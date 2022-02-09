@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["jf_aap"] = [{"text":"impl Committable for <a class=\"enum\" href=\"jf_aap/enum.TransactionNote.html\" title=\"enum jf_aap::TransactionNote\">TransactionNote</a>","synthetic":false,"types":["jf_aap::TransactionNote"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
