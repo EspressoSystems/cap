@@ -1,0 +1,709 @@
+//! Circuit for auditable anonymous transfer.
+use super::structs::{AssetPolicyVar, AuditMemoVar, ExpirableCredVar, RecordOpeningVar};
+use crate::{
+    circuit::{
+        gadgets::{Spender, TransactionGadgets},
+        structs::UserAddressVar,
+    },
+    constants::{AMOUNT_LEN, ASSET_TRACING_MAP_LEN, AUDIT_DATA_LEN},
+    errors::TxnApiError,
+    keys::UserKeyPair,
+    proof::transfer::{InputSecret, TransferPublicInput, TransferWitness},
+    BaseField, CurveParam,
+};
+use ark_ff::Zero;
+use ark_std::{format, string::ToString, vec, vec::Vec};
+use jf_plonk::{
+    circuit::{Circuit, PlonkCircuit, Variable},
+    errors::{CircuitError::InternalError, PlonkError},
+};
+use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
+use jf_utils::fr_to_fq;
+
+pub(crate) struct TransferCircuit(pub(crate) PlonkCircuit<BaseField>);
+
+impl TransferCircuit {
+    /// Build a circuit during preprocessing for derivation of proving key and
+    /// verifying key.
+    pub(crate) fn build_for_preprocessing(
+        num_input: usize,
+        num_output: usize,
+        tree_depth: u8,
+    ) -> Result<(Self, usize), TxnApiError> {
+        let user_keypair = UserKeyPair::default();
+        let dummy_witness =
+            TransferWitness::dummy(num_input, num_output, tree_depth, &user_keypair);
+        let valid_until = 0;
+        let dummy_pub_input = TransferPublicInput::from_witness(&dummy_witness, valid_until)?;
+
+        Self::build(&dummy_witness, &dummy_pub_input)
+            .map_err(|e| TxnApiError::FailedSnark(format!("{:?}", e)))
+    }
+
+    /// Build the circuit given a satisfiable assignment of
+    /// secret witness and public inputs.
+    pub(crate) fn build(
+        witness: &TransferWitness,
+        pub_input: &TransferPublicInput,
+    ) -> Result<(Self, usize), PlonkError> {
+        if witness.input_secrets.is_empty() {
+            return Err(PlonkError::CircuitError(InternalError(
+                "the number of transfer inputs cannot be zero".to_string(),
+            )));
+        }
+        if witness.output_record_openings.is_empty() {
+            return Err(PlonkError::CircuitError(InternalError(
+                "the number of transfer outputs cannot be zero".to_string(),
+            )));
+        }
+
+        let mut circuit = PlonkCircuit::new_turbo_plonk();
+        let witness = TransferWitnessVar::new(&mut circuit, witness)?;
+        let pub_input = TransferPubInputVar::new(&mut circuit, pub_input)?;
+
+        for (i, (input, &expected_nl)) in witness
+            .input_secrets
+            .iter()
+            .zip(pub_input.input_nullifiers.iter())
+            .enumerate()
+        {
+            // The input is not frozen.
+            circuit.constant_gate(input.ro.freeze_flag, BaseField::zero())?;
+            // check if record is dummy
+            let is_dummy_record = input.ro.is_asset_code_dummy(&mut circuit)?;
+            let is_zero_amount = circuit.is_zero(input.ro.amount)?;
+            // if records is dummy, then amount must be zero
+            // That is, check that either record is not dummy or the amount is zero
+            let not_dummy_record = circuit.logic_neg(is_dummy_record)?;
+            circuit.logic_or_gate(not_dummy_record, is_zero_amount)?;
+
+            // The first input is with native asset code and is for txn fees.
+            if i == 0 {
+                circuit.equal_gate(input.ro.asset_code, pub_input.native_asset_code)?;
+                input.ro.policy.enforce_dummy_policy(&mut circuit)?;
+            } else {
+                // if asset type code is dummy, then policy must be dummy
+                let is_dummy_policy = input.ro.policy.is_dummy_policy(&mut circuit)?;
+                circuit.logic_or_gate(not_dummy_record, is_dummy_policy)?;
+                // if asset type code is not dummy, then policy must be the transfers note
+                // policy
+                let is_equal_policy = input
+                    .ro
+                    .policy
+                    .is_equal_policy(&mut circuit, &witness.policy)?;
+                circuit.logic_or_gate(is_dummy_record, is_equal_policy)?;
+            }
+
+            let (nullifier, root) = circuit.prove_spend(
+                &input.ro,
+                &input.acc_member_witness,
+                input.addr_secret,
+                Spender::User,
+            )?;
+
+            circuit.equal_gate(nullifier, expected_nl)?;
+
+            let is_correct_root = circuit.is_equal(root, pub_input.root)?;
+            // if dummy, root is allowed to be incorrect
+            circuit.logic_or_gate(is_dummy_record, is_correct_root)?;
+
+            // Check credential if credential issuer's cred_pk is present.
+            let b_dummy_cred_pk = input.ro.policy.is_dummy_cred_pk(&mut circuit)?;
+            let b_cred_vfy = input.cred.verify(&mut circuit, pub_input.valid_until)?;
+            circuit.logic_or_gate(b_dummy_cred_pk, b_cred_vfy)?;
+        }
+
+        for (i, (output_ro, &expected_rc)) in witness
+            .output_record_openings
+            .iter()
+            .zip(pub_input.output_commitments.iter())
+            .enumerate()
+        {
+            // The output is not frozen.
+            circuit.constant_gate(output_ro.freeze_flag, BaseField::zero())?;
+            // The first output is with native asset code and is for txn fees
+            if i == 0 {
+                circuit.equal_gate(output_ro.asset_code, pub_input.native_asset_code)?;
+                output_ro.policy.enforce_dummy_policy(&mut circuit)?;
+            } else {
+                circuit.equal_gate(output_ro.asset_code, witness.asset_code)?;
+                output_ro
+                    .policy
+                    .enforce_equal_policy(&mut circuit, &witness.policy)?;
+            }
+
+            // commitment
+            let rc_out = output_ro.compute_record_commitment(&mut circuit)?;
+            circuit.equal_gate(rc_out, expected_rc)?;
+
+            // Range-check `amount`
+            // Note we don't need to range-check inputs' `amount`, because those amounts are
+            // bound to inputs' accumulated ars, whose underlying amounts have
+            // already been range-checked in the transactions that created the
+            // inputs' ars.
+            circuit.range_gate(output_ro.amount, AMOUNT_LEN)?;
+        }
+
+        // The amount balance is preserved
+        let amounts_in: Vec<Variable> = witness
+            .input_secrets
+            .iter()
+            .map(|input| input.ro.amount)
+            .collect();
+        let amounts_out: Vec<Variable> = witness
+            .output_record_openings
+            .iter()
+            .map(|ro| ro.amount)
+            .collect();
+
+        let transfer_amount = circuit.preserve_balance(
+            pub_input.native_asset_code,
+            witness.asset_code,
+            pub_input.fee,
+            &amounts_in,
+            &amounts_out,
+        )?;
+
+        // Audit memo is correctly constructed when `auditor_pk` is not null and
+        // `transfer_amount > asset_policy.reveal_threshold`
+        let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
+        let b_under_limit = circuit.is_in_range(amount_diff, AMOUNT_LEN)?;
+        let b_dummy_audit_pk = witness.policy.is_dummy_audit_pk(&mut circuit)?;
+        let under_limit_or_dummy_audit_pk = circuit.logic_or(b_under_limit, b_dummy_audit_pk)?;
+        let b_correct_audit_memo = Self::is_correct_audit_memo(&mut circuit, &witness, &pub_input)?;
+        circuit.logic_or_gate(under_limit_or_dummy_audit_pk, b_correct_audit_memo)?;
+
+        let n_constraints = circuit.num_gates();
+        circuit.finalize_for_arithmetization()?;
+        Ok((Self(circuit), n_constraints))
+    }
+
+    /// Check whether a transfer audit memo has encrypted the correct data,
+    /// returns "one" variable if valid, "zero" otherwise
+    fn is_correct_audit_memo(
+        circuit: &mut PlonkCircuit<BaseField>,
+        witness: &TransferWitnessVar,
+        pub_input: &TransferPubInputVar,
+    ) -> Result<Variable, PlonkError> {
+        // 1. Prepare message to be encrypted
+        let mut message: Vec<Variable> = vec![witness.asset_code];
+        let reveal_map_vars: Vec<Variable> = circuit.unpack(witness.policy.reveal_map, AUDIT_DATA_LEN)?
+                                            .into_iter()
+                                            .rev() // unpack is in little endian
+                                            .collect();
+        let dummy_key = UserAddressVar::dummy(circuit);
+        for input in witness.input_secrets.iter().skip(1) {
+            let is_dummy_record = input.ro.is_asset_code_dummy(circuit)?;
+            // if record is dummy, then add dummy key to audit memo so that auditor can
+            // recognize dummy records by looking at the key
+            let addr_x = circuit.conditional_select(
+                is_dummy_record,
+                input.ro.owner_addr.0.get_x(),
+                dummy_key.0.get_x(),
+            )?;
+            let addr_y = circuit.conditional_select(
+                is_dummy_record,
+                input.ro.owner_addr.0.get_y(),
+                dummy_key.0.get_y(),
+            )?;
+
+            let mut vals = vec![addr_x, addr_y, input.ro.amount, input.ro.blind];
+            let mut bit_map_vars = reveal_map_vars[..ASSET_TRACING_MAP_LEN].to_vec();
+            // id tracing fields
+            for (attr, reveal_bit) in input
+                .cred
+                .attrs
+                .iter()
+                .zip(reveal_map_vars.iter().skip(ASSET_TRACING_MAP_LEN))
+            {
+                vals.push(attr.0);
+                bit_map_vars.push(*reveal_bit);
+            }
+
+            // reveal if dummy or reveal_bit
+            let actual_reveal_bit = circuit.logic_or(is_dummy_record, reveal_map_vars[0])?;
+            // it is guaranteed at this point that bit_map_vars[0] == bitmap_vars[1]
+            bit_map_vars[0] = actual_reveal_bit;
+            bit_map_vars[1] = actual_reveal_bit;
+
+            let revealed_vals = circuit.hadamard_product(&bit_map_vars, &vals)?;
+            message.extend_from_slice(&revealed_vals[..]);
+        }
+        for output_ro in witness.output_record_openings.iter().skip(1) {
+            // asset tracing fields
+            let vals = vec![
+                output_ro.owner_addr.0.get_x(),
+                output_ro.owner_addr.0.get_y(),
+                output_ro.amount,
+                output_ro.blind,
+            ];
+
+            let revealed_vals =
+                circuit.hadamard_product(&reveal_map_vars[..ASSET_TRACING_MAP_LEN], &vals)?;
+            message.extend_from_slice(&revealed_vals[..]);
+        }
+
+        // 2. Derive audit memo.
+        let derived_audit_memo = AuditMemoVar::derive(
+            circuit,
+            &witness.policy.auditor_pk,
+            &message,
+            witness.audit_memo_enc_rand,
+        )?;
+
+        // 3. Compare derived audit_memo with that in the public input.
+        pub_input.audit_memo.is_equal(circuit, &derived_audit_memo)
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct TransferWitnessVar {
+    pub(crate) asset_code: Variable,   // transfer asset code
+    pub(crate) policy: AssetPolicyVar, // transfer policy
+    pub(crate) input_secrets: Vec<InputSecretVar>,
+    pub(crate) output_record_openings: Vec<RecordOpeningVar>,
+    pub(crate) audit_memo_enc_rand: Variable,
+}
+
+impl TransferWitnessVar {
+    /// Create a variable for a transfer witness
+    pub(crate) fn new(
+        circuit: &mut PlonkCircuit<BaseField>,
+        witness: &TransferWitness,
+    ) -> Result<Self, PlonkError> {
+        let asset_code = circuit.create_variable(witness.asset_def.code.0)?;
+        let policy = AssetPolicyVar::new(circuit, &witness.asset_def.policy)?;
+        let input_secrets = witness
+            .input_secrets
+            .iter()
+            .map(|input_secret| InputSecretVar::new(circuit, input_secret))
+            .collect::<Result<Vec<_>, PlonkError>>()?;
+        let output_record_openings = witness
+            .output_record_openings
+            .iter()
+            .map(|ro| RecordOpeningVar::new(circuit, ro))
+            .collect::<Result<Vec<_>, PlonkError>>()?;
+        let audit_memo_enc_rand =
+            circuit.create_variable(fr_to_fq::<_, CurveParam>(&witness.audit_memo_enc_rand))?;
+        Ok(Self {
+            asset_code,
+            policy,
+            input_secrets,
+            output_record_openings,
+            audit_memo_enc_rand,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct TransferPubInputVar {
+    pub(crate) root: Variable,
+    pub(crate) native_asset_code: Variable,
+    pub(crate) valid_until: Variable,
+    pub(crate) fee: Variable,
+    pub(crate) input_nullifiers: Vec<Variable>,
+    pub(crate) output_commitments: Vec<Variable>,
+    pub(crate) audit_memo: AuditMemoVar,
+}
+
+impl TransferPubInputVar {
+    /// Create a transfer public input variable.
+    pub(crate) fn new(
+        circuit: &mut PlonkCircuit<BaseField>,
+        pub_input: &TransferPublicInput,
+    ) -> Result<Self, PlonkError> {
+        let root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
+        let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
+        let valid_until = circuit.create_public_variable(BaseField::from(pub_input.valid_until))?;
+        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee))?;
+        let input_nullifiers = pub_input
+            .input_nullifiers
+            .iter()
+            .map(|&nl| circuit.create_public_variable(nl.0))
+            .collect::<Result<Vec<_>, PlonkError>>()?;
+        let output_commitments = pub_input
+            .output_commitments
+            .iter()
+            .map(|rc| circuit.create_public_variable(rc.0))
+            .collect::<Result<Vec<_>, PlonkError>>()?;
+        let audit_memo = AuditMemoVar::new(circuit, &pub_input.audit_memo)?;
+        audit_memo.set_public(circuit)?;
+        Ok(Self {
+            root,
+            native_asset_code,
+            valid_until,
+            fee,
+            input_nullifiers,
+            output_commitments,
+            audit_memo,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct InputSecretVar {
+    pub(crate) addr_secret: Variable,
+    pub(crate) ro: RecordOpeningVar,
+    pub(crate) acc_member_witness: AccMemberWitnessVar,
+    pub(crate) cred: ExpirableCredVar,
+}
+
+impl InputSecretVar {
+    /// Create a variable for a transfer input secret.
+    pub(crate) fn new(
+        circuit: &mut PlonkCircuit<BaseField>,
+        input_secret: &InputSecret,
+    ) -> Result<Self, PlonkError> {
+        let addr_secret = circuit.create_variable(fr_to_fq::<_, CurveParam>(
+            input_secret.owner_keypair.address_secret_ref(),
+        ))?;
+        let ro = RecordOpeningVar::new(circuit, &input_secret.ro)?;
+        let cred = ExpirableCredVar::new(circuit, &input_secret.cred)?;
+        let acc_member_witness =
+            AccMemberWitnessVar::new::<_, CurveParam>(circuit, &input_secret.acc_member_witness)?;
+        Ok(Self {
+            addr_secret,
+            ro,
+            acc_member_witness,
+            cred,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{TransferCircuit, TransferPubInputVar, TransferPublicInput, TransferWitness};
+    use crate::{
+        keys::UserKeyPair,
+        structs::{
+            AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditMemo, ExpirableCredential,
+            FreezeFlag, Nullifier, RecordCommitment, RecordOpening,
+        },
+        utils::params_builder::TransferParamsBuilder,
+        BaseField, ScalarField,
+    };
+    use ark_ff::Zero;
+    use ark_std::{vec, vec::Vec, UniformRand};
+    use jf_plonk::{
+        circuit::{Circuit, PlonkCircuit},
+        errors::PlonkError,
+    };
+    use jf_primitives::merkle_tree::{MerklePathNode, NodeValue};
+
+    #[test]
+    fn test_pub_input_to_scalars_order_consistency() {
+        let rng = &mut ark_std::test_rng();
+        let mut input_ros = vec![RecordOpening::rand_for_test(rng); 5];
+        input_ros[0].asset_def = AssetDefinition::native();
+        let output_ros = vec![RecordOpening::rand_for_test(rng); 4];
+        let input_creds = vec![ExpirableCredential::dummy_unexpired().unwrap(); 5];
+        let randomizer = ScalarField::rand(rng);
+        let pub_input = TransferPublicInput {
+            merkle_root: NodeValue::from_scalar(BaseField::from(10u8)),
+            native_asset_code: AssetCode::native(),
+            valid_until: 123u64,
+            fee: 8u64,
+            input_nullifiers: vec![Nullifier(BaseField::from(2u8)); 5],
+            output_commitments: vec![RecordCommitment::from(&output_ros[0]); 4],
+            audit_memo: AuditMemo::new_for_transfer_note(
+                &input_ros,
+                &output_ros,
+                &input_creds,
+                randomizer,
+            )
+            .unwrap(),
+        };
+        let pub_input_vec = pub_input.to_scalars();
+        let mut circuit = PlonkCircuit::new_turbo_plonk();
+        let _pub_input_var = TransferPubInputVar::new(&mut circuit, &pub_input).unwrap(); // safe unwrap
+
+        let circuit_pub_input = circuit.public_input().unwrap();
+        assert_eq!(pub_input_vec.len(), circuit_pub_input.len());
+        pub_input_vec
+            .iter()
+            .zip(circuit_pub_input.iter())
+            .for_each(|(&a, &b)| assert_eq!(a, b));
+    }
+
+    #[test]
+    fn test_threshold_policy() -> Result<(), PlonkError> {
+        let rng = &mut ark_std::test_rng();
+        let cred_expiry = 9998u64;
+        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypairs = vec![&user_keypair; 3];
+
+        // transfer amount doesn't exceed the limit, the policy won't be applied
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs.clone())
+            .set_reveal_threshold(30)
+            .set_input_amounts(30, &[20, 10])
+            .set_output_amounts(19, &[17, 13])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+        assert_eq!(
+            pub_input.audit_memo,
+            AuditMemo::dummy_for_transfer_note(
+                witness.input_secrets.len(),
+                witness.output_record_openings.len(),
+                witness.audit_memo_enc_rand
+            )
+        );
+
+        // transfer amount exceeds the limit, the policy will be applied
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs.clone())
+            .set_reveal_threshold(20)
+            .set_input_amounts(30, &[20, 10])
+            .set_output_amounts(19, &[17, 13])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+        let input_ros: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.ro.clone())
+            .collect();
+        let output_ros = witness.output_record_openings.clone();
+        let input_creds: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.cred.clone())
+            .collect();
+        assert_eq!(
+            pub_input.audit_memo,
+            AuditMemo::new_for_transfer_note(
+                &input_ros,
+                &output_ros,
+                &input_creds,
+                witness.audit_memo_enc_rand
+            )
+            .unwrap()
+        );
+
+        // no threshold policy, tracing policy is always applied
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
+            .set_reveal_threshold(0)
+            .set_input_amounts(1, &[2, 1])
+            .set_output_amounts(1, &[1, 2])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+        let input_ros: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.ro.clone())
+            .collect();
+        let output_ros = witness.output_record_openings.clone();
+        let input_creds: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.cred.clone())
+            .collect();
+        assert_eq!(
+            pub_input.audit_memo,
+            AuditMemo::new_for_transfer_note(
+                &input_ros,
+                &output_ros,
+                &input_creds,
+                witness.audit_memo_enc_rand
+            )
+            .unwrap()
+        );
+
+        Ok(())
+    }
+    #[test]
+    fn test_transfer_circuit_build() -> Result<(), PlonkError> {
+        let rng = &mut ark_std::test_rng();
+        let cred_expiry = 9998u64;
+        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypairs = vec![&user_keypair; 3];
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
+            .set_input_amounts(30, &[20, 10])
+            .set_output_amounts(19, &[17, 13])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+
+        // bad path: wrong freeze_flag
+        let builder = builder.update_input_freeze_flag(0, FreezeFlag::Frozen);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+        let builder = builder.update_input_freeze_flag(0, FreezeFlag::Unfrozen);
+
+        // bad path: wrong asset definition for the 1st input/output,
+        // TODO this cannot be tested as we cannot build public input for non_native fee
+        // input let builder =
+        // builder.update_fee_input_asset_def(AssetDefinition::default());
+        // let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        // check_transfer_circuit(&witness, &pub_input, false)?;
+        // let native_asset_def = AssetDefinition::native();
+        // let builder = builder.update_fee_input_asset_def(native_asset_def);
+        // return Ok(());
+
+        // bad path: multiple non-native asset codes
+        let builder = builder.update_input_asset_def(
+            0,
+            AssetDefinition::new(
+                AssetCode::new_domestic(AssetCodeSeed::generate(rng), b"other digest"),
+                AssetPolicy::default(),
+            )
+            .unwrap(),
+        );
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+        let transfer_asset_def = builder
+            .transfer_asset_def
+            .as_ref()
+            .unwrap()
+            .asset_def
+            .clone();
+        let builder = builder.update_input_asset_def(0, transfer_asset_def);
+
+        // bad path: wrong balance
+        let builder = builder.update_input_amount(0, 100);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+        let builder = builder.update_input_amount(0, 20);
+
+        // bad path: wrong output commitment
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        pub_input.output_commitments[0] = RecordCommitment(BaseField::zero());
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // bad path: wrong merkle root
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        pub_input.merkle_root = NodeValue::default();
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // bad path: wrong input nullifier
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        pub_input.input_nullifiers[0].0 = BaseField::zero();
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // bad path: wrong txn fee
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        pub_input.fee = 21u64;
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // bad path: expired credential
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        pub_input.valid_until = 10000u64;
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // bad path: wrong audit memo
+        let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        let input_ros: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.ro.clone())
+            .collect();
+        let output_ros = witness.output_record_openings.clone();
+        let input_creds: Vec<_> = witness
+            .input_secrets
+            .iter()
+            .map(|secret| secret.cred.clone())
+            .collect();
+        // replace with an audit memo encrypted with a wrong randomizer
+        pub_input.audit_memo = AuditMemo::new_for_transfer_note(
+            &input_ros,
+            &output_ros,
+            &input_creds,
+            ScalarField::zero(),
+        )
+        .unwrap(); // safe unwrap
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_transfer_circuit_build_with_dummy_records() -> Result<(), PlonkError> {
+        let rng = &mut ark_std::test_rng();
+        let cred_expiry = 9998u64;
+        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
+            .set_input_amounts(30, &[30, 0])
+            .set_output_amounts(19, &[17, 13])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+
+        // wrong asset definition
+        let builder = builder
+            .update_input_asset_def(1, AssetDefinition::default())
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // test 1: dummy record with non-zero amount should fail
+        let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
+        let mut builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
+            .set_input_amounts(30, &[30, 0])
+            .set_output_amounts(19, &[17, 13])
+            .set_dummy_input_record(1)
+            .set_input_creds(cred_expiry);
+        builder.input_ros[2].amount = 10; // need to update amount AFTER setting dummy input
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // test 2: dummy record with 0 amount should pass
+        let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
+        let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
+            .set_input_amounts(30, &[30, 0])
+            .set_output_amounts(19, &[17, 13])
+            .set_dummy_input_record(1)
+            .set_input_creds(cred_expiry);
+        let (mut witness, mut pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, true)?;
+
+        // bad merkle path shouldn't affect satisfiability
+        assert_ne!(witness.input_secrets[2].acc_member_witness.uid, 0);
+        assert_ne!(
+            witness.input_secrets[2].acc_member_witness.root,
+            NodeValue::from(0)
+        );
+        witness.input_secrets[2].acc_member_witness.uid = 0;
+        witness.input_secrets[2].acc_member_witness.root = NodeValue::from(0);
+        witness.input_secrets[2]
+            .acc_member_witness
+            .merkle_path
+            .nodes[0] = MerklePathNode::default();
+        let dummy_record_commitment = builder.input_ros[2].derive_record_commitment();
+        let dummy_nullifier =
+            builder.input_keypairs[2].nullify(&Default::default(), 0, &dummy_record_commitment);
+        pub_input.input_nullifiers[2] = dummy_nullifier;
+        check_transfer_circuit(&witness, &pub_input, true)?;
+        Ok(())
+    }
+
+    fn create_witness_and_pub_input<'a>(
+        builder: &'a TransferParamsBuilder,
+    ) -> (TransferWitness<'a>, TransferPublicInput) {
+        let rng = &mut ark_std::test_rng();
+        let witness = builder.build_witness(rng);
+        let valid_until = 1234u64;
+        let pub_input = TransferPublicInput::from_witness(&witness, valid_until).unwrap();
+        (witness, pub_input)
+    }
+
+    fn check_transfer_circuit(
+        witness: &TransferWitness,
+        pub_input: &TransferPublicInput,
+        witness_is_valid: bool,
+    ) -> Result<(), PlonkError> {
+        let pub_input_vec = pub_input.to_scalars();
+        let (circuit, _) = TransferCircuit::build(witness, pub_input)?;
+        let verify = circuit.0.check_circuit_satisfiability(&pub_input_vec[..]);
+
+        if !witness_is_valid {
+            if verify.is_ok() {
+                Err(PlonkError::WrongProof) // some error
+            } else {
+                Ok(())
+            }
+        } else {
+            verify
+        }
+    }
+}
