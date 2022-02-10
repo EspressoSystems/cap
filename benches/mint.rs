@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
 use criterion::Criterion;
-use jf_aap::{
+use jf_cap::{
     bench_utils::{
         compute_sizes, compute_title_simple, get_builder_mint, save_result_to_file_simple, GEN,
         TREE_DEPTH, VERIFY,

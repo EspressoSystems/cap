@@ -1,4 +1,4 @@
-use jf_aap::{errors::TxnApiError, parameters::*};
+use jf_cap::{errors::TxnApiError, parameters::*};
 use std::{path::PathBuf, str::FromStr};
 use structopt::StructOpt;
 

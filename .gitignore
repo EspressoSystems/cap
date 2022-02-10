@@ -9,6 +9,6 @@ Cargo.lock
 default.profraw
 
 
-# AAP temporary bin
+# CAP temporary bin
 data/*.bin
 !data/aztec-crs-131072.bin

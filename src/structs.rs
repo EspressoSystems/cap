@@ -125,7 +125,7 @@ impl AssetCode {
         (Self::new_domestic(seed, &[]), seed)
     }
 
-    /// Derive a domestic aap Asset code from its seed and digest
+    /// Derive a domestic cap Asset code from its seed and digest
     /// `seed`:  only known by the asset issuer.
     /// `description`: asset code description
     pub fn new_domestic(seed: AssetCodeSeed, description: &[u8]) -> AssetCode {
@@ -133,7 +133,7 @@ impl AssetCode {
         Self::new_domestic_from_internal(&internal)
     }
 
-    /// Derive a domestic aap Asset code from its seed and digest
+    /// Derive a domestic cap Asset code from its seed and digest
     /// `seed`:  only known by the asset issuer.
     /// `description`: asset code description
     pub(crate) fn new_domestic_from_digest(
@@ -144,7 +144,7 @@ impl AssetCode {
         Self::new_domestic_from_internal(&internal)
     }
 
-    /// Derive a domestic aap asset code from its internal asset code value
+    /// Derive a domestic cap asset code from its internal asset code value
     pub(crate) fn new_domestic_from_internal(internal: &InternalAssetCode) -> AssetCode {
         let bytes_internal = internal.0.into_repr().to_bytes_le();
         let bytes = [DOM_SEP_DOMESTIC_ASSET.to_vec(), bytes_internal].concat();
@@ -174,7 +174,7 @@ impl AssetCode {
         Err(TxnApiError::FailedAssetCodeVerification("Derived asset code from does not match expected asset code in minted asset code verification".to_string()))
     }
 
-    /// Verify that asset code is a foreign derived from a non aap asset
+    /// Verify that asset code is a foreign derived from a non cap asset
     /// description or identifier
     pub fn verify_foreign(&self, description: &[u8]) -> Result<(), TxnApiError> {
         let derived = Self::new_foreign(description);
@@ -1779,9 +1779,9 @@ mod test {
     #[test]
     fn test_asset_code() {
         let rng = &mut ark_std::test_rng();
-        let aap_token_description = b"aap_usdx";
+        let cap_token_description = b"cap_usdx";
         let seed = AssetCodeSeed::generate(rng);
-        let internal_asset_code = InternalAssetCode::new(seed, aap_token_description);
+        let internal_asset_code = InternalAssetCode::new(seed, cap_token_description);
         let asset_code = AssetCode::new_domestic_from_internal(&internal_asset_code);
         assert!(asset_code.verify_domestic(&internal_asset_code).is_ok());
         let bad_internal = InternalAssetCode(BaseField::zero());
@@ -1793,7 +1793,7 @@ mod test {
             .verify_foreign(external_description)
             .is_ok());
         assert!(external_asset_code
-            .verify_foreign(aap_token_description)
+            .verify_foreign(cap_token_description)
             .is_err());
     }
 
