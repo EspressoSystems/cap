@@ -570,18 +570,8 @@ impl AssetPolicy {
 /// Asset Definition
 /// * `code` -- asset code as unique id code
 /// * `policy` -- asset policy attached
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Clone,
-    Default,
-    CanonicalDeserialize,
-    CanonicalSerialize,
-    Serialize,
-    Deserialize,
-)]
+#[tagged_blob("ASSET_DEF")]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Default, CanonicalDeserialize, CanonicalSerialize)]
 pub struct AssetDefinition {
     /// asset code as unique id code
     pub code: AssetCode,
