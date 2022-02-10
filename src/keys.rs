@@ -21,6 +21,7 @@ use ark_ec::{group::Group, twisted_edwards_extended::GroupProjective, Projective
 use ark_serialize::*;
 use ark_std::{
     format,
+    hash::{Hash, Hasher},
     rand::{CryptoRng, RngCore},
     string::ToString,
     vec,
@@ -330,7 +331,7 @@ impl AuditorKeyPair {
 
 /// Public key for the freezer
 #[tagged_blob("FREEZEPUBKEY")]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(Clone, Debug, Eq, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct FreezerPubKey(pub(crate) GroupProjective<CurveParam>);
 
 impl FreezerPubKey {
@@ -341,9 +342,21 @@ impl FreezerPubKey {
     }
 }
 
+impl Hash for FreezerPubKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.0.into_affine(), state)
+    }
+}
+
+impl PartialEq for FreezerPubKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.into_affine().eq(&other.0.into_affine())
+    }
+}
+
 /// Key pair for the freezer
 #[tagged_blob("FREEZEKEY")]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(Clone, Debug, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct FreezerKeyPair {
     pub(crate) sec_key: ScalarField,
     pub(crate) pub_key: GroupProjective<CurveParam>,
@@ -386,6 +399,19 @@ impl FreezerKeyPair {
     // avoid malformed user public key.
     pub(crate) fn derive_nullifier_key(&self, address: &UserAddress) -> NullifierKey {
         compute_nullifier_key(address.internal(), &self.sec_key)
+    }
+}
+
+impl Hash for FreezerKeyPair {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        Hash::hash(&self.sec_key, state);
+        Hash::hash(&self.pub_key.into_affine(), state);
+    }
+}
+
+impl PartialEq for FreezerKeyPair {
+    fn eq(&self, other: &Self) -> bool {
+        self.sec_key == other.sec_key && self.pub_key.into_affine() == other.pub_key.into_affine()
     }
 }
 
