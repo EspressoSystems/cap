@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["MintAuxInfo","Auxiliary info of `MintNote`"],["MintNote","Asset issuance/Mint note structure for single newly minted asset type."]]});
