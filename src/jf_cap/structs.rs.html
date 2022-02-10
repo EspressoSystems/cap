@@ -1935,16 +1935,6 @@
 <span id="1935">1935</span>
 <span id="1936">1936</span>
 <span id="1937">1937</span>
-<span id="1938">1938</span>
-<span id="1939">1939</span>
-<span id="1940">1940</span>
-<span id="1941">1941</span>
-<span id="1942">1942</span>
-<span id="1943">1943</span>
-<span id="1944">1944</span>
-<span id="1945">1945</span>
-<span id="1946">1946</span>
-<span id="1947">1947</span>
 </pre><pre class="rust"><code><span class="doccomment">//! record-related data structures in transactions</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
@@ -2517,18 +2507,8 @@
 <span class="doccomment">/// Asset Definition</span>
 <span class="doccomment">/// * `code` -- asset code as unique id code</span>
 <span class="doccomment">/// * `policy` -- asset policy attached</span>
-<span class="attribute">#[<span class="ident">derive</span>(
-    <span class="ident">Debug</span>,
-    <span class="ident">PartialEq</span>,
-    <span class="ident">Eq</span>,
-    <span class="ident">Hash</span>,
-    <span class="ident">Clone</span>,
-    <span class="ident">Default</span>,
-    <span class="ident">CanonicalDeserialize</span>,
-    <span class="ident">CanonicalSerialize</span>,
-    <span class="ident">Serialize</span>,
-    <span class="ident">Deserialize</span>,
-)]</span>
+<span class="attribute">#[<span class="ident">tagged_blob</span>(<span class="string">&quot;ASSET_DEF&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">CanonicalDeserialize</span>, <span class="ident">CanonicalSerialize</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AssetDefinition</span> {
     <span class="doccomment">/// asset code as unique id code</span>
     <span class="kw">pub</span> <span class="ident">code</span>: <span class="ident">AssetCode</span>,
