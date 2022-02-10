@@ -1,6 +1,6 @@
 [package]
-name = "jf-aap"
-description = "Spectrum auditable anonymous payments. Transaction building and verification."
+name = "jf-cap"
+description = "CAP: configarable anonymous payments"
 version = "0.0.1"
 authors = ["Translucence Research <hello@translucence.net>"]
 edition = "2018"
