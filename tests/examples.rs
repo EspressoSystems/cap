@@ -9,7 +9,7 @@ use ark_std::{
     rand::CryptoRng,
     rc::Rc,
 };
-use jf_aap::{
+use jf_cap::{
     constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
     derive_txns_fee_record,
     errors::TxnApiError,
@@ -415,7 +415,7 @@ impl<'a> ValidatorMock<'a> {
         let description = String::from("Mint");
         if !self.verifying_keys.contains_key(&description) {
             let (_, verifying_key, _) =
-                jf_aap::proof::mint::preprocess(&self.srs, TREE_DEPTH).unwrap();
+                jf_cap::proof::mint::preprocess(&self.srs, TREE_DEPTH).unwrap();
             self.verifying_keys.insert(
                 description.clone(),
                 Rc::new(TransactionVerifyingKey::Mint(verifying_key)),
@@ -445,7 +445,7 @@ impl<'a> ValidatorMock<'a> {
         let description = format!("Freeze_{}", n_inputs);
         if !self.verifying_keys.contains_key(&description) {
             let (_, verifying_key, _) =
-                jf_aap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
+                jf_cap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
             self.verifying_keys.insert(
                 description.clone(),
                 Rc::new(TransactionVerifyingKey::Freeze(verifying_key)),
@@ -619,7 +619,7 @@ impl<'a> FreezerMock<'a> {
 
     fn compute_proving_key(&self, n_inputs: usize) -> FreezeProvingKey<'a> {
         let (proving_key, ..) =
-            jf_aap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
+            jf_cap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
         proving_key
     }
 
@@ -850,7 +850,7 @@ impl<'a> FreezerMock<'a> {
             FreezeFlag::Frozen
         };
         let (dummy_ro, _dummy_key) = RecordOpening::dummy(rng, freeze_flag);
-        let mut inputs = vec![jf_aap::freeze::FreezeNoteInput {
+        let mut inputs = vec![jf_cap::freeze::FreezeNoteInput {
             ro: dummy_ro,
             acc_member_witness: AccMemberWitness::dummy(TREE_DEPTH),
             keypair: &dummy_freezer_keypair,
@@ -861,7 +861,7 @@ impl<'a> FreezerMock<'a> {
                 .expect_ok()
                 .unwrap()
                 .1;
-            inputs.push(jf_aap::freeze::FreezeNoteInput {
+            inputs.push(jf_cap::freeze::FreezeNoteInput {
                 ro: record.clone(),
                 acc_member_witness: witness,
                 keypair: &self.keypair,
@@ -869,7 +869,7 @@ impl<'a> FreezerMock<'a> {
         }
         // push a dummy input at the end just as an example
         let (dummy_ro, _dummy_key) = RecordOpening::dummy(rng, freeze_flag);
-        inputs.push(jf_aap::freeze::FreezeNoteInput {
+        inputs.push(jf_cap::freeze::FreezeNoteInput {
             ro: dummy_ro,
             acc_member_witness: AccMemberWitness::dummy(TREE_DEPTH),
             keypair: &dummy_freezer_keypair,
@@ -1482,7 +1482,7 @@ impl<'a> AssetIssuerMock<'a> {
         srs: &'a UniversalParam,
     ) -> AssetIssuerMock<'a> {
         let wallet = SimpleUserWalletMock::generate(rng, srs);
-        let (proving_key, ..) = jf_aap::proof::mint::preprocess(&wallet.srs, TREE_DEPTH).unwrap();
+        let (proving_key, ..) = jf_cap::proof::mint::preprocess(&wallet.srs, TREE_DEPTH).unwrap();
 
         AssetIssuerMock {
             wallet,
@@ -1554,7 +1554,7 @@ impl<'a> AssetIssuerMock<'a> {
             owner_keypair: &self.wallet.keypair,
         };
         let (txn_fee_info, fee_chg_ro) = TxnFeeInfo::new(rng, fee_input, fee).unwrap();
-        let (min_note, sig_key) = jf_aap::mint::MintNote::generate(
+        let (min_note, sig_key) = jf_cap::mint::MintNote::generate(
             rng,
             mint_record,
             *seed,

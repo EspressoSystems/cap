@@ -2,7 +2,7 @@
 extern crate criterion;
 
 use criterion::Criterion;
-use jf_aap::{
+use jf_cap::{
     bench_utils::{
         compute_sizes, compute_title_simple, get_builder_transfer, get_key_pairs,
         save_result_to_file_simple, GEN, NUM_INPUTS_RANGE, NUM_OUTPUTS_RANGE, TREE_DEPTH, VERIFY,
