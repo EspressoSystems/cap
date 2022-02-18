@@ -403,11 +403,91 @@ mod tests {
         let srs = universal_setup_for_test(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
+        let keypair1 = UserKeyPair::generate(&mut prng);
+        let keypair2 = UserKeyPair::generate(&mut prng);
+
+        // ====================================
+        // a normal transfer
+        // ====================================
         let input_amounts = [30, 25];
         let output_amounts = [19, 3, 4, 5, 6, 7];
 
-        let keypair1 = UserKeyPair::generate(&mut prng);
-        let keypair2 = UserKeyPair::generate(&mut prng);
+        let builder = TransferParamsBuilder::new_non_native(
+            num_input,
+            num_output,
+            Some(depth),
+            vec![&keypair1, &keypair2],
+        )
+        .set_input_amounts(input_amounts[0], &input_amounts[1..])
+        .set_output_amounts(output_amounts[0], &output_amounts[1..])
+        .policy_reveal(PolicyRevealAttr::Amount)
+        .set_input_creds(cred_expiry);
+
+        let (note, _recv_memos, _sig) = builder
+            .build_transfer_note(
+                &mut prng,
+                &prover_key,
+                valid_until,
+                extra_proof_bound_data.clone(),
+            )
+            .unwrap();
+
+        // Check memos
+        let asset_def = builder.transfer_asset_def.as_ref().unwrap();
+
+        let auditor_keypair = &asset_def.auditor_keypair;
+
+        let (input_audit_data, output_audit_data) = auditor_keypair
+            .open_transfer_audit_memo(&asset_def.asset_def, &note)
+            .unwrap();
+        assert_eq!(input_audit_data.len(), input_amounts.len() - 1);
+        assert_eq!(output_audit_data.len(), output_amounts.len() - 1);
+
+        assert_eq!(input_audit_data[0].asset_code, asset_def.asset_def.code);
+        assert_eq!(input_audit_data[0].amount, Some(input_amounts[1]));
+        assert_eq!(input_audit_data[0].attributes.len(), ATTRS_LEN);
+        assert!(input_audit_data[0].blinding_factor.is_none());
+        assert!(input_audit_data[0].user_address.is_none());
+
+        for (audit_data, expected_amount) in output_audit_data.iter().zip(&output_amounts[1..]) {
+            assert_eq!(audit_data.asset_code, asset_def.asset_def.code);
+            assert_eq!(audit_data.amount, Some(*expected_amount));
+            assert_eq!(audit_data.attributes.len(), ATTRS_LEN);
+            assert!(audit_data.blinding_factor.is_none());
+            assert!(audit_data.user_address.is_none());
+        }
+
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_ok());
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until)
+            .is_ok());
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until + 1)
+            .is_err());
+        assert!(note
+            .verify(&verifier_key, NodeValue::default(), valid_until)
+            .is_err());
+        // note with wrong recv_memos_ver_key should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(&mut prng).ver_key();
+        assert!(wrong_note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_err());
+        // note with wrong `extra_proof_bound_data` should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.extra_proof_bound_data = vec![];
+        assert!(wrong_note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_err());
+
+        // ====================================
+        // a transfer with 0 fee
+        // ====================================
+        let input_amounts = [30, 25];
+        let output_amounts = [30, 3, 4, 5, 6, 7];
+
         let mut builder = TransferParamsBuilder::new_non_native(
             num_input,
             num_output,
@@ -478,7 +558,9 @@ mod tests {
             .verify(&verifier_key, builder.root, valid_until - 1)
             .is_err());
 
+        // ====================================
         // bad prover
+        // ====================================
         // 1. inconsistent prover_crs
         let mut prover_key = prover_key;
         prover_key.tree_depth += 1;
