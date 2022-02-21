@@ -375,8 +375,12 @@ impl TransferNote {
 mod tests {
     use crate::{
         constants::ATTRS_LEN,
+        errors::TxnApiError,
         keys::UserKeyPair,
-        proof::{transfer::preprocess, universal_setup_for_test},
+        proof::{
+            transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
+            universal_setup_for_test,
+        },
         structs::{AssetDefinition, ExpirableCredential, NoteType},
         transfer::TransferNote,
         utils::{
@@ -407,156 +411,44 @@ mod tests {
         let keypair2 = UserKeyPair::generate(&mut prng);
 
         // ====================================
-        // a normal transfer
-        // ====================================
-        let input_amounts = [30, 25];
-        let output_amounts = [19, 3, 4, 5, 6, 7];
-
-        let builder = TransferParamsBuilder::new_non_native(
-            num_input,
-            num_output,
-            Some(depth),
-            vec![&keypair1, &keypair2],
-        )
-        .set_input_amounts(input_amounts[0], &input_amounts[1..])
-        .set_output_amounts(output_amounts[0], &output_amounts[1..])
-        .policy_reveal(PolicyRevealAttr::Amount)
-        .set_input_creds(cred_expiry);
-
-        let (note, _recv_memos, _sig) = builder
-            .build_transfer_note(
-                &mut prng,
-                &prover_key,
-                valid_until,
-                extra_proof_bound_data.clone(),
-            )
-            .unwrap();
-
-        // Check memos
-        let asset_def = builder.transfer_asset_def.as_ref().unwrap();
-
-        let auditor_keypair = &asset_def.auditor_keypair;
-
-        let (input_audit_data, output_audit_data) = auditor_keypair
-            .open_transfer_audit_memo(&asset_def.asset_def, &note)
-            .unwrap();
-        assert_eq!(input_audit_data.len(), input_amounts.len() - 1);
-        assert_eq!(output_audit_data.len(), output_amounts.len() - 1);
-
-        assert_eq!(input_audit_data[0].asset_code, asset_def.asset_def.code);
-        assert_eq!(input_audit_data[0].amount, Some(input_amounts[1]));
-        assert_eq!(input_audit_data[0].attributes.len(), ATTRS_LEN);
-        assert!(input_audit_data[0].blinding_factor.is_none());
-        assert!(input_audit_data[0].user_address.is_none());
-
-        for (audit_data, expected_amount) in output_audit_data.iter().zip(&output_amounts[1..]) {
-            assert_eq!(audit_data.asset_code, asset_def.asset_def.code);
-            assert_eq!(audit_data.amount, Some(*expected_amount));
-            assert_eq!(audit_data.attributes.len(), ATTRS_LEN);
-            assert!(audit_data.blinding_factor.is_none());
-            assert!(audit_data.user_address.is_none());
-        }
-
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_ok());
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until)
-            .is_ok());
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until + 1)
-            .is_err());
-        assert!(note
-            .verify(&verifier_key, NodeValue::default(), valid_until)
-            .is_err());
-        // note with wrong recv_memos_ver_key should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(&mut prng).ver_key();
-        assert!(wrong_note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_err());
-        // note with wrong `extra_proof_bound_data` should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.extra_proof_bound_data = vec![];
-        assert!(wrong_note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_err());
-
-        // ====================================
         // a transfer with 0 fee
         // ====================================
         let input_amounts = [30, 25];
         let output_amounts = [30, 3, 4, 5, 6, 7];
 
-        let mut builder = TransferParamsBuilder::new_non_native(
-            num_input,
-            num_output,
-            Some(depth),
-            vec![&keypair1, &keypair2],
+        let mut builder = test_anon_xfr_2in_6out_helper(
+            &input_amounts,
+            &output_amounts,
+            &keypair1,
+            &keypair2,
+            depth,
+            &prover_key,
+            &verifier_key,
+            valid_until,
+            cred_expiry,
+            &extra_proof_bound_data,
         )
-        .set_input_amounts(input_amounts[0], &input_amounts[1..])
-        .set_output_amounts(output_amounts[0], &output_amounts[1..])
-        .policy_reveal(PolicyRevealAttr::Amount)
-        .set_input_creds(cred_expiry);
+        .unwrap();
 
-        let (note, recv_memos, sig) = builder
-            .build_transfer_note(
-                &mut prng,
-                &prover_key,
-                valid_until,
-                extra_proof_bound_data.clone(),
-            )
-            .unwrap();
+        // ====================================
+        // a normal transfer
+        // ====================================
+        let input_amounts = [30, 25];
+        let output_amounts = [19, 3, 4, 5, 6, 7];
 
-        // Check memos
-        let asset_def = builder.transfer_asset_def.as_ref().unwrap();
-
-        let auditor_keypair = &asset_def.auditor_keypair;
-
-        let (input_audit_data, output_audit_data) = auditor_keypair
-            .open_transfer_audit_memo(&asset_def.asset_def, &note)
-            .unwrap();
-        assert_eq!(input_audit_data.len(), input_amounts.len() - 1);
-        assert_eq!(output_audit_data.len(), output_amounts.len() - 1);
-
-        assert_eq!(input_audit_data[0].asset_code, asset_def.asset_def.code);
-        assert_eq!(input_audit_data[0].amount, Some(input_amounts[1]));
-        assert_eq!(input_audit_data[0].attributes.len(), ATTRS_LEN);
-        assert!(input_audit_data[0].blinding_factor.is_none());
-        assert!(input_audit_data[0].user_address.is_none());
-
-        for (audit_data, expected_amount) in output_audit_data.iter().zip(&output_amounts[1..]) {
-            assert_eq!(audit_data.asset_code, asset_def.asset_def.code);
-            assert_eq!(audit_data.amount, Some(*expected_amount));
-            assert_eq!(audit_data.attributes.len(), ATTRS_LEN);
-            assert!(audit_data.blinding_factor.is_none());
-            assert!(audit_data.user_address.is_none());
-        }
-
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_ok());
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until)
-            .is_ok());
-        assert!(note
-            .verify(&verifier_key, builder.root, valid_until + 1)
-            .is_err());
-        assert!(note
-            .verify(&verifier_key, NodeValue::default(), valid_until)
-            .is_err());
-        // note with wrong recv_memos_ver_key should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(&mut prng).ver_key();
-        assert!(wrong_note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_err());
-        // note with wrong `extra_proof_bound_data` should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.extra_proof_bound_data = vec![];
-        assert!(wrong_note
-            .verify(&verifier_key, builder.root, valid_until - 1)
-            .is_err());
+        let _builder = test_anon_xfr_2in_6out_helper(
+            &input_amounts,
+            &output_amounts,
+            &keypair1,
+            &keypair2,
+            depth,
+            &prover_key,
+            &verifier_key,
+            valid_until,
+            cred_expiry,
+            &extra_proof_bound_data,
+        )
+        .unwrap();
 
         // ====================================
         // bad prover
@@ -708,14 +600,101 @@ mod tests {
                 "Multiple non-native asset type should fail"
             );
         }
+    }
 
-        // 7. test receiver memos and signature
+    fn test_anon_xfr_2in_6out_helper<'a>(
+        input_amounts: &[u64],
+        output_amounts: &[u64],
+        keypair1: &'a UserKeyPair,
+        keypair2: &'a UserKeyPair,
+        depth: u8,
+        prover_key: &TransferProvingKey,
+        verifier_key: &TransferVerifyingKey,
+        valid_until: u64,
+        cred_expiry: u64,
+        extra_proof_bound_data: &[u8],
+    ) -> Result<TransferParamsBuilder<'a>, TxnApiError> {
+        let mut prng = &mut ark_std::test_rng();
+
+        let builder = TransferParamsBuilder::new_non_native(
+            input_amounts.len(),
+            output_amounts.len(),
+            Some(depth),
+            vec![&keypair1, &keypair2],
+        )
+        .set_input_amounts(input_amounts[0], &input_amounts[1..])
+        .set_output_amounts(output_amounts[0], &output_amounts[1..])
+        .policy_reveal(PolicyRevealAttr::Amount)
+        .set_input_creds(cred_expiry);
+
+        let (note, recv_memos, sig) = builder
+            .build_transfer_note(
+                &mut prng,
+                &prover_key,
+                valid_until,
+                extra_proof_bound_data.to_vec(),
+            )
+            .unwrap();
+
+        // Check memos
+        let asset_def = builder.transfer_asset_def.as_ref().unwrap();
+
+        let auditor_keypair = &asset_def.auditor_keypair;
+
+        let (input_audit_data, output_audit_data) = auditor_keypair
+            .open_transfer_audit_memo(&asset_def.asset_def, &note)
+            .unwrap();
+        assert_eq!(input_audit_data.len(), input_amounts.len() - 1);
+        assert_eq!(output_audit_data.len(), output_amounts.len() - 1);
+
+        assert_eq!(input_audit_data[0].asset_code, asset_def.asset_def.code);
+        assert_eq!(input_audit_data[0].amount, Some(input_amounts[1]));
+        assert_eq!(input_audit_data[0].attributes.len(), ATTRS_LEN);
+        assert!(input_audit_data[0].blinding_factor.is_none());
+        assert!(input_audit_data[0].user_address.is_none());
+
+        for (audit_data, expected_amount) in output_audit_data.iter().zip(&output_amounts[1..]) {
+            assert_eq!(audit_data.asset_code, asset_def.asset_def.code);
+            assert_eq!(audit_data.amount, Some(*expected_amount));
+            assert_eq!(audit_data.attributes.len(), ATTRS_LEN);
+            assert!(audit_data.blinding_factor.is_none());
+            assert!(audit_data.user_address.is_none());
+        }
+
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_ok());
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until)
+            .is_ok());
+        assert!(note
+            .verify(&verifier_key, builder.root, valid_until + 1)
+            .is_err());
+        assert!(note
+            .verify(&verifier_key, NodeValue::default(), valid_until)
+            .is_err());
+        // note with wrong recv_memos_ver_key should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(&mut prng).ver_key();
+        assert!(wrong_note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_err());
+        // note with wrong `extra_proof_bound_data` should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.extra_proof_bound_data = vec![];
+        assert!(wrong_note
+            .verify(&verifier_key, builder.root, valid_until - 1)
+            .is_err());
+
+        // test receiver memos and signature
         assert!(
             TransactionNote::Transfer(Box::new(note))
                 .verify_receiver_memos_signature(&recv_memos, &sig)
                 .is_ok(),
             "Should have correct receiver memo signature"
         );
+
+        Ok(builder)
     }
 
     #[test]

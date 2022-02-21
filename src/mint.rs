@@ -199,7 +199,11 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{AuditorKeyPair, UserKeyPair},
-        proof::{self, universal_setup_for_test},
+        proof::{
+            self,
+            mint::{MintProvingKey, MintVerifyingKey},
+            universal_setup_for_test,
+        },
         sign_receiver_memos,
         structs::{AssetCodeSeed, AssetDefinition, FreezeFlag, ReceiverMemo},
         utils::params_builder::{MintParamsBuilder, PolicyRevealAttr},
@@ -224,49 +228,6 @@ mod test {
         let auditor_keypair = AuditorKeyPair::generate(rng);
 
         // ====================================
-        // non-zero fee
-        // ====================================
-        let fee = 4;
-        let builder = MintParamsBuilder::new(
-            rng,
-            tree_depth,
-            input_amount,
-            fee,
-            mint_amount,
-            &issuer_keypair,
-            &receiver_keypair,
-            &auditor_keypair,
-        )
-        .policy_reveal(PolicyRevealAttr::Amount)
-        .policy_reveal(PolicyRevealAttr::UserAddr)
-        .policy_reveal(PolicyRevealAttr::BlindFactor);
-
-        let (note, sig_keypair, _change_ro) = builder.build_mint_note(rng, &proving_key)?;
-        // Check note
-        assert!(note
-            .verify(&verifying_key, note.aux_info.merkle_root)
-            .is_ok());
-
-        assert!(note.verify(&verifying_key, NodeValue::default()).is_err());
-        // note with wrong recv_memos_ver_key should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(rng).ver_key();
-        assert!(wrong_note
-            .verify(&verifying_key, note.aux_info.merkle_root)
-            .is_err());
-
-        // test receiver memos and signature embedding the mint note in a transaction
-        // note
-        let recv_memos = [ReceiverMemo::from_ro(rng, &builder.mint_ro, &[]).unwrap()];
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos).unwrap();
-        let txn = TransactionNote::Mint(Box::new(note.clone()));
-        assert!(
-            txn.verify_receiver_memos_signature(&recv_memos, &sig)
-                .is_ok(),
-            "Should have correct receiver memos signature"
-        );
-
-        // ====================================
         // zero fee
         // ====================================
         let fee = 0;
@@ -284,30 +245,43 @@ mod test {
         .policy_reveal(PolicyRevealAttr::UserAddr)
         .policy_reveal(PolicyRevealAttr::BlindFactor);
 
-        let (note, sig_keypair, _change_ro) = builder.build_mint_note(rng, &proving_key)?;
-        // Check note
-        assert!(note
-            .verify(&verifying_key, note.aux_info.merkle_root)
-            .is_ok());
+        assert!(test_mint_note_helper(
+            &builder,
+            mint_amount,
+            &proving_key,
+            &verifying_key,
+            &receiver_keypair,
+            &auditor_keypair
+        )
+        .is_ok());
 
-        assert!(note.verify(&verifying_key, NodeValue::default()).is_err());
-        // note with wrong recv_memos_ver_key should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(rng).ver_key();
-        assert!(wrong_note
-            .verify(&verifying_key, note.aux_info.merkle_root)
-            .is_err());
+        // ====================================
+        // non-zero fee
+        // ====================================
+        let fee = 4;
+        let builder = MintParamsBuilder::new(
+            rng,
+            tree_depth,
+            input_amount,
+            fee,
+            mint_amount,
+            &issuer_keypair,
+            &receiver_keypair,
+            &auditor_keypair,
+        )
+        .policy_reveal(PolicyRevealAttr::Amount)
+        .policy_reveal(PolicyRevealAttr::UserAddr)
+        .policy_reveal(PolicyRevealAttr::BlindFactor);
 
-        // test receiver memos and signature embedding the mint note in a transaction
-        // note
-        let recv_memos = [ReceiverMemo::from_ro(rng, &builder.mint_ro, &[]).unwrap()];
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos).unwrap();
-        let txn = TransactionNote::Mint(Box::new(note.clone()));
-        assert!(
-            txn.verify_receiver_memos_signature(&recv_memos, &sig)
-                .is_ok(),
-            "Should have correct receiver memos signature"
-        );
+        assert!(test_mint_note_helper(
+            &builder,
+            mint_amount,
+            &proving_key,
+            &verifying_key,
+            &receiver_keypair,
+            &auditor_keypair
+        )
+        .is_ok());
 
         // ====================================
         // bad prover
@@ -367,6 +341,44 @@ mod test {
             bad_builder.fee_ro.asset_def = AssetDefinition::rand_for_test(rng);
             assert!(bad_builder.build_mint_note(rng, &proving_key).is_err());
         }
+
+        Ok(())
+    }
+
+    fn test_mint_note_helper(
+        builder: &MintParamsBuilder,
+        mint_amount: u64,
+        proving_key: &MintProvingKey,
+        verifying_key: &MintVerifyingKey,
+        receiver_keypair: &UserKeyPair,
+        auditor_keypair: &AuditorKeyPair,
+    ) -> Result<(), TxnApiError> {
+        let rng = &mut ark_std::test_rng();
+
+        let (note, sig_keypair, _change_ro) = builder.build_mint_note(rng, &proving_key)?;
+        // Check note
+        assert!(note
+            .verify(&verifying_key, note.aux_info.merkle_root)
+            .is_ok());
+
+        assert!(note.verify(&verifying_key, NodeValue::default()).is_err());
+        // note with wrong recv_memos_ver_key should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(rng).ver_key();
+        assert!(wrong_note
+            .verify(&verifying_key, note.aux_info.merkle_root)
+            .is_err());
+
+        // test receiver memos and signature embedding the mint note in a transaction
+        // note
+        let recv_memos = [ReceiverMemo::from_ro(rng, &builder.mint_ro, &[]).unwrap()];
+        let sig = sign_receiver_memos(&sig_keypair, &recv_memos).unwrap();
+        let txn = TransactionNote::Mint(Box::new(note.clone()));
+        assert!(
+            txn.verify_receiver_memos_signature(&recv_memos, &sig)
+                .is_ok(),
+            "Should have correct receiver memos signature"
+        );
 
         // Check tracer's memo
         let audit_data = auditor_keypair.open_mint_audit_memo(&note);
