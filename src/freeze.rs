@@ -190,7 +190,10 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
-        proof::{freeze, universal_setup_for_test},
+        proof::{
+            freeze::{self, FreezeProvingKey, FreezeVerifyingKey},
+            universal_setup_for_test,
+        },
         sign_receiver_memos,
         structs::{AssetDefinition, AssetPolicy, FreezeFlag, ReceiverMemo},
         utils::params_builder::FreezeParamsBuilder,
@@ -211,9 +214,14 @@ mod test {
 
         let input_amounts = vec![20, 30];
         let fee_input_amount = 10;
-        let fee = 5;
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
+
+        // ====================================
+        // zero fee
+        // ====================================
+        let fee = 0;
+
         let builder = FreezeParamsBuilder::new(
             tree_depth,
             &input_amounts,
@@ -223,31 +231,27 @@ mod test {
             vec![&freeze_keypair; 2],
         );
 
-        let (note, keypair, _fee_chg_ro, record_openings) =
-            builder.build_freeze_note(rng, &proving_key)?;
+        assert!(test_freeze_note_helper(&builder, &proving_key, &verifying_key).is_ok());
 
-        assert!(note
-            .verify(&verifying_key, note.aux_info.merkle_root)
-            .is_ok());
-        assert!(note.verify(&verifying_key, NodeValue::default()).is_err());
-        // note with wrong recv_memos_ver_key should fail
-        let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
-        assert!(wrong_note
-            .verify(&verifying_key, wrong_note.aux_info.merkle_root)
-            .is_err());
+        // ====================================
+        // non-zero fee
+        // ====================================
+        let fee = 5;
 
-        // test receiver memos signature
-        let txn: TransactionNote = note.into();
-        let recv_memos: Vec<_> = record_openings
-            .iter()
-            .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]).unwrap())
-            .collect();
-        let sig = sign_receiver_memos(&keypair, &recv_memos).unwrap();
-        assert!(txn
-            .verify_receiver_memos_signature(&recv_memos, &sig)
-            .is_ok());
+        let builder = FreezeParamsBuilder::new(
+            tree_depth,
+            &input_amounts,
+            fee_input_amount,
+            fee,
+            &fee_keypair,
+            vec![&freeze_keypair; 2],
+        );
 
+        assert!(test_freeze_note_helper(&builder, &proving_key, &verifying_key).is_ok());
+
+        // ====================================
+        // bad path
+        // ====================================
         // bad proving key
         {
             let mut bad_proving_key = proving_key.clone();
@@ -302,6 +306,42 @@ mod test {
                 .update_input_policy(1, AssetPolicy::default());
             assert!(bad_builder.build_freeze_note(rng, &proving_key).is_err());
         }
+        Ok(())
+    }
+
+    fn test_freeze_note_helper(
+        builder: &FreezeParamsBuilder,
+        proving_key: &FreezeProvingKey,
+        verifying_key: &FreezeVerifyingKey,
+    ) -> Result<(), TxnApiError> {
+        let rng = &mut ark_std::test_rng();
+
+        let (note, keypair, _fee_chg_ro, record_openings) =
+            builder.build_freeze_note(rng, &proving_key)?;
+
+        assert!(note
+            .verify(&verifying_key, note.aux_info.merkle_root)
+            .is_ok());
+        assert!(note.verify(&verifying_key, NodeValue::default()).is_err());
+
+        // note with wrong recv_memos_ver_key should fail
+        let mut wrong_note = note.clone();
+        wrong_note.aux_info.txn_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
+        assert!(wrong_note
+            .verify(&verifying_key, wrong_note.aux_info.merkle_root)
+            .is_err());
+
+        // test receiver memos signature
+        let txn: TransactionNote = note.into();
+        let recv_memos: Vec<_> = record_openings
+            .iter()
+            .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]).unwrap())
+            .collect();
+        let sig = sign_receiver_memos(&keypair, &recv_memos).unwrap();
+        assert!(txn
+            .verify_receiver_memos_signature(&recv_memos, &sig)
+            .is_ok());
+
         Ok(())
     }
 }
