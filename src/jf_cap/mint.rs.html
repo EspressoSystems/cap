@@ -350,6 +350,66 @@
 <span id="350">350</span>
 <span id="351">351</span>
 <span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Generation and verification of mint notes (a.k.a Asset Issuance)</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
@@ -551,7 +611,11 @@
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">errors::TxnApiError</span>,
         <span class="ident">keys</span>::{<span class="ident">AuditorKeyPair</span>, <span class="ident">UserKeyPair</span>},
-        <span class="ident">proof</span>::{<span class="self">self</span>, <span class="ident">universal_setup_for_test</span>},
+        <span class="ident">proof</span>::{
+            <span class="self">self</span>,
+            <span class="ident">mint</span>::{<span class="ident">MintProvingKey</span>, <span class="ident">MintVerifyingKey</span>},
+            <span class="ident">universal_setup_for_test</span>,
+        },
         <span class="ident">sign_receiver_memos</span>,
         <span class="ident">structs</span>::{<span class="ident">AssetCodeSeed</span>, <span class="ident">AssetDefinition</span>, <span class="ident">FreezeFlag</span>, <span class="ident">ReceiverMemo</span>},
         <span class="ident">utils::params_builder</span>::{<span class="ident">MintParamsBuilder</span>, <span class="ident">PolicyRevealAttr</span>},
@@ -570,12 +634,15 @@
             <span class="ident">proof::mint::preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">input_amount</span> <span class="op">=</span> <span class="number">10</span>;
-        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">4</span>;
         <span class="kw">let</span> <span class="ident">mint_amount</span> <span class="op">=</span> <span class="number">35</span>;
         <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">receiver_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="ident">rng</span>);
 
+        <span class="comment">// ====================================</span>
+        <span class="comment">// zero fee</span>
+        <span class="comment">// ====================================</span>
+        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">MintParamsBuilder::new</span>(
             <span class="ident">rng</span>,
             <span class="ident">tree_depth</span>,
@@ -590,32 +657,47 @@
         .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::UserAddr</span>)
         .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::BlindFactor</span>);
 
-        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">sig_keypair</span>, <span class="ident">_change_ro</span>) <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_mint_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>)<span class="question-mark">?</span>;
-        <span class="comment">// Check note</span>
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
-            .<span class="ident">is_ok</span>());
+        <span class="macro">assert!</span>(<span class="ident">test_mint_note_helper</span>(
+            <span class="kw-2">&amp;</span><span class="ident">builder</span>,
+            <span class="ident">mint_amount</span>,
+            <span class="kw-2">&amp;</span><span class="ident">proving_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">verifying_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">receiver_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">auditor_keypair</span>
+        )
+        .<span class="ident">is_ok</span>());
 
-        <span class="macro">assert!</span>(<span class="ident">note</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">NodeValue::default</span>()).<span class="ident">is_err</span>());
-        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
-        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
-        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
-            .<span class="ident">is_err</span>());
+        <span class="comment">// ====================================</span>
+        <span class="comment">// non-zero fee</span>
+        <span class="comment">// ====================================</span>
+        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">4</span>;
+        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">MintParamsBuilder::new</span>(
+            <span class="ident">rng</span>,
+            <span class="ident">tree_depth</span>,
+            <span class="ident">input_amount</span>,
+            <span class="ident">fee</span>,
+            <span class="ident">mint_amount</span>,
+            <span class="kw-2">&amp;</span><span class="ident">issuer_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">receiver_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">auditor_keypair</span>,
+        )
+        .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::Amount</span>)
+        .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::UserAddr</span>)
+        .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::BlindFactor</span>);
 
-        <span class="comment">// test receiver memos and signature embedding the mint note in a transaction</span>
-        <span class="comment">// note</span>
-        <span class="kw">let</span> <span class="ident">recv_memos</span> <span class="op">=</span> [<span class="ident">ReceiverMemo::from_ro</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">builder</span>.<span class="ident">mint_ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>()];
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sign_receiver_memos</span>(<span class="kw-2">&amp;</span><span class="ident">sig_keypair</span>, <span class="kw-2">&amp;</span><span class="ident">recv_memos</span>).<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">TransactionNote::Mint</span>(<span class="ident">Box::new</span>(<span class="ident">note</span>.<span class="ident">clone</span>()));
-        <span class="macro">assert!</span>(
-            <span class="ident">txn</span>.<span class="ident">verify_receiver_memos_signature</span>(<span class="kw-2">&amp;</span><span class="ident">recv_memos</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>)
-                .<span class="ident">is_ok</span>(),
-            <span class="string">&quot;Should have correct receiver memos signature&quot;</span>
-        );
+        <span class="macro">assert!</span>(<span class="ident">test_mint_note_helper</span>(
+            <span class="kw-2">&amp;</span><span class="ident">builder</span>,
+            <span class="ident">mint_amount</span>,
+            <span class="kw-2">&amp;</span><span class="ident">proving_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">verifying_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">receiver_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">auditor_keypair</span>
+        )
+        .<span class="ident">is_ok</span>());
 
+        <span class="comment">// ====================================</span>
         <span class="comment">// bad prover</span>
+        <span class="comment">// ====================================</span>
         {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bad_proving_key</span> <span class="op">=</span> <span class="ident">proving_key</span>.<span class="ident">clone</span>();
             <span class="ident">bad_proving_key</span>.<span class="ident">tree_depth</span> <span class="op">=</span> <span class="ident">tree_depth</span> <span class="op">+</span> <span class="number">1</span>;
@@ -671,6 +753,44 @@
             <span class="ident">bad_builder</span>.<span class="ident">fee_ro</span>.<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="ident">rng</span>);
             <span class="macro">assert!</span>(<span class="ident">bad_builder</span>.<span class="ident">build_mint_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>).<span class="ident">is_err</span>());
         }
+
+        <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="kw">fn</span> <span class="ident">test_mint_note_helper</span>(
+        <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="ident">MintParamsBuilder</span>,
+        <span class="ident">mint_amount</span>: <span class="ident">u64</span>,
+        <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">MintProvingKey</span>,
+        <span class="ident">verifying_key</span>: <span class="kw-2">&amp;</span><span class="ident">MintVerifyingKey</span>,
+        <span class="ident">receiver_keypair</span>: <span class="kw-2">&amp;</span><span class="ident">UserKeyPair</span>,
+        <span class="ident">auditor_keypair</span>: <span class="kw-2">&amp;</span><span class="ident">AuditorKeyPair</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+
+        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">sig_keypair</span>, <span class="ident">_change_ro</span>) <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_mint_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>)<span class="question-mark">?</span>;
+        <span class="comment">// Check note</span>
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
+            .<span class="ident">is_ok</span>());
+
+        <span class="macro">assert!</span>(<span class="ident">note</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">NodeValue::default</span>()).<span class="ident">is_err</span>());
+        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
+        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
+        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
+            .<span class="ident">is_err</span>());
+
+        <span class="comment">// test receiver memos and signature embedding the mint note in a transaction</span>
+        <span class="comment">// note</span>
+        <span class="kw">let</span> <span class="ident">recv_memos</span> <span class="op">=</span> [<span class="ident">ReceiverMemo::from_ro</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">builder</span>.<span class="ident">mint_ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>()];
+        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sign_receiver_memos</span>(<span class="kw-2">&amp;</span><span class="ident">sig_keypair</span>, <span class="kw-2">&amp;</span><span class="ident">recv_memos</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">TransactionNote::Mint</span>(<span class="ident">Box::new</span>(<span class="ident">note</span>.<span class="ident">clone</span>()));
+        <span class="macro">assert!</span>(
+            <span class="ident">txn</span>.<span class="ident">verify_receiver_memos_signature</span>(<span class="kw-2">&amp;</span><span class="ident">recv_memos</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>)
+                .<span class="ident">is_ok</span>(),
+            <span class="string">&quot;Should have correct receiver memos signature&quot;</span>
+        );
 
         <span class="comment">// Check tracer&#39;s memo</span>
         <span class="kw">let</span> <span class="ident">audit_data</span> <span class="op">=</span> <span class="ident">auditor_keypair</span>.<span class="ident">open_mint_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">note</span>);

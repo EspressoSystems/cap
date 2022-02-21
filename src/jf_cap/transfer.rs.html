@@ -696,6 +696,67 @@
 <span id="696">696</span>
 <span id="697">697</span>
 <span id="698">698</span>
+<span id="699">699</span>
+<span id="700">700</span>
+<span id="701">701</span>
+<span id="702">702</span>
+<span id="703">703</span>
+<span id="704">704</span>
+<span id="705">705</span>
+<span id="706">706</span>
+<span id="707">707</span>
+<span id="708">708</span>
+<span id="709">709</span>
+<span id="710">710</span>
+<span id="711">711</span>
+<span id="712">712</span>
+<span id="713">713</span>
+<span id="714">714</span>
+<span id="715">715</span>
+<span id="716">716</span>
+<span id="717">717</span>
+<span id="718">718</span>
+<span id="719">719</span>
+<span id="720">720</span>
+<span id="721">721</span>
+<span id="722">722</span>
+<span id="723">723</span>
+<span id="724">724</span>
+<span id="725">725</span>
+<span id="726">726</span>
+<span id="727">727</span>
+<span id="728">728</span>
+<span id="729">729</span>
+<span id="730">730</span>
+<span id="731">731</span>
+<span id="732">732</span>
+<span id="733">733</span>
+<span id="734">734</span>
+<span id="735">735</span>
+<span id="736">736</span>
+<span id="737">737</span>
+<span id="738">738</span>
+<span id="739">739</span>
+<span id="740">740</span>
+<span id="741">741</span>
+<span id="742">742</span>
+<span id="743">743</span>
+<span id="744">744</span>
+<span id="745">745</span>
+<span id="746">746</span>
+<span id="747">747</span>
+<span id="748">748</span>
+<span id="749">749</span>
+<span id="750">750</span>
+<span id="751">751</span>
+<span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Generation and verification of auditable anonymous transfer notes</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">errors::TxnApiError</span>,
@@ -1073,8 +1134,12 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">constants::ATTRS_LEN</span>,
+        <span class="ident">errors::TxnApiError</span>,
         <span class="ident">keys::UserKeyPair</span>,
-        <span class="ident">proof</span>::{<span class="ident">transfer::preprocess</span>, <span class="ident">universal_setup_for_test</span>},
+        <span class="ident">proof</span>::{
+            <span class="ident">transfer</span>::{<span class="ident">preprocess</span>, <span class="ident">TransferProvingKey</span>, <span class="ident">TransferVerifyingKey</span>},
+            <span class="ident">universal_setup_for_test</span>,
+        },
         <span class="ident">structs</span>::{<span class="ident">AssetDefinition</span>, <span class="ident">ExpirableCredential</span>, <span class="ident">NoteType</span>},
         <span class="ident">transfer::TransferNote</span>,
         <span class="ident">utils</span>::{
@@ -1101,82 +1166,52 @@
         <span class="kw">let</span> <span class="ident">srs</span> <span class="op">=</span> <span class="ident">universal_setup_for_test</span>(<span class="ident">domain_size</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> (<span class="ident">prover_key</span>, <span class="ident">verifier_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">srs</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">depth</span>).<span class="ident">unwrap</span>();
 
+        <span class="kw">let</span> <span class="ident">keypair1</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>);
+        <span class="kw">let</span> <span class="ident">keypair2</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>);
+
+        <span class="comment">// ====================================</span>
+        <span class="comment">// a transfer with 0 fee</span>
+        <span class="comment">// ====================================</span>
+        <span class="kw">let</span> <span class="ident">input_amounts</span> <span class="op">=</span> [<span class="number">30</span>, <span class="number">25</span>];
+        <span class="kw">let</span> <span class="ident">output_amounts</span> <span class="op">=</span> [<span class="number">30</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>];
+
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">test_anon_xfr_helper</span>(
+            <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>,
+            <span class="kw-2">&amp;</span><span class="ident">output_amounts</span>,
+            <span class="kw-2">&amp;</span><span class="ident">keypair1</span>,
+            <span class="kw-2">&amp;</span><span class="ident">keypair2</span>,
+            <span class="ident">depth</span>,
+            <span class="kw-2">&amp;</span><span class="ident">prover_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">verifier_key</span>,
+            <span class="ident">valid_until</span>,
+            <span class="ident">cred_expiry</span>,
+            <span class="kw-2">&amp;</span><span class="ident">extra_proof_bound_data</span>,
+        )
+        .<span class="ident">unwrap</span>();
+
+        <span class="comment">// ====================================</span>
+        <span class="comment">// a normal transfer</span>
+        <span class="comment">// ====================================</span>
         <span class="kw">let</span> <span class="ident">input_amounts</span> <span class="op">=</span> [<span class="number">30</span>, <span class="number">25</span>];
         <span class="kw">let</span> <span class="ident">output_amounts</span> <span class="op">=</span> [<span class="number">19</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>];
 
-        <span class="kw">let</span> <span class="ident">keypair1</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>);
-        <span class="kw">let</span> <span class="ident">keypair2</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder::new_non_native</span>(
-            <span class="ident">num_input</span>,
-            <span class="ident">num_output</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">depth</span>),
-            <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">keypair1</span>, <span class="kw-2">&amp;</span><span class="ident">keypair2</span>],
+        <span class="kw">let</span> <span class="ident">_builder</span> <span class="op">=</span> <span class="ident">test_anon_xfr_helper</span>(
+            <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>,
+            <span class="kw-2">&amp;</span><span class="ident">output_amounts</span>,
+            <span class="kw-2">&amp;</span><span class="ident">keypair1</span>,
+            <span class="kw-2">&amp;</span><span class="ident">keypair2</span>,
+            <span class="ident">depth</span>,
+            <span class="kw-2">&amp;</span><span class="ident">prover_key</span>,
+            <span class="kw-2">&amp;</span><span class="ident">verifier_key</span>,
+            <span class="ident">valid_until</span>,
+            <span class="ident">cred_expiry</span>,
+            <span class="kw-2">&amp;</span><span class="ident">extra_proof_bound_data</span>,
         )
-        .<span class="ident">set_input_amounts</span>(<span class="ident">input_amounts</span>[<span class="number">0</span>], <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>[<span class="number">1</span>..])
-        .<span class="ident">set_output_amounts</span>(<span class="ident">output_amounts</span>[<span class="number">0</span>], <span class="kw-2">&amp;</span><span class="ident">output_amounts</span>[<span class="number">1</span>..])
-        .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::Amount</span>)
-        .<span class="ident">set_input_creds</span>(<span class="ident">cred_expiry</span>);
+        .<span class="ident">unwrap</span>();
 
-        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">recv_memos</span>, <span class="ident">sig</span>) <span class="op">=</span> <span class="ident">builder</span>
-            .<span class="ident">build_transfer_note</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>,
-                <span class="kw-2">&amp;</span><span class="ident">prover_key</span>,
-                <span class="ident">valid_until</span>,
-                <span class="ident">extra_proof_bound_data</span>.<span class="ident">clone</span>(),
-            )
-            .<span class="ident">unwrap</span>();
-
-        <span class="comment">// Check memos</span>
-        <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
-
-        <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">asset_def</span>.<span class="ident">auditor_keypair</span>;
-
-        <span class="kw">let</span> (<span class="ident">input_audit_data</span>, <span class="ident">output_audit_data</span>) <span class="op">=</span> <span class="ident">auditor_keypair</span>
-            .<span class="ident">open_transfer_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">asset_def</span>.<span class="ident">asset_def</span>, <span class="kw-2">&amp;</span><span class="ident">note</span>)
-            .<span class="ident">unwrap</span>();
-        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>.<span class="ident">len</span>(), <span class="ident">input_amounts</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>);
-        <span class="macro">assert_eq!</span>(<span class="ident">output_audit_data</span>.<span class="ident">len</span>(), <span class="ident">output_amounts</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>);
-
-        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">asset_code</span>, <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">code</span>);
-        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">amount</span>, <span class="prelude-val">Some</span>(<span class="ident">input_amounts</span>[<span class="number">1</span>]));
-        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">attributes</span>.<span class="ident">len</span>(), <span class="ident">ATTRS_LEN</span>);
-        <span class="macro">assert!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">blinding_factor</span>.<span class="ident">is_none</span>());
-        <span class="macro">assert!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">user_address</span>.<span class="ident">is_none</span>());
-
-        <span class="kw">for</span> (<span class="ident">audit_data</span>, <span class="ident">expected_amount</span>) <span class="kw">in</span> <span class="ident">output_audit_data</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="kw-2">&amp;</span><span class="ident">output_amounts</span>[<span class="number">1</span>..]) {
-            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">asset_code</span>, <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">code</span>);
-            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">amount</span>, <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">expected_amount</span>));
-            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">attributes</span>.<span class="ident">len</span>(), <span class="ident">ATTRS_LEN</span>);
-            <span class="macro">assert!</span>(<span class="ident">audit_data</span>.<span class="ident">blinding_factor</span>.<span class="ident">is_none</span>());
-            <span class="macro">assert!</span>(<span class="ident">audit_data</span>.<span class="ident">user_address</span>.<span class="ident">is_none</span>());
-        }
-
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
-            .<span class="ident">is_ok</span>());
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span>)
-            .<span class="ident">is_ok</span>());
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">+</span> <span class="number">1</span>)
-            .<span class="ident">is_err</span>());
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">NodeValue::default</span>(), <span class="ident">valid_until</span>)
-            .<span class="ident">is_err</span>());
-        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
-        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">KeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>).<span class="ident">ver_key</span>();
-        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
-            .<span class="ident">is_err</span>());
-        <span class="comment">// note with wrong `extra_proof_bound_data` should fail</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
-        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">extra_proof_bound_data</span> <span class="op">=</span> <span class="macro">vec!</span>[];
-        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
-            .<span class="ident">is_err</span>());
-
+        <span class="comment">// ====================================</span>
         <span class="comment">// bad prover</span>
+        <span class="comment">// ====================================</span>
         <span class="comment">// 1. inconsistent prover_crs</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prover_key</span> <span class="op">=</span> <span class="ident">prover_key</span>;
         <span class="ident">prover_key</span>.<span class="ident">tree_depth</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
@@ -1324,14 +1359,101 @@
                 <span class="string">&quot;Multiple non-native asset type should fail&quot;</span>
             );
         }
+    }
 
-        <span class="comment">// 7. test receiver memos and signature</span>
+    <span class="kw">fn</span> <span class="ident">test_anon_xfr_helper</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+        <span class="ident">input_amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>],
+        <span class="ident">output_amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>],
+        <span class="ident">keypair1</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
+        <span class="ident">keypair2</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
+        <span class="ident">depth</span>: <span class="ident">u8</span>,
+        <span class="ident">prover_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span>,
+        <span class="ident">verifier_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferVerifyingKey</span>,
+        <span class="ident">valid_until</span>: <span class="ident">u64</span>,
+        <span class="ident">cred_expiry</span>: <span class="ident">u64</span>,
+        <span class="ident">extra_proof_bound_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferParamsBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+
+        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder::new_non_native</span>(
+            <span class="ident">input_amounts</span>.<span class="ident">len</span>(),
+            <span class="ident">output_amounts</span>.<span class="ident">len</span>(),
+            <span class="prelude-val">Some</span>(<span class="ident">depth</span>),
+            <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">keypair1</span>, <span class="kw-2">&amp;</span><span class="ident">keypair2</span>],
+        )
+        .<span class="ident">set_input_amounts</span>(<span class="ident">input_amounts</span>[<span class="number">0</span>], <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>[<span class="number">1</span>..])
+        .<span class="ident">set_output_amounts</span>(<span class="ident">output_amounts</span>[<span class="number">0</span>], <span class="kw-2">&amp;</span><span class="ident">output_amounts</span>[<span class="number">1</span>..])
+        .<span class="ident">policy_reveal</span>(<span class="ident">PolicyRevealAttr::Amount</span>)
+        .<span class="ident">set_input_creds</span>(<span class="ident">cred_expiry</span>);
+
+        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">recv_memos</span>, <span class="ident">sig</span>) <span class="op">=</span> <span class="ident">builder</span>
+            .<span class="ident">build_transfer_note</span>(
+                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>,
+                <span class="kw-2">&amp;</span><span class="ident">prover_key</span>,
+                <span class="ident">valid_until</span>,
+                <span class="ident">extra_proof_bound_data</span>.<span class="ident">to_vec</span>(),
+            )
+            .<span class="ident">unwrap</span>();
+
+        <span class="comment">// Check memos</span>
+        <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">as_ref</span>().<span class="ident">unwrap</span>();
+
+        <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">asset_def</span>.<span class="ident">auditor_keypair</span>;
+
+        <span class="kw">let</span> (<span class="ident">input_audit_data</span>, <span class="ident">output_audit_data</span>) <span class="op">=</span> <span class="ident">auditor_keypair</span>
+            .<span class="ident">open_transfer_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">asset_def</span>.<span class="ident">asset_def</span>, <span class="kw-2">&amp;</span><span class="ident">note</span>)
+            .<span class="ident">unwrap</span>();
+        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>.<span class="ident">len</span>(), <span class="ident">input_amounts</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>);
+        <span class="macro">assert_eq!</span>(<span class="ident">output_audit_data</span>.<span class="ident">len</span>(), <span class="ident">output_amounts</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="number">1</span>);
+
+        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">asset_code</span>, <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">code</span>);
+        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">amount</span>, <span class="prelude-val">Some</span>(<span class="ident">input_amounts</span>[<span class="number">1</span>]));
+        <span class="macro">assert_eq!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">attributes</span>.<span class="ident">len</span>(), <span class="ident">ATTRS_LEN</span>);
+        <span class="macro">assert!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">blinding_factor</span>.<span class="ident">is_none</span>());
+        <span class="macro">assert!</span>(<span class="ident">input_audit_data</span>[<span class="number">0</span>].<span class="ident">user_address</span>.<span class="ident">is_none</span>());
+
+        <span class="kw">for</span> (<span class="ident">audit_data</span>, <span class="ident">expected_amount</span>) <span class="kw">in</span> <span class="ident">output_audit_data</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="kw-2">&amp;</span><span class="ident">output_amounts</span>[<span class="number">1</span>..]) {
+            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">asset_code</span>, <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">code</span>);
+            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">amount</span>, <span class="prelude-val">Some</span>(<span class="kw-2">*</span><span class="ident">expected_amount</span>));
+            <span class="macro">assert_eq!</span>(<span class="ident">audit_data</span>.<span class="ident">attributes</span>.<span class="ident">len</span>(), <span class="ident">ATTRS_LEN</span>);
+            <span class="macro">assert!</span>(<span class="ident">audit_data</span>.<span class="ident">blinding_factor</span>.<span class="ident">is_none</span>());
+            <span class="macro">assert!</span>(<span class="ident">audit_data</span>.<span class="ident">user_address</span>.<span class="ident">is_none</span>());
+        }
+
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
+            .<span class="ident">is_ok</span>());
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span>)
+            .<span class="ident">is_ok</span>());
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">+</span> <span class="number">1</span>)
+            .<span class="ident">is_err</span>());
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">NodeValue::default</span>(), <span class="ident">valid_until</span>)
+            .<span class="ident">is_err</span>());
+        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
+        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">KeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">prng</span>).<span class="ident">ver_key</span>();
+        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
+            .<span class="ident">is_err</span>());
+        <span class="comment">// note with wrong `extra_proof_bound_data` should fail</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
+        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">extra_proof_bound_data</span> <span class="op">=</span> <span class="macro">vec!</span>[];
+        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifier_key</span>, <span class="ident">builder</span>.<span class="ident">root</span>, <span class="ident">valid_until</span> <span class="op">-</span> <span class="number">1</span>)
+            .<span class="ident">is_err</span>());
+
+        <span class="comment">// test receiver memos and signature</span>
         <span class="macro">assert!</span>(
             <span class="ident">TransactionNote::Transfer</span>(<span class="ident">Box::new</span>(<span class="ident">note</span>))
                 .<span class="ident">verify_receiver_memos_signature</span>(<span class="kw-2">&amp;</span><span class="ident">recv_memos</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>)
                 .<span class="ident">is_ok</span>(),
             <span class="string">&quot;Should have correct receiver memo signature&quot;</span>
         );
+
+        <span class="prelude-val">Ok</span>(<span class="ident">builder</span>)
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>

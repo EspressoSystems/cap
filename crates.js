@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["jf_aap","jf_cap"];
+window.ALL_CRATES = ["jf_cap"];

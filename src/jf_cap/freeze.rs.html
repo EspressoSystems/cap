@@ -305,6 +305,46 @@
 <span id="305">305</span>
 <span id="306">306</span>
 <span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Generation and verification of freezing transfer notes</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">errors::TxnApiError</span>,
@@ -497,7 +537,10 @@
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">errors::TxnApiError</span>,
         <span class="ident">keys</span>::{<span class="ident">FreezerKeyPair</span>, <span class="ident">UserKeyPair</span>},
-        <span class="ident">proof</span>::{<span class="ident">freeze</span>, <span class="ident">universal_setup_for_test</span>},
+        <span class="ident">proof</span>::{
+            <span class="ident">freeze</span>::{<span class="self">self</span>, <span class="ident">FreezeProvingKey</span>, <span class="ident">FreezeVerifyingKey</span>},
+            <span class="ident">universal_setup_for_test</span>,
+        },
         <span class="ident">sign_receiver_memos</span>,
         <span class="ident">structs</span>::{<span class="ident">AssetDefinition</span>, <span class="ident">AssetPolicy</span>, <span class="ident">FreezeFlag</span>, <span class="ident">ReceiverMemo</span>},
         <span class="ident">utils::params_builder::FreezeParamsBuilder</span>,
@@ -518,9 +561,14 @@
 
         <span class="kw">let</span> <span class="ident">input_amounts</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="number">20</span>, <span class="number">30</span>];
         <span class="kw">let</span> <span class="ident">fee_input_amount</span> <span class="op">=</span> <span class="number">10</span>;
-        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">5</span>;
         <span class="kw">let</span> <span class="ident">fee_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">freeze_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="ident">rng</span>);
+
+        <span class="comment">// ====================================</span>
+        <span class="comment">// zero fee</span>
+        <span class="comment">// ====================================</span>
+        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">0</span>;
+
         <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">FreezeParamsBuilder::new</span>(
             <span class="ident">tree_depth</span>,
             <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>,
@@ -530,31 +578,27 @@
             <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">freeze_keypair</span>; <span class="number">2</span>],
         );
 
-        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">keypair</span>, <span class="ident">_fee_chg_ro</span>, <span class="ident">record_openings</span>) <span class="op">=</span>
-            <span class="ident">builder</span>.<span class="ident">build_freeze_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>)<span class="question-mark">?</span>;
+        <span class="macro">assert!</span>(<span class="ident">test_freeze_note_helper</span>(<span class="kw-2">&amp;</span><span class="ident">builder</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>, <span class="kw-2">&amp;</span><span class="ident">verifying_key</span>).<span class="ident">is_ok</span>());
 
-        <span class="macro">assert!</span>(<span class="ident">note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
-            .<span class="ident">is_ok</span>());
-        <span class="macro">assert!</span>(<span class="ident">note</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">NodeValue::default</span>()).<span class="ident">is_err</span>());
-        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
-        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">schnorr_dsa::KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
-        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
-            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
-            .<span class="ident">is_err</span>());
+        <span class="comment">// ====================================</span>
+        <span class="comment">// non-zero fee</span>
+        <span class="comment">// ====================================</span>
+        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="number">5</span>;
 
-        <span class="comment">// test receiver memos signature</span>
-        <span class="kw">let</span> <span class="ident">txn</span>: <span class="ident">TransactionNote</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">into</span>();
-        <span class="kw">let</span> <span class="ident">recv_memos</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">record_openings</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">ReceiverMemo::from_ro</span>(<span class="ident">rng</span>, <span class="ident">ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>())
-            .<span class="ident">collect</span>();
-        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sign_receiver_memos</span>(<span class="kw-2">&amp;</span><span class="ident">keypair</span>, <span class="kw-2">&amp;</span><span class="ident">recv_memos</span>).<span class="ident">unwrap</span>();
-        <span class="macro">assert!</span>(<span class="ident">txn</span>
-            .<span class="ident">verify_receiver_memos_signature</span>(<span class="kw-2">&amp;</span><span class="ident">recv_memos</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>)
-            .<span class="ident">is_ok</span>());
+        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">FreezeParamsBuilder::new</span>(
+            <span class="ident">tree_depth</span>,
+            <span class="kw-2">&amp;</span><span class="ident">input_amounts</span>,
+            <span class="ident">fee_input_amount</span>,
+            <span class="ident">fee</span>,
+            <span class="kw-2">&amp;</span><span class="ident">fee_keypair</span>,
+            <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">freeze_keypair</span>; <span class="number">2</span>],
+        );
 
+        <span class="macro">assert!</span>(<span class="ident">test_freeze_note_helper</span>(<span class="kw-2">&amp;</span><span class="ident">builder</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>, <span class="kw-2">&amp;</span><span class="ident">verifying_key</span>).<span class="ident">is_ok</span>());
+
+        <span class="comment">// ====================================</span>
+        <span class="comment">// bad path</span>
+        <span class="comment">// ====================================</span>
         <span class="comment">// bad proving key</span>
         {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bad_proving_key</span> <span class="op">=</span> <span class="ident">proving_key</span>.<span class="ident">clone</span>();
@@ -609,6 +653,42 @@
                 .<span class="ident">update_input_policy</span>(<span class="number">1</span>, <span class="ident">AssetPolicy::default</span>());
             <span class="macro">assert!</span>(<span class="ident">bad_builder</span>.<span class="ident">build_freeze_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>).<span class="ident">is_err</span>());
         }
+        <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="kw">fn</span> <span class="ident">test_freeze_note_helper</span>(
+        <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeParamsBuilder</span>,
+        <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeProvingKey</span>,
+        <span class="ident">verifying_key</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeVerifyingKey</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+
+        <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">keypair</span>, <span class="ident">_fee_chg_ro</span>, <span class="ident">record_openings</span>) <span class="op">=</span>
+            <span class="ident">builder</span>.<span class="ident">build_freeze_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">proving_key</span>)<span class="question-mark">?</span>;
+
+        <span class="macro">assert!</span>(<span class="ident">note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
+            .<span class="ident">is_ok</span>());
+        <span class="macro">assert!</span>(<span class="ident">note</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">NodeValue::default</span>()).<span class="ident">is_err</span>());
+
+        <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
+        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">schnorr_dsa::KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
+        <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
+            .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
+            .<span class="ident">is_err</span>());
+
+        <span class="comment">// test receiver memos signature</span>
+        <span class="kw">let</span> <span class="ident">txn</span>: <span class="ident">TransactionNote</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">into</span>();
+        <span class="kw">let</span> <span class="ident">recv_memos</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">record_openings</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">ReceiverMemo::from_ro</span>(<span class="ident">rng</span>, <span class="ident">ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>())
+            .<span class="ident">collect</span>();
+        <span class="kw">let</span> <span class="ident">sig</span> <span class="op">=</span> <span class="ident">sign_receiver_memos</span>(<span class="kw-2">&amp;</span><span class="ident">keypair</span>, <span class="kw-2">&amp;</span><span class="ident">recv_memos</span>).<span class="ident">unwrap</span>();
+        <span class="macro">assert!</span>(<span class="ident">txn</span>
+            .<span class="ident">verify_receiver_memos_signature</span>(<span class="kw-2">&amp;</span><span class="ident">recv_memos</span>, <span class="kw-2">&amp;</span><span class="ident">sig</span>)
+            .<span class="ident">is_ok</span>());
+
         <span class="prelude-val">Ok</span>(())
     }
 }

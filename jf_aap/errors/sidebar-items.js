@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["DeserializationError","Errors from deserialization."],["TxnApiError","All possible categories of error from Transaction API"]]});
