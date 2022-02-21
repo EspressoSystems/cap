@@ -416,7 +416,7 @@ mod tests {
         let input_amounts = [30, 25];
         let output_amounts = [30, 3, 4, 5, 6, 7];
 
-        let mut builder = test_anon_xfr_2in_6out_helper(
+        let mut builder = test_anon_xfr_helper(
             &input_amounts,
             &output_amounts,
             &keypair1,
@@ -436,7 +436,7 @@ mod tests {
         let input_amounts = [30, 25];
         let output_amounts = [19, 3, 4, 5, 6, 7];
 
-        let _builder = test_anon_xfr_2in_6out_helper(
+        let _builder = test_anon_xfr_helper(
             &input_amounts,
             &output_amounts,
             &keypair1,
@@ -602,7 +602,7 @@ mod tests {
         }
     }
 
-    fn test_anon_xfr_2in_6out_helper<'a>(
+    fn test_anon_xfr_helper<'a>(
         input_amounts: &[u64],
         output_amounts: &[u64],
         keypair1: &'a UserKeyPair,
