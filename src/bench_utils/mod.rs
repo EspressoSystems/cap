@@ -193,7 +193,7 @@ pub fn save_results_to_file(
     note_description: &str,
     build_csv_record_fun: &dyn Fn(&str, Vec<&str>, &str) -> Vec<String>,
 ) -> Result<(), Box<dyn Error>> {
-    let output_filename = format!("/tmp/{}_jellyfish_benchmark.csv", note_description);
+    let output_filename = format!("/tmp/{}_cap_benchmark.csv", note_description);
     let f = File::create(&output_filename).expect("Unable to create file");
     let wtr = BufWriter::new(f);
     let mut csv_wtr = csv::Writer::from_writer(wtr);

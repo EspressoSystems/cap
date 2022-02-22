@@ -5,7 +5,7 @@ echo "This is just a script template, not the script (yet) - pass it to 'argbash
 exit 11  #)Created by argbash-init v2.10.0
 # ARG_OPTIONAL_BOOLEAN([asm])
 # ARG_OPTIONAL_BOOLEAN([multi_threads])
-# ARG_HELP([<Jellyfish benchmarks>])
+# ARG_HELP([<CAP benchmarks>])
 # ARGBASH_GO
 
 # [ <-- needed because of Argbash

@@ -2,7 +2,7 @@
 name = "jf-cap"
 description = "CAP: configarable anonymous payments"
 version = "0.0.1"
-authors = ["Translucence Research <hello@translucence.net>"]
+authors = ["Spectrum Ecosystem <hello@spectrum.xyz>"]
 edition = "2018"
 
 [[bin]]

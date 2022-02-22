@@ -1,4 +1,4 @@
-# Jellyfish cryptographic library
+# CAP: configurable anonymous payment system
 
 ## Development environment setup
 
@@ -74,16 +74,6 @@ Refer to the [nix/vagrant](./nix/vagrant/) directory.
 
 ### Benchmarks
 
-#### Primitives
-
-Currently, a benchmark for verifying Merkle paths is implemented.
-The additional flags allow using assembly implementation of `square_in_place` and `mul_assign` within arkworks:
-
-```bash
-> RUSTFLAGS='-Ctarget-cpu=native -Ctarget-feature=+bmi2,+adx' cargo bench --bench=merkle_path
-```
-
-
 #### Transactions generation/verification
 
 Running the benchmarks produces a csv file containing the information about the note being benched 
@@ -95,7 +85,7 @@ Benchmarks can be run
 
 ```
 >./scripts/run_benchmarks.sh --help
-Jellyfish benchmarks
+CAP benchmarks
 Usage: ./scripts/run_benchmarks.sh [--(no-)asm] [--(no-)multi_threads] [-h|--help]
 	-h, --help: Prints help
 
@@ -111,8 +101,8 @@ Multi-threads: ON
 Asm feature: ON
 ```
 
-The csv files can be found at `/tmp/{note_description}_jellyfish_benchmark.csv`, 
-    e.g. `/tmp/transfer_note_jellyfish_benchmark.csv`. 
+The csv files can be found at `/tmp/{note_description}_cap_benchmark.csv`, 
+    e.g. `/tmp/transfer_note_cap_benchmark.csv`. 
 
 The criterion report can be found at `target/criterion/report/index.html`.
 
