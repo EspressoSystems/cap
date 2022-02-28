@@ -1,4 +1,4 @@
-//! API library for the _auditable anonymous payment_ system which allows for
+//! API library for the _configurable asset policy_ system which allows for
 //! issuance, transfers and (un)freezing of arbitrary asset that are fully
 //! private, yet publicly verifiable and auditable. It is strongly recommended
 //! to refer to at least the first two chapters of [Spec] for an introduction to

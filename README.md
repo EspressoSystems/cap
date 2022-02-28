@@ -1,4 +1,4 @@
-# CAP: configurable anonymous payment system
+# CAP: configurable asset policy system
 
 ## Development environment setup
 

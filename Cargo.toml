@@ -1,6 +1,6 @@
 [package]
 name = "jf-cap"
-description = "CAP: configarable anonymous payments"
+description = "CAP: configurable asset policy"
 version = "0.0.1"
 authors = ["Spectrum Ecosystem <hello@spectrum.xyz>"]
 edition = "2018"

@@ -10,4 +10,4 @@
 
 ### Bugfixes
 
-## v0.1.0 (Initial release of CAP: Configurable Anonymous Payment system)
+## v0.1.0 (Initial release of CAP: configurable asset policy system)
