@@ -114,10 +114,10 @@
 //! Again, we recommend readers take a look at the [integration test] to get an
 //! idea of this workflow in actual mock code.
 //!
-//! ### FIXME: decide if we want to open source the spec
+//! ### FIXME: update the link to spec
 //! [Spec]: https://gitlab.com/translucence/crypto/AT-spec/-/jobs/1368849847/artifacts/file/main.pdf
 //!
-//! [integration test]: https://gitlab.com/translucence/crypto/jellyfish/-/tree/main/transactions/tests
+//! [integration test]: https://github.com/EspressoSystems/cap/blob/main/src/transfer.rs
 //!
 //! [^srs]: in production, this would be a file downloaded from authority
 //! source, but in test and for demo, we can generate them via
