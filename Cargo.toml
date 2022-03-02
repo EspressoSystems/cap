@@ -2,7 +2,7 @@
 name = "jf-cap"
 description = "CAP: configurable asset policy"
 version = "0.0.1"
-authors = ["Spectrum Ecosystem <hello@spectrum.xyz>"]
+authors = ["Esoresso Ecosystems <hello@espressosys.com>"]
 edition = "2018"
 
 [[bin]]
