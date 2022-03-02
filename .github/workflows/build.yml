@@ -70,4 +70,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
           # fixme: update this before open sourcing
-          cname: jellyfish-apps.docs.translucence.net
+          cname: cap.docs.espressosys.com
