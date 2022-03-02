@@ -1,4 +1,4 @@
-# Jellyfish cryptographic library
+# Configurable Asset Policy (CAP) protocol -- a library in the Jellyfish ecosystem
 
 ## Development environment setup
 
