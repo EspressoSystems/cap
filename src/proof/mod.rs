@@ -76,7 +76,8 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         ));
     }
 
-    let mut d = PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
+    let mut d =
+        PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
     d.push("data");
     d.push("aztec-crs-131072");
     d.set_extension("bin");

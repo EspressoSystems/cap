@@ -452,7 +452,8 @@ pub fn load_freeze_verifying_key(
 
 // by default, all parameters are stored in `CURRENT_CARGO_ROOT/data/`
 fn default_path(filename: &str, extension: &str) -> PathBuf {
-    let mut d = PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
+    let mut d =
+        PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
     d.push("data");
     d.push(filename);
     d.set_extension(extension);
