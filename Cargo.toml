@@ -1,8 +1,8 @@
 [package]
 name = "jf-cap"
-description = "CAP: configarable anonymous payments"
+description = "CAP: configurable asset policy"
 version = "0.0.1"
-authors = ["Translucence Research <hello@translucence.net>"]
+authors = ["Espresso Systems <hello@espressosys.com>"]
 edition = "2018"
 
 [[bin]]

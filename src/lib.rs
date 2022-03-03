@@ -1,4 +1,4 @@
-//! API library for the _auditable anonymous payment_ system which allows for
+//! API library for the _configurable asset policy_ system which allows for
 //! issuance, transfers and (un)freezing of arbitrary asset that are fully
 //! private, yet publicly verifiable and auditable. It is strongly recommended
 //! to refer to at least the first two chapters of [Spec] for an introduction to
@@ -114,9 +114,10 @@
 //! Again, we recommend readers take a look at the [integration test] to get an
 //! idea of this workflow in actual mock code.
 //!
+//! ### FIXME: update the link to spec
 //! [Spec]: https://gitlab.com/translucence/crypto/AT-spec/-/jobs/1368849847/artifacts/file/main.pdf
 //!
-//! [integration test]: https://gitlab.com/translucence/crypto/jellyfish/-/tree/main/transactions/tests
+//! [integration test]: https://github.com/EspressoSystems/cap/blob/main/src/transfer.rs
 //!
 //! [^srs]: in production, this would be a file downloaded from authority
 //! source, but in test and for demo, we can generate them via

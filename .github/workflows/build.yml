@@ -19,6 +19,7 @@ jobs:
       - uses: actions/checkout@v3
         name: Checkout Repository
 
+      # fixme: remove this before open sourcing
       - name: Configure Git
         run: |
           git config --global url."https://ancient123:${{ secrets.ORG_GITHUB_PAT }}@github.com".insteadOf git://github.com
@@ -69,4 +70,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          cname: jellyfish-apps.docs.translucence.net
+          cname: cap.docs.espressosys.com

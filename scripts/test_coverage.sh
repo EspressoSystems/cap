@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -o xtrace
-IGNORED_FILES="--ignore **/errors.rs\
-               --ignore **/src/bin/*\
-               --ignore transactions/src/parameters.rs\
-               --ignore transactions/src/bench_utils/*\
+IGNORED_FILES="--ignore src/errors.rs\
+               --ignore src/bin/*\
+               --ignore src/parameters.rs\
+               --ignore src/bench_utils/*\
               "
 cargo +nightly install grcov
 export CARGO_INCREMENTAL=0
