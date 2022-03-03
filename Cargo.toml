@@ -14,14 +14,14 @@ ark-std = { version = "0.3.0", default-features = false }
 ark-serialize = { version = "0.3.0", default-features = false }
 ark-ec = { version = "0.3.0", default-features = false }
 ark-ff = { version = "0.3.0", default-features = false }
-commit = { git = "ssh://git@github.com/EspressoSystems/commit.git", rev = "f48cd52c59755eade0605111826eef3df6abdcf8" }
+commit = { git = "https://github.com/EspressoSystems/commit.git", rev = "f48cd52c59755eade0605111826eef3df6abdcf8" }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_derive = { version = "1.0", default-features = false }
 itertools = { version = "0.10.1", default-features = false }
-jf-plonk = { features=["std"], git = "ssh://git@github.com/EspressoSystems/jellyfish.git" }
-jf-rescue = { features=["std"], git = "ssh://git@github.com/EspressoSystems/jellyfish.git" }
-jf-primitives = { features=["std"], git = "ssh://git@github.com/EspressoSystems/jellyfish.git" }
-jf-utils = { git = "ssh://git@github.com/EspressoSystems/jellyfish.git" }
+jf-plonk = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git" }
+jf-rescue = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git" }
+jf-primitives = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git" }
+jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git" }
 sha2 = { version = "0.9.5", default-features = false }
 structopt = { version = "0.3.22", default-features = false }
 rand = { version = "0.8.4", default-features = false, features = [ "alloc" ] }
