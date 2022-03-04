@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;utils&#x2F;params_builder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>params_builder.rs - source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../../jf_cap/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;utils&#x2F;params_builder.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>params_builder.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
+    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.png" alt="logo"></div>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.png" alt="logo"></a><nav class="sub"><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1444,12 +1446,12 @@
 <span class="kw">impl</span> <span class="ident">TxnsParams</span> {
     <span class="doccomment">/// Randomly generate a list of transaction of different types</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate_txns</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">num_transfer_txn</span>: <span class="ident">usize</span>,
         <span class="ident">num_mint_txn</span>: <span class="ident">usize</span>,
         <span class="ident">num_freeze_txn</span>: <span class="ident">usize</span>,
         <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -1480,7 +1482,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transfer_builders</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_transfer_txn</span>)
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="kw">let</span> <span class="ident">user_keypairs_slice</span> <span class="op">=</span> <span class="ident">user_keypairs</span>.<span class="ident">iter</span>().<span class="ident">collect</span>();
                 <span class="ident">TransferParamsBuilder::rand</span>(
                     <span class="ident">rng</span>,
@@ -1504,7 +1506,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mint_builders</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_mint_txn</span>)
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="ident">MintParamsBuilder::rand</span>(
                     <span class="ident">rng</span>,
                     <span class="ident">tree_depth</span>,
@@ -1527,7 +1529,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">freeze_builders</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_freeze_txn</span>)
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="kw">let</span> <span class="ident">freezing_keypairs</span> <span class="op">=</span> <span class="ident">freezing_keypairs</span>[<span class="ident">i</span>].<span class="ident">iter</span>().<span class="ident">collect</span>();
                 <span class="ident">FreezeParamsBuilder::rand</span>(<span class="ident">rng</span>, <span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">fee_keypairs</span>[<span class="ident">i</span>], <span class="ident">freezing_keypairs</span>)
             })
@@ -1577,9 +1579,9 @@
         <span class="kw">let</span> <span class="ident">transfer_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionNote</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">transfer_builders</span>
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">extra_proof_bound_data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-                <span class="ident">rng</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">extra_proof_bound_data</span>);
+                <span class="ident">rng</span>.<span class="ident">fill_bytes</span>(<span class="kw-2">&amp;mut</span> <span class="ident">extra_proof_bound_data</span>);
                 <span class="kw">let</span> (<span class="ident">note</span>, ..) <span class="op">=</span> <span class="ident">builder</span>
                     .<span class="ident">build_transfer_note</span>(
                         <span class="ident">rng</span>,
@@ -1594,7 +1596,7 @@
         <span class="kw">let</span> <span class="ident">mint_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">mint_builders</span>
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="kw">let</span> (<span class="ident">note</span>, ..) <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_mint_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">mint_prover_key</span>).<span class="ident">unwrap</span>();
                 <span class="ident">TransactionNote::Mint</span>(<span class="ident">Box::new</span>(<span class="ident">note</span>))
             })
@@ -1602,7 +1604,7 @@
         <span class="kw">let</span> <span class="ident">freeze_txns</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">freeze_builders</span>
             .<span class="ident">into_par_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+                <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
                 <span class="kw">let</span> (<span class="ident">note</span>, ..) <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_freeze_note</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">freeze_prover_key</span>).<span class="ident">unwrap</span>();
                 <span class="ident">TransactionNote::Freeze</span>(<span class="ident">Box::new</span>(<span class="ident">note</span>))
             })
@@ -1623,19 +1625,19 @@
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_verifying_keys</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">TransactionVerifyingKey</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_verifying_keys</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">TransactionVerifyingKey</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">keys</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">for</span> <span class="ident">txn</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">txns</span> {
             <span class="kw">match</span> <span class="ident">txn</span> {
-                <span class="ident">TransactionNote::Transfer</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">0</span>].<span class="ident">clone</span>()),
-                <span class="ident">TransactionNote::Mint</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">1</span>].<span class="ident">clone</span>()),
-                <span class="ident">TransactionNote::Freeze</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">2</span>].<span class="ident">clone</span>()),
+                <span class="ident">TransactionNote::Transfer</span>(<span class="kw">_</span>) =&gt; <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">0</span>].<span class="ident">clone</span>()),
+                <span class="ident">TransactionNote::Mint</span>(<span class="kw">_</span>) =&gt; <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">1</span>].<span class="ident">clone</span>()),
+                <span class="ident">TransactionNote::Freeze</span>(<span class="kw">_</span>) =&gt; <span class="ident">keys</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">verifying_keys</span>[<span class="number">2</span>].<span class="ident">clone</span>()),
             }
         }
         <span class="ident">keys</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_merkle_roots</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NodeValue</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_merkle_roots</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">NodeValue</span><span class="op">&gt;</span> {
         <span class="macro">vec!</span>[<span class="self">self</span>.<span class="ident">merkle_root</span>; <span class="self">self</span>.<span class="ident">txns</span>.<span class="ident">len</span>()]
     }
 
@@ -1643,16 +1645,16 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">idx</span>: <span class="ident">usize</span>,
         <span class="ident">recv_memos_ver_key</span>: <span class="ident">VerKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">idx</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">txns</span>.<span class="ident">len</span>());
-        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">txns</span>[<span class="ident">idx</span>] {
-            <span class="ident">TransactionNote::Transfer</span>(<span class="ident">note</span>) <span class="op">=</span><span class="op">&gt;</span> {
+        <span class="kw">match</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">txns</span>[<span class="ident">idx</span>] {
+            <span class="ident">TransactionNote::Transfer</span>(<span class="ident">note</span>) =&gt; {
                 <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">recv_memos_ver_key</span>;
             },
-            <span class="ident">TransactionNote::Mint</span>(<span class="ident">note</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">TransactionNote::Mint</span>(<span class="ident">note</span>) =&gt; {
                 <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">recv_memos_ver_key</span>;
             },
-            <span class="ident">TransactionNote::Freeze</span>(<span class="ident">note</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">TransactionNote::Freeze</span>(<span class="ident">note</span>) =&gt; {
                 <span class="ident">note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">recv_memos_ver_key</span>;
             },
         };
@@ -1695,7 +1697,7 @@
         <span class="ident">num_output</span>: <span class="ident">usize</span>,
         <span class="ident">tree_depth</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">user_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert_eq!</span>(<span class="ident">user_keypairs</span>.<span class="ident">len</span>(), <span class="ident">num_input</span>);
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::calculate_tree_depth</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>);
         <span class="self">Self</span> {
@@ -1724,11 +1726,11 @@
         <span class="ident">num_output</span>: <span class="ident">usize</span>,
         <span class="ident">tree_depth</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">user_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert_eq!</span>(<span class="ident">user_keypairs</span>.<span class="ident">len</span>(), <span class="ident">num_input</span>);
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::calculate_tree_depth</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="ident">transfer_asset_def</span> <span class="op">=</span> <span class="ident">NonNativeAssetDefinition::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">transfer_asset_def</span> <span class="op">=</span> <span class="ident">NonNativeAssetDefinition::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
 
         <span class="self">Self</span> {
             <span class="ident">num_input</span>,
@@ -1746,7 +1748,7 @@
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">policy_reveal</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_type</span>: <span class="ident">PolicyRevealAttr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">policy_reveal</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_type</span>: <span class="ident">PolicyRevealAttr</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(
             <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">is_some</span>(),
             <span class="string">&quot;reveal map cannot be set on native asset&quot;</span>
@@ -1754,20 +1756,20 @@
         <span class="comment">// change transfer_asset_definition</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">unwrap</span>();
         <span class="kw">match</span> <span class="ident">reveal_type</span> {
-            <span class="ident">PolicyRevealAttr::UserAddr</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::UserAddr</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_user_address</span>();
             },
-            <span class="ident">PolicyRevealAttr::Amount</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::Amount</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_amount</span>();
             },
-            <span class="ident">PolicyRevealAttr::BlindFactor</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::BlindFactor</span> =&gt; {
                 <span class="ident">asset_def</span>
                     .<span class="ident">asset_def</span>
                     .<span class="ident">policy</span>
                     .<span class="ident">reveal_map</span>
                     .<span class="ident">reveal_blinding_factor</span>();
             },
-            <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) =&gt; {
                 <span class="ident">asset_def</span>
                     .<span class="ident">asset_def</span>
                     .<span class="ident">policy</span>
@@ -1775,7 +1777,7 @@
                     .<span class="ident">reveal_ith_id_attribute</span>(<span class="ident">i</span>)
                     .<span class="ident">unwrap</span>();
             },
-            <span class="ident">PolicyRevealAttr::AllIdAttr</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::AllIdAttr</span> =&gt; {
                 <span class="ident">asset_def</span>
                     .<span class="ident">asset_def</span>
                     .<span class="ident">policy</span>
@@ -1790,14 +1792,14 @@
             .<span class="ident">skip</span>(<span class="number">1</span>)<span class="comment">// first one is used for fee</span>
             .<span class="ident">chain</span>(<span class="self">self</span>.<span class="ident">output_ros</span>.<span class="ident">iter_mut</span>())
             .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">reveal_type</span> {
-                <span class="ident">PolicyRevealAttr::UserAddr</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">PolicyRevealAttr::UserAddr</span> =&gt; {
                     <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span>
                         <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">clone</span>().<span class="ident">reveal_user_address</span>().<span class="ident">unwrap</span>();
                 },
-                <span class="ident">PolicyRevealAttr::Amount</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">PolicyRevealAttr::Amount</span> =&gt; {
                     <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span> <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">clone</span>().<span class="ident">reveal_amount</span>().<span class="ident">unwrap</span>();
                 },
-                <span class="ident">PolicyRevealAttr::BlindFactor</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">PolicyRevealAttr::BlindFactor</span> =&gt; {
                     <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span> <span class="ident">ro</span>
                         .<span class="ident">asset_def</span>
                         .<span class="ident">policy</span>
@@ -1805,11 +1807,11 @@
                         .<span class="ident">reveal_blinding_factor</span>()
                         .<span class="ident">unwrap</span>();
                 },
-                <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) =&gt; {
                     <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span>
                         <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">clone</span>().<span class="ident">reveal_ith_attribute</span>(<span class="ident">i</span>).<span class="ident">unwrap</span>();
                 },
-                <span class="ident">PolicyRevealAttr::AllIdAttr</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">PolicyRevealAttr::AllIdAttr</span> =&gt; {
                     <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span>
                         <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">clone</span>().<span class="ident">reveal_all_attributes</span>().<span class="ident">unwrap</span>();
                 },
@@ -1817,7 +1819,7 @@
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_reveal_threshold</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_threshold</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_reveal_threshold</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_threshold</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(
             <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">is_some</span>(),
             <span class="string">&quot;reveal_threshold cannot be set on native asset&quot;</span>
@@ -1837,7 +1839,7 @@
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_policy_reveal_map</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_map</span>: <span class="ident">RevealMap</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_policy_reveal_map</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_map</span>: <span class="ident">RevealMap</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(
             <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">is_some</span>(),
             <span class="string">&quot;reveal map cannot be set on native asset&quot;</span>
@@ -1863,7 +1865,7 @@
     <span class="doccomment">///   overall left over amount</span>
     <span class="doccomment">/// * `amounts` - list of input amounts (the first amount corresponds to the</span>
     <span class="doccomment">///   native asset)</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_input_amounts</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_input</span>: <span class="ident">u64</span>, <span class="ident">amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_input_amounts</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_input</span>: <span class="ident">u64</span>, <span class="ident">amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">is_empty</span>(), <span class="string">&quot;Input records already set&quot;</span>);
         <span class="macro">assert_eq!</span>(
             <span class="ident">amounts</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="number">1</span>,
@@ -1872,7 +1874,7 @@
         );
         <span class="kw">let</span> <span class="ident">input_user_pk</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">input_upk_at</span>(<span class="number">0</span>);
         <span class="kw">let</span> <span class="ident">fee_ro</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+            <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
             <span class="ident">fee_input</span>,
             <span class="ident">AssetDefinition::native</span>(),
             <span class="ident">input_user_pk</span>,
@@ -1883,15 +1885,15 @@
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">amount</span>) <span class="kw">in</span> <span class="ident">amounts</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">let</span> <span class="ident">input_user_pk</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">input_upk_at</span>(<span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>);
             <span class="kw">let</span> <span class="ident">ro</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">as_ref</span>() {
-                <span class="prelude-val">Some</span>(<span class="ident">non_native_asset</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RecordOpening::new</span>(
-                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">non_native_asset</span>) =&gt; <span class="ident">RecordOpening::new</span>(
+                    <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
                     <span class="kw-2">*</span><span class="ident">amount</span>,
                     <span class="ident">non_native_asset</span>.<span class="ident">asset_def</span>.<span class="ident">clone</span>(),
                     <span class="ident">input_user_pk</span>,
                     <span class="ident">FreezeFlag::Unfrozen</span>,
                 ),
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RecordOpening::new</span>(
-                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+                <span class="prelude-val">None</span> =&gt; <span class="ident">RecordOpening::new</span>(
+                    <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
                     <span class="kw-2">*</span><span class="ident">amount</span>,
                     <span class="ident">AssetDefinition::native</span>(),
                     <span class="ident">input_user_pk</span>,
@@ -1906,7 +1908,7 @@
     <span class="doccomment">/// Define the outputs amounts of a Transfer note</span>
     <span class="doccomment">/// * `amounts` - list of input amounts (the first amount corresponds to the</span>
     <span class="doccomment">///   native asset)</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_output_amounts</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_chg</span>: <span class="ident">u64</span>, <span class="ident">amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_output_amounts</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_chg</span>: <span class="ident">u64</span>, <span class="ident">amounts</span>: <span class="kw-2">&amp;</span>[<span class="ident">u64</span>]) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="self">self</span>.<span class="ident">output_ros</span>.<span class="ident">is_empty</span>(), <span class="string">&quot;Output records already set&quot;</span>);
         <span class="macro">assert_eq!</span>(
             <span class="ident">amounts</span>.<span class="ident">len</span>() <span class="op">+</span> <span class="number">1</span>,
@@ -1915,7 +1917,7 @@
         );
         <span class="kw">let</span> <span class="ident">output_user_pk</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">input_upk_at</span>(<span class="number">0</span>);
         <span class="kw">let</span> <span class="ident">fee_change_ro</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+            <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
             <span class="ident">fee_chg</span>,
             <span class="ident">AssetDefinition::native</span>(),
             <span class="ident">output_user_pk</span>,
@@ -1924,17 +1926,17 @@
         <span class="self">self</span>.<span class="ident">fee_chg_ro</span> <span class="op">=</span> <span class="ident">fee_change_ro</span>;
 
         <span class="kw">for</span> <span class="ident">amount</span> <span class="kw">in</span> <span class="ident">amounts</span>.<span class="ident">iter</span>() {
-            <span class="kw">let</span> <span class="ident">output_user_pk</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>).<span class="ident">pub_key</span>();
+            <span class="kw">let</span> <span class="ident">output_user_pk</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>).<span class="ident">pub_key</span>();
             <span class="kw">let</span> <span class="ident">ro</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">as_ref</span>() {
-                <span class="prelude-val">Some</span>(<span class="ident">non_native_asset</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RecordOpening::new</span>(
-                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">non_native_asset</span>) =&gt; <span class="ident">RecordOpening::new</span>(
+                    <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
                     <span class="kw-2">*</span><span class="ident">amount</span>,
                     <span class="ident">non_native_asset</span>.<span class="ident">asset_def</span>.<span class="ident">clone</span>(),
                     <span class="ident">output_user_pk</span>,
                     <span class="ident">FreezeFlag::Unfrozen</span>,
                 ),
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RecordOpening::new</span>(
-                    <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
+                <span class="prelude-val">None</span> =&gt; <span class="ident">RecordOpening::new</span>(
+                    <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>,
                     <span class="kw-2">*</span><span class="ident">amount</span>,
                     <span class="ident">AssetDefinition::native</span>(),
                     <span class="ident">output_user_pk</span>,
@@ -1948,9 +1950,9 @@
 
     <span class="doccomment">/// Set the input credentials</span>
     <span class="doccomment">/// * `cred_expiry` - expiration timestamp the of the credentials</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_input_creds</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cred_expiry</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_input_creds</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cred_expiry</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="self">self</span>.<span class="ident">num_input</span> {
-            <span class="kw">let</span> <span class="ident">cred</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">i</span>].<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">cred_pk</span> <span class="op">=</span><span class="op">=</span> <span class="ident">CredIssuerPubKey::default</span>()
+            <span class="kw">let</span> <span class="ident">cred</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">i</span>].<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">cred_pk</span> <span class="op">==</span> <span class="ident">CredIssuerPubKey::default</span>()
             {
                 <span class="prelude-val">None</span>
             } <span class="kw">else</span> {
@@ -1958,7 +1960,7 @@
                 <span class="prelude-val">Some</span>(
                     <span class="ident">ExpirableCredential::issue</span>(
                         <span class="self">self</span>.<span class="ident">input_upk_at</span>(<span class="ident">i</span>).<span class="ident">address</span>,
-                        <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">rng</span>),
+                        <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">rng</span>),
                         <span class="ident">cred_expiry</span>,
                         <span class="kw-2">&amp;</span><span class="ident">transfer_asset_def</span>.<span class="ident">issuer_keypair</span>,
                     )
@@ -1970,7 +1972,7 @@
         <span class="self">self</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mt</span> <span class="op">=</span> <span class="ident">MerkleTree::new</span>(<span class="self">self</span>.<span class="ident">tree_depth</span>).<span class="ident">unwrap</span>();
         <span class="kw">for</span> <span class="ident">ro</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">iter</span>() {
             <span class="ident">mt</span>.<span class="ident">push</span>(<span class="ident">ro</span>.<span class="ident">derive_record_commitment</span>().<span class="ident">to_field_element</span>());
@@ -1981,7 +1983,7 @@
 
     <span class="doccomment">/// if `uid` is None, then it&#39;s by default assumed to be the first few</span>
     <span class="doccomment">/// leaves in the merkle tree.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_acc_member_witness</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mt</span>: <span class="kw-2">&amp;</span><span class="ident">MerkleTree</span>, <span class="ident">uids</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_acc_member_witness</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">mt</span>: <span class="kw-2">&amp;</span><span class="ident">MerkleTree</span>, <span class="ident">uids</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> <span class="ident">uids</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">uids</span>) <span class="op">=</span> <span class="ident">uids</span> {
             <span class="macro">assert_eq!</span>(
                 <span class="ident">uids</span>.<span class="ident">len</span>(),
@@ -2007,13 +2009,13 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">usize</span>,
         <span class="ident">freeze_flag</span>: <span class="ident">FreezeFlag</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">index</span>].<span class="ident">freeze_flag</span> <span class="op">=</span> <span class="ident">freeze_flag</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="number">0</span>].<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">asset_def</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
@@ -2022,13 +2024,13 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">usize</span>,
         <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>].<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">asset_def</span>; <span class="comment">// first position is reserved for input fee</span>
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_dummy_input_record</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_dummy_input_record</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>].<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::dummy</span>(); <span class="comment">// first position is reserved for input fee</span>
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>].<span class="ident">amount</span> <span class="op">=</span> <span class="number">0</span>;
@@ -2036,7 +2038,7 @@
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_chg_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_chg_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">fee_chg_ro</span>.<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">asset_def</span>;
         <span class="self">self</span>
     }
@@ -2045,18 +2047,18 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">usize</span>,
         <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">output_ros</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">output_ros</span>[<span class="ident">index</span>].<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">asset_def</span>;
         <span class="self">self</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">amount</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="number">0</span>].<span class="ident">amount</span> <span class="op">=</span> <span class="ident">amount</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">amount</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">amount</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="ident">index</span> <span class="op">+</span> <span class="number">1</span>].<span class="ident">amount</span> <span class="op">=</span> <span class="ident">amount</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>()
@@ -2065,13 +2067,13 @@
     <span class="doccomment">/// randomly generate/prepare a parameter builder with 50% chance</span>
     <span class="doccomment">/// transferring native asset type.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">rand</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">num_input</span>: <span class="ident">usize</span>,
         <span class="ident">num_output</span>: <span class="ident">usize</span>,
         <span class="ident">tree_depth</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         <span class="ident">user_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span><span class="op">&gt;</span>,
         <span class="ident">valid_until</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2103,15 +2105,15 @@
 
     <span class="kw">fn</span> <span class="ident">len_check</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="macro">assert!</span>(
-            <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_input</span>
-                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_acc_member_witnesses</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_input</span>
-                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_keypairs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_input</span>
-                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_creds</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">num_input</span>,
+            <span class="self">self</span>.<span class="ident">input_ros</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">num_input</span>
+                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_acc_member_witnesses</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">num_input</span>
+                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_keypairs</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">num_input</span>
+                <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">input_creds</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="self">self</span>.<span class="ident">num_input</span>,
             <span class="string">&quot;Internal error, forget to initialize/update input RO/MemberWitness/KeyPair/Cred&quot;</span>
         );
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransferWitness</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="ident">TransferWitness</span> {
         <span class="self">self</span>.<span class="ident">len_check</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inputs</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="self">self</span>.<span class="ident">num_input</span> {
@@ -2131,11 +2133,11 @@
     <span class="doccomment">/// Build a transfer note</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_transfer_note</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span>,
         <span class="ident">valid_until</span>: <span class="ident">u64</span>,
         <span class="ident">extra_proof_bound_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">transfer_asset_def</span>.<span class="ident">is_none</span>() {
             <span class="self">self</span>.<span class="ident">build_transfer_note_native</span>(<span class="ident">rng</span>, <span class="ident">proving_key</span>)
         } <span class="kw">else</span> {
@@ -2150,9 +2152,9 @@
 
     <span class="kw">fn</span> <span class="ident">build_transfer_note_native</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">len_check</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">inputs</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="self">self</span>.<span class="ident">num_input</span> {
@@ -2185,11 +2187,11 @@
 
     <span class="kw">fn</span> <span class="ident">build_transfer_note_non_native</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span>,
         <span class="ident">valid_until</span>: <span class="ident">u64</span>,
         <span class="ident">extra_proof_bound_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferNote</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ReceiverMemo</span><span class="op">&gt;</span>, <span class="ident">Signature</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">len_check</span>();
         <span class="kw">let</span> <span class="ident">fee_input</span> <span class="op">=</span> <span class="ident">FeeInput</span> {
             <span class="ident">ro</span>: <span class="self">self</span>.<span class="ident">input_ros</span>[<span class="number">0</span>].<span class="ident">clone</span>(),
@@ -2234,22 +2236,22 @@
 
 <span class="comment">// private functions</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TransferParamsBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">calculate_tree_depth</span>(<span class="ident">num_input</span>: <span class="ident">usize</span>, <span class="ident">num_output</span>: <span class="ident">usize</span>, <span class="ident">tree_depth</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+    <span class="kw">fn</span> <span class="ident">calculate_tree_depth</span>(<span class="ident">num_input</span>: <span class="ident">usize</span>, <span class="ident">num_output</span>: <span class="ident">usize</span>, <span class="ident">tree_depth</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="ident">u8</span> {
         <span class="macro">assert_ne!</span>(<span class="ident">num_input</span>, <span class="number">0</span>, <span class="string">&quot;Require at least 1 input&quot;</span>);
         <span class="macro">assert_ne!</span>(<span class="ident">num_output</span>, <span class="number">0</span>, <span class="string">&quot;Require at least 1 output&quot;</span>);
         <span class="kw">match</span> <span class="ident">tree_depth</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">depth</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">depth</span>) =&gt; {
                 <span class="macro">assert!</span>(
                     <span class="number">3usize</span>.<span class="ident">pow</span>(<span class="ident">depth</span> <span class="kw">as</span> <span class="ident">u32</span>) <span class="op">&gt;</span><span class="op">=</span> <span class="ident">num_input</span> <span class="op">+</span> <span class="ident">num_output</span>,
                     <span class="string">&quot;tree depth is not enough!&quot;</span>
                 );
                 <span class="ident">depth</span>
             },
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">next_power_of_three</span>(<span class="ident">num_input</span> <span class="op">+</span> <span class="ident">num_output</span>) <span class="kw">as</span> <span class="ident">u8</span>,
+            <span class="prelude-val">None</span> =&gt; <span class="ident">next_power_of_three</span>(<span class="ident">num_input</span> <span class="op">+</span> <span class="ident">num_output</span>) <span class="kw">as</span> <span class="ident">u8</span>,
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">input_upk_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">UserPubKey</span> {
+    <span class="kw">fn</span> <span class="ident">input_upk_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="ident">UserPubKey</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">input_keypairs</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">input_keypairs</span>[<span class="ident">index</span>].<span class="ident">pub_key</span>()
     }
@@ -2264,7 +2266,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">NonNativeAssetDefinition</span> {
-    <span class="kw">fn</span> <span class="ident">generate</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">generate</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="ident">rng</span>);
@@ -2303,7 +2305,7 @@
     <span class="doccomment">/// Generate the parameters for a Mint note</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::too_many_arguments</span>)]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
         <span class="ident">input_amount</span>: <span class="ident">u64</span>,
         <span class="ident">fee</span>: <span class="ident">u64</span>,
@@ -2311,7 +2313,7 @@
         <span class="ident">issuer_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">receiver_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">auditor_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">AuditorKeyPair</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2360,7 +2362,7 @@
         <span class="ident">builder</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mt</span> <span class="op">=</span> <span class="ident">MerkleTree::new</span>(<span class="self">self</span>.<span class="ident">tree_depth</span>).<span class="ident">unwrap</span>();
         <span class="ident">mt</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">fee_ro</span>.<span class="ident">derive_record_commitment</span>().<span class="ident">to_field_element</span>());
         <span class="self">self</span>.<span class="ident">acc_member_witness</span> <span class="op">=</span> <span class="ident">AccMemberWitness::lookup_from_tree</span>(<span class="kw-2">&amp;</span><span class="ident">mt</span>, <span class="number">0</span>)
@@ -2369,7 +2371,7 @@
             .<span class="number">1</span>; <span class="comment">// safe unwrap()</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">update_acc_member_witness</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">mt</span>: <span class="kw-2">&amp;</span><span class="ident">MerkleTree</span>, <span class="ident">uid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>) {
+    <span class="kw">fn</span> <span class="ident">update_acc_member_witness</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">mt</span>: <span class="kw-2">&amp;</span><span class="ident">MerkleTree</span>, <span class="ident">uid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> <span class="ident">uid</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">uid</span>) <span class="op">=</span> <span class="ident">uid</span> { <span class="ident">uid</span> } <span class="kw">else</span> { <span class="number">0</span> };
         <span class="self">self</span>.<span class="ident">acc_member_witness</span> <span class="op">=</span> <span class="ident">AccMemberWitness::lookup_from_tree</span>(<span class="ident">mt</span>, <span class="ident">uid</span>)
             .<span class="ident">expect_ok</span>()
@@ -2377,7 +2379,7 @@
             .<span class="number">1</span>; <span class="comment">// safe unwrap()</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">MintWitness</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="ident">MintWitness</span> {
         <span class="kw">let</span> <span class="ident">ac_digest</span> <span class="op">=</span> <span class="ident">AssetCodeDigest::from_description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ac_description</span>);
         <span class="comment">// avoid integer overflow crash on debug mode, and we don&#39;t want to return error</span>
         <span class="kw">let</span> <span class="ident">fee_chg</span> <span class="op">=</span> <span class="kw">if</span> <span class="self">self</span>.<span class="ident">fee_ro</span>.<span class="ident">amount</span> <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">fee</span> {
@@ -2404,27 +2406,27 @@
         }
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">policy_reveal</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_type</span>: <span class="ident">PolicyRevealAttr</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">policy_reveal</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_type</span>: <span class="ident">PolicyRevealAttr</span>) -&gt; <span class="self">Self</span> {
         <span class="comment">// change transfer_asset_definition</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">asset_def</span>.<span class="ident">clone</span>();
         <span class="kw">match</span> <span class="ident">reveal_type</span> {
-            <span class="ident">PolicyRevealAttr::UserAddr</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::UserAddr</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_user_address</span>();
             },
-            <span class="ident">PolicyRevealAttr::Amount</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::Amount</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_amount</span>();
             },
-            <span class="ident">PolicyRevealAttr::BlindFactor</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::BlindFactor</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_blinding_factor</span>();
             },
-            <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::IdAttr</span>(<span class="ident">i</span>) =&gt; {
                 <span class="ident">asset_def</span>
                     .<span class="ident">policy</span>
                     .<span class="ident">reveal_map</span>
                     .<span class="ident">reveal_ith_id_attribute</span>(<span class="ident">i</span>)
                     .<span class="ident">unwrap</span>();
             },
-            <span class="ident">PolicyRevealAttr::AllIdAttr</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PolicyRevealAttr::AllIdAttr</span> =&gt; {
                 <span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_all_id_attributes</span>();
             },
         }
@@ -2437,8 +2439,8 @@
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness_and_public_input</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MintWitness</span>, <span class="ident">MintPublicInput</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span>
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MintWitness</span>, <span class="ident">MintPublicInput</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2450,9 +2452,9 @@
     <span class="doccomment">/// Build the note given the parameters and a proving key</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_mint_note</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">MintProvingKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MintNote</span>, <span class="ident">KeyPair</span>, <span class="ident">RecordOpening</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">MintNote</span>, <span class="ident">KeyPair</span>, <span class="ident">RecordOpening</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">fee_input</span> <span class="op">=</span> <span class="ident">FeeInput</span> {
             <span class="ident">ro</span>: <span class="self">self</span>.<span class="ident">fee_ro</span>.<span class="ident">clone</span>(),
             <span class="ident">acc_member_witness</span>: <span class="self">self</span>.<span class="ident">acc_member_witness</span>.<span class="ident">clone</span>(),
@@ -2472,12 +2474,12 @@
 
     <span class="doccomment">/// randomly generate/prepare builder</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">rand</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
         <span class="ident">issuer_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">receiver_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">auditor_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">AuditorKeyPair</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2515,8 +2517,8 @@
         <span class="ident">fee</span>: <span class="ident">u64</span>,
         <span class="ident">fee_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">freezing_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FreezerKeyPair</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+    ) -&gt; <span class="self">Self</span> {
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="macro">assert_eq!</span>(
             <span class="ident">input_amounts</span>.<span class="ident">len</span>(),
             <span class="ident">freezing_keypairs</span>.<span class="ident">len</span>(),
@@ -2562,22 +2564,22 @@
         <span class="ident">builder</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">input_ros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">input_ros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">input</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">ro</span>).<span class="ident">collect</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">fee_ro</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span> {
+    <span class="kw">fn</span> <span class="ident">fee_ro</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">ro</span>
     }
 
     <span class="doccomment">/// randomly sample a builder with random amounts, and 50% freeze, 50%</span>
     <span class="doccomment">/// unfreeze</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">rand</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
         <span class="ident">fee_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
         <span class="ident">freezing_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">FreezerKeyPair</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2606,7 +2608,7 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">fn</span> <span class="ident">refresh_merkle_root</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">mt</span> <span class="op">=</span> <span class="ident">MerkleTree::new</span>(<span class="self">self</span>.<span class="ident">tree_depth</span>).<span class="ident">unwrap</span>();
         <span class="kw">for</span> <span class="ident">ro</span> <span class="kw">in</span> <span class="self">self</span>.<span class="ident">input_ros</span>().<span class="ident">iter</span>() {
             <span class="ident">mt</span>.<span class="ident">push</span>(<span class="ident">ro</span>.<span class="ident">derive_record_commitment</span>().<span class="ident">to_field_element</span>());
@@ -2616,7 +2618,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">update_acc_member_witness</span>(
-        <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>,
+        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">mt</span>: <span class="kw-2">&amp;</span><span class="ident">MerkleTree</span>,
         <span class="ident">input_uids</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
         <span class="ident">fee_uid</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
@@ -2652,19 +2654,19 @@
             .<span class="number">1</span>;
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_asset_def</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">ro</span>.<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">asset_def</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>();
         <span class="self">self</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_amount</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_input_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">fee_amount</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">ro</span>.<span class="ident">amount</span> <span class="op">=</span> <span class="ident">fee_amount</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>();
         <span class="self">self</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_freeze_flag</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_fee_freeze_flag</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">ro</span>.<span class="ident">freeze_flag</span> <span class="op">=</span> <span class="ident">flag</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>();
         <span class="self">self</span>
@@ -2674,14 +2676,14 @@
         <span class="kw-2">mut</span> <span class="self">self</span>,
         <span class="ident">index</span>: <span class="ident">usize</span>,
         <span class="ident">freeze_flag</span>: <span class="ident">FreezeFlag</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">inputs</span>[<span class="ident">index</span>].<span class="ident">ro</span>.<span class="ident">freeze_flag</span> <span class="op">=</span> <span class="ident">freeze_flag</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>();
         <span class="self">self</span>
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_input_policy</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">policy</span>: <span class="ident">AssetPolicy</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">update_input_policy</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">policy</span>: <span class="ident">AssetPolicy</span>) -&gt; <span class="self">Self</span> {
         <span class="macro">assert!</span>(<span class="ident">index</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">len</span>());
         <span class="self">self</span>.<span class="ident">inputs</span>[<span class="ident">index</span>].<span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span> <span class="op">=</span> <span class="ident">policy</span>;
         <span class="self">self</span>.<span class="ident">refresh_merkle_root</span>();
@@ -2689,19 +2691,19 @@
     }
 
     <span class="comment">// calculate the output ROs</span>
-    <span class="kw">fn</span> <span class="ident">output_ros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+    <span class="kw">fn</span> <span class="ident">output_ros</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="ident">get_output_ros</span>(<span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inputs</span>)
     }
 
     <span class="doccomment">/// Build a witness</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FreezeWitness</span> {
-        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">FreezeWitness</span> {
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> (<span class="ident">txn_fee_input</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TxnFeeInfo::new</span>(<span class="ident">rng</span>, <span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">clone</span>(), <span class="self">self</span>.<span class="ident">fee</span>).<span class="ident">unwrap</span>();
         <span class="ident">FreezeWitness::new_unchecked</span>(<span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">clone</span>(), <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">output_ros</span>(), <span class="ident">txn_fee_input</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness_and_public_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">FreezeWitness</span>, <span class="ident">FreezePublicInput</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_witness_and_public_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="ident">FreezeWitness</span>, <span class="ident">FreezePublicInput</span>) {
         <span class="kw">let</span> <span class="ident">witness</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">build_witness</span>();
         <span class="kw">let</span> <span class="ident">pub_input</span> <span class="op">=</span> <span class="ident">FreezePublicInput::from_witness</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>).<span class="ident">unwrap</span>();
         (<span class="ident">witness</span>, <span class="ident">pub_input</span>)
@@ -2712,9 +2714,9 @@
     <span class="doccomment">/// outputs record openings</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">build_freeze_note</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeProvingKey</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">FreezeNote</span>, <span class="ident">KeyPair</span>, <span class="ident">RecordOpening</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">FreezeNote</span>, <span class="ident">KeyPair</span>, <span class="ident">RecordOpening</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> (<span class="ident">txn_fee_info</span>, <span class="ident">fee_chg_ro</span>) <span class="op">=</span> <span class="ident">TxnFeeInfo::new</span>(<span class="ident">rng</span>, <span class="self">self</span>.<span class="ident">fee_input</span>.<span class="ident">clone</span>(), <span class="self">self</span>.<span class="ident">fee</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">note</span>, <span class="ident">keypair</span>, <span class="ident">outputs</span>) <span class="op">=</span>
             <span class="ident">FreezeNote::generate</span>(<span class="ident">rng</span>, <span class="self">self</span>.<span class="ident">inputs</span>.<span class="ident">clone</span>(), <span class="ident">txn_fee_info</span>, <span class="ident">proving_key</span>)<span class="question-mark">?</span>;
@@ -2726,7 +2728,7 @@
 <span class="kw">impl</span> <span class="ident">RevealMap</span> {
     <span class="doccomment">/// Modify current reveal map so that address, amount and blinding factor</span>
     <span class="doccomment">/// are revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_record_opening</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_record_opening</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">reveal_user_address</span>();
         <span class="self">self</span>.<span class="ident">reveal_amount</span>();
         <span class="self">self</span>.<span class="ident">reveal_blinding_factor</span>();
@@ -2734,13 +2736,13 @@
 
     <span class="doccomment">/// Modify current reveal map so that address, amount, blinding factor, and</span>
     <span class="doccomment">/// all identity attributes are revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_all</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_all</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="ident">reveal_record_opening</span>();
         <span class="self">self</span>.<span class="ident">reveal_all_id_attributes</span>();
     }
 
     <span class="doccomment">/// Generate a random reveal map</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reveal_map</span> <span class="op">=</span> [<span class="bool-val">false</span>; <span class="ident">AUDIT_DATA_LEN</span>];
         <span class="kw">for</span> <span class="ident">bit</span> <span class="kw">in</span> <span class="ident">reveal_map</span>.<span class="ident">iter_mut</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
             <span class="kw-2">*</span><span class="ident">bit</span> <span class="op">=</span> <span class="ident">rng</span>.<span class="ident">gen_bool</span>(<span class="number">0.5</span>);
@@ -2752,7 +2754,7 @@
 
 <span class="kw">impl</span> <span class="ident">AssetDefinition</span> {
     <span class="doccomment">/// Create a new random asset definition</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span>,
     {
@@ -2766,7 +2768,7 @@
 
 <span class="kw">impl</span> <span class="ident">AssetPolicy</span> {
     <span class="doccomment">/// generates a random AssetPolicy</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span>,
     {
@@ -2782,7 +2784,7 @@
 
 <span class="kw">impl</span> <span class="ident">RecordOpening</span> {
     <span class="doccomment">/// Create a random record opening. Only used for testing.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="ident">rng</span>.<span class="ident">next_u32</span>() <span class="kw">as</span> <span class="ident">u64</span>; <span class="comment">// In order to avoid possible u64 overflows</span>
         <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">pub_key</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">pub_key</span>();
@@ -2791,6 +2793,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>
-    <script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
 </body></html>

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;structs.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>structs.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../../jf_cap/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src&#x2F;structs.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>structs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
+    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a class="sidebar-logo" href="../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.png" alt="logo"></div>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../jf_cap/index.html"><img class="rust-logo" src="../../rust-logo.png" alt="logo"></a><nav class="sub"><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1993,7 +1995,7 @@
 
 <span class="kw">impl</span> <span class="ident">AssetCodeSeed</span> {
     <span class="doccomment">/// sample a new seed for asset code generation</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCodeSeed</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">generate</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="ident">AssetCodeSeed</span> {
         <span class="ident">AssetCodeSeed</span>(<span class="ident">BaseField::rand</span>(<span class="ident">rng</span>))
     }
 }
@@ -2003,7 +2005,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">AssetCodeDigest</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">BaseField</span>);
 
 <span class="kw">impl</span> <span class="ident">AssetCodeDigest</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_description</span>(<span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCodeDigest</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_description</span>(<span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">AssetCodeDigest</span> {
         <span class="kw">let</span> <span class="ident">scalars</span> <span class="op">=</span> <span class="ident">hash_to_field</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">BaseField</span><span class="op">&gt;</span>(<span class="ident">description</span>);
         <span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">Permutation::default</span>().<span class="ident">sponge_with_padding</span>(<span class="kw-2">&amp;</span>[<span class="ident">scalars</span>], <span class="number">1</span>)[<span class="number">0</span>];
         <span class="ident">AssetCodeDigest</span>(<span class="ident">digest</span>)
@@ -2014,13 +2016,13 @@
     <span class="doccomment">/// Derive an Asset code from its seed and digest</span>
     <span class="doccomment">/// `seed`:  only known by the asset issuer.</span>
     <span class="doccomment">/// `description`: asset code description</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">digest</span> <span class="op">=</span> <span class="ident">AssetCodeDigest::from_description</span>(<span class="ident">description</span>);
         <span class="ident"><span class="self">Self</span>::new_internal</span>(<span class="ident">seed</span>, <span class="ident">digest</span>)
     }
 
     <span class="comment">// internal logic of deriving an asset code from seed and digest, both as scalar</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_internal</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">digest</span>: <span class="ident">AssetCodeDigest</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_internal</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">digest</span>: <span class="ident">AssetCodeDigest</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">prf_key</span> <span class="op">=</span> <span class="ident">PrfKey::from</span>(<span class="ident">seed</span>.<span class="number">0</span>);
         <span class="kw">let</span> <span class="ident">scalar</span> <span class="op">=</span> <span class="ident">PRF::new</span>(<span class="number">1</span>, <span class="number">1</span>).<span class="ident">eval</span>(<span class="kw-2">&amp;</span><span class="ident">prf_key</span>, <span class="kw-2">&amp;</span>[<span class="ident">digest</span>.<span class="number">0</span>]).<span class="ident">unwrap</span>()[<span class="number">0</span>];
         <span class="self">Self</span>(<span class="ident">scalar</span>)
@@ -2028,7 +2030,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">AssetCode</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BaseField</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">ac</span>: <span class="kw-2">&amp;</span><span class="ident">AssetCode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">ac</span>: <span class="kw-2">&amp;</span><span class="ident">AssetCode</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">ac</span>.<span class="number">0</span>
     }
 }
@@ -2042,19 +2044,19 @@
 
 <span class="kw">impl</span> <span class="ident">AssetCode</span> {
     <span class="doccomment">/// Return the AssetCode assigned for the native asset</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">native</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">native</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">NATIVE_ASSET_CODE</span>
     }
 
     <span class="doccomment">/// Return the AssetCode assigned for a dummy record</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">dummy</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">dummy</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">DUMMY_ASSET_CODE</span>
     }
 
     <span class="doccomment">/// Generate a random asset code</span>
     <span class="doccomment">/// Returns the asset code together with the randomly sampled seed and</span>
     <span class="doccomment">/// digest used to derive it</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">AssetCodeSeed</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; (<span class="self">Self</span>, <span class="ident">AssetCodeSeed</span>)
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2065,7 +2067,7 @@
     <span class="doccomment">/// Derive a domestic cap Asset code from its seed and digest</span>
     <span class="doccomment">/// `seed`:  only known by the asset issuer.</span>
     <span class="doccomment">/// `description`: asset code description</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_domestic</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCode</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_domestic</span>(<span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">AssetCode</span> {
         <span class="kw">let</span> <span class="ident">internal</span> <span class="op">=</span> <span class="ident">InternalAssetCode::new</span>(<span class="ident">seed</span>, <span class="ident">description</span>);
         <span class="ident"><span class="self">Self</span>::new_domestic_from_internal</span>(<span class="kw-2">&amp;</span><span class="ident">internal</span>)
     }
@@ -2076,13 +2078,13 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_domestic_from_digest</span>(
         <span class="ident">seed</span>: <span class="ident">AssetCodeSeed</span>,
         <span class="ident">digest</span>: <span class="ident">AssetCodeDigest</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCode</span> {
+    ) -&gt; <span class="ident">AssetCode</span> {
         <span class="kw">let</span> <span class="ident">internal</span> <span class="op">=</span> <span class="ident">InternalAssetCode::new_internal</span>(<span class="ident">seed</span>, <span class="ident">digest</span>);
         <span class="ident"><span class="self">Self</span>::new_domestic_from_internal</span>(<span class="kw-2">&amp;</span><span class="ident">internal</span>)
     }
 
     <span class="doccomment">/// Derive a domestic cap asset code from its internal asset code value</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_domestic_from_internal</span>(<span class="ident">internal</span>: <span class="kw-2">&amp;</span><span class="ident">InternalAssetCode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCode</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_domestic_from_internal</span>(<span class="ident">internal</span>: <span class="kw-2">&amp;</span><span class="ident">InternalAssetCode</span>) -&gt; <span class="ident">AssetCode</span> {
         <span class="kw">let</span> <span class="ident">bytes_internal</span> <span class="op">=</span> <span class="ident">internal</span>.<span class="number">0</span>.<span class="ident">into_repr</span>().<span class="ident">to_bytes_le</span>();
         <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="ident">DOM_SEP_DOMESTIC_ASSET</span>.<span class="ident">to_vec</span>(), <span class="ident">bytes_internal</span>].<span class="ident">concat</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">Keccak256::new</span>();
@@ -2093,7 +2095,7 @@
 
     <span class="doccomment">/// Derive asset code from a foreign tokens (e.g. an Ethereum</span>
     <span class="doccomment">/// wrapped token)</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_foreign</span>(<span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AssetCode</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_foreign</span>(<span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="ident">AssetCode</span> {
         <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="ident">DOM_SEP_FOREIGN_ASSET</span>.<span class="ident">to_vec</span>(), <span class="ident">description</span>.<span class="ident">to_vec</span>()].<span class="ident">concat</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">Keccak256::new</span>();
         <span class="ident">hasher</span>.<span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>);
@@ -2103,9 +2105,9 @@
 
     <span class="doccomment">/// Verify that asset code is an app domestic asset that was derived from</span>
     <span class="doccomment">/// `internal` asset code</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify_domestic</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">internal</span>: <span class="kw-2">&amp;</span><span class="ident">InternalAssetCode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify_domestic</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">internal</span>: <span class="kw-2">&amp;</span><span class="ident">InternalAssetCode</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">derived</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::new_domestic_from_internal</span>(<span class="ident">internal</span>);
-        <span class="kw">if</span> <span class="ident">derived</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span> {
+        <span class="kw">if</span> <span class="ident">derived</span> <span class="op">==</span> <span class="kw-2">*</span><span class="self">self</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
         <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedAssetCodeVerification</span>(<span class="string">&quot;Derived asset code from does not match expected asset code in minted asset code verification&quot;</span>.<span class="ident">to_string</span>()))
@@ -2113,9 +2115,9 @@
 
     <span class="doccomment">/// Verify that asset code is a foreign derived from a non cap asset</span>
     <span class="doccomment">/// description or identifier</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_foreign</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_foreign</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">description</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">derived</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::new_foreign</span>(<span class="ident">description</span>);
-        <span class="kw">if</span> <span class="ident">derived</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="self">self</span> {
+        <span class="kw">if</span> <span class="ident">derived</span> <span class="op">==</span> <span class="kw-2">*</span><span class="self">self</span> {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
         }
         <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedAssetCodeVerification</span>(<span class="string">&quot;Derived asset code from does not match expected asset code in minted asset code verification&quot;</span>.<span class="ident">to_string</span>()))
@@ -2132,7 +2134,7 @@
 <span class="macro">deserialize_canonical_bytes!</span>(<span class="ident">RevealMap</span>);
 
 <span class="kw">impl</span> <span class="ident">CanonicalSerialize</span> <span class="kw">for</span> <span class="ident">RevealMap</span> {
-    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">W</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">w</span>: <span class="ident">W</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">W</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">w</span>: <span class="ident">W</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">W</span>: <span class="ident">ark_serialize::Write</span>,
     {
@@ -2142,18 +2144,18 @@
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">serialized_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">fn</span> <span class="ident">serialized_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="ident">AUDIT_DATA_LEN</span> <span class="op">+</span> <span class="number">8</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">CanonicalDeserialize</span> <span class="kw">for</span> <span class="ident">RevealMap</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">mut</span> <span class="ident">r</span>: <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">mut</span> <span class="ident">r</span>: <span class="ident">R</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">ark_serialize::Read</span>,
     {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">len_buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">8</span>];
-        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">len_buf</span>)<span class="question-mark">?</span>;
+        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;mut</span> <span class="ident">len_buf</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">usize::from_le_bytes</span>(<span class="ident">len_buf</span>);
 
         <span class="kw">if</span> <span class="ident">len</span> <span class="op">!</span><span class="op">=</span> <span class="ident">AUDIT_DATA_LEN</span> {
@@ -2161,13 +2163,13 @@
         }
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="ident">AUDIT_DATA_LEN</span>];
-        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>)<span class="question-mark">?</span>;
+        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">map</span> <span class="op">=</span> [<span class="bool-val">true</span>; <span class="ident">AUDIT_DATA_LEN</span>];
         <span class="kw">for</span> (<span class="kw-2">&amp;</span><span class="ident">b</span>, <span class="ident">e</span>) <span class="kw">in</span> <span class="ident">buf</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">map</span>.<span class="ident">iter_mut</span>()) {
             <span class="kw-2">*</span><span class="ident">e</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">b</span> {
-                <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
-                <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
-                <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ark_serialize::SerializationError::InvalidData</span>),
+                <span class="number">0</span> =&gt; <span class="bool-val">false</span>,
+                <span class="number">1</span> =&gt; <span class="bool-val">true</span>,
+                <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ark_serialize::SerializationError::InvalidData</span>),
             };
         }
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="ident">map</span>))
@@ -2181,49 +2183,49 @@
     <span class="doccomment">/// `AssetPolicy.reveal_xxx()` API.</span>
     <span class="doccomment">/// This API may be useful when deserialize into a `RevealMap` given its</span>
     <span class="doccomment">/// internal representation.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">internal_repr</span>: [<span class="ident">bool</span>; <span class="ident">AUDIT_DATA_LEN</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">internal_repr</span>: [<span class="ident">bool</span>; <span class="ident">AUDIT_DATA_LEN</span>]) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">internal_repr</span>)
     }
     <span class="doccomment">/// Get the internal reveal map representation</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">bool</span>; <span class="ident">AUDIT_DATA_LEN</span>] {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; [<span class="ident">bool</span>; <span class="ident">AUDIT_DATA_LEN</span>] {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Modify current reveal map so that address is revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_user_address</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">0</span>] <span class="op">=</span> <span class="bool-val">true</span>;
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">1</span>] <span class="op">=</span> <span class="bool-val">true</span>;
     }
 
     <span class="doccomment">/// Check if map is set to reveal user address</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_user_address_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_user_address_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">0</span>]
     }
 
     <span class="doccomment">/// Modify current reveal map so that amount is revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_amount</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_amount</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">2</span>] <span class="op">=</span> <span class="bool-val">true</span>;
     }
 
     <span class="doccomment">/// Check if map is set to reveal amount</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_amount_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_amount_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">2</span>]
     }
 
     <span class="doccomment">/// Modify current reveal map so that commitment blinding factor is revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_blinding_factor</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_blinding_factor</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">3</span>] <span class="op">=</span> <span class="bool-val">true</span>;
     }
 
     <span class="doccomment">/// Check if map is set to reveal blinding factor</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_blinding_factor_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_blinding_factor_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="number">0</span>[<span class="number">3</span>]
     }
 
     <span class="doccomment">/// Modify current reveal map so that ith identity attribute is revealed</span>
     <span class="doccomment">/// `i`: index (in range [0..ATTR_LEN - 1]) of identity attribute to reveal</span>
     <span class="doccomment">/// Return error is index `i` &gt; ATTR_LEN - 1</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_ith_id_attribute</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_ith_id_attribute</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">ATTRS_LEN</span> {
             <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;index out of bounds to setting reveal map identity attribute&quot;</span>.<span class="ident">to_string</span>(),
@@ -2236,7 +2238,7 @@
 
     <span class="doccomment">/// Check if map is set to reveal i-th identity attribute</span>
     <span class="doccomment">/// `i`: index (in range [0..ATTR_LEN - 1]) of identity attribute to reveal</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_ith_attribute_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_ith_attribute_revealed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">ATTRS_LEN</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;index {} must be smaller than ATTRS_LEN {}&quot;</span>,
@@ -2247,7 +2249,7 @@
     }
 
     <span class="doccomment">/// Modify current reveal map so that ith identity attribute is revealed</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_all_id_attributes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">reveal_all_id_attributes</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
         <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">ATTRS_LEN</span> {
             <span class="self">self</span>.<span class="number">0</span>[<span class="ident">ASSET_TRACING_MAP_LEN</span> <span class="op">+</span> <span class="ident">i</span>] <span class="op">=</span> <span class="bool-val">true</span>;
         }
@@ -2255,7 +2257,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RevealMap</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BaseField</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">map</span>: <span class="ident">RevealMap</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">map</span>: <span class="ident">RevealMap</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">BaseField::from</span>(
             <span class="ident">map</span>.<span class="number">0</span>
                 .<span class="ident">iter</span>()
@@ -2269,7 +2271,7 @@
     <span class="doccomment">/// vals).</span>
     <span class="doccomment">/// Noted that the 1st bit in reveal map on `upk` would require</span>
     <span class="doccomment">/// two Scalars: `(upk_x, upk_y)` thus vals.len() == REVEAL_MAP_LEN + 1</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">hadamard_product</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">vals</span>: <span class="kw-2">&amp;</span>[<span class="ident">BaseField</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">hadamard_product</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">vals</span>: <span class="kw-2">&amp;</span>[<span class="ident">BaseField</span>]) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
         <span class="macro">assert!</span>(
             <span class="ident">vals</span>.<span class="ident">len</span>() <span class="op">&lt;</span><span class="op">=</span> <span class="ident">AUDIT_DATA_LEN</span>,
             <span class="string">&quot;Internal Error: number of attributes larger than expected&quot;</span>
@@ -2311,29 +2313,29 @@
 
 <span class="kw">impl</span> <span class="ident">AssetPolicy</span> {
     <span class="doccomment">/// Reference to auditor public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auditor_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">AuditorPubKey</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">auditor_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">AuditorPubKey</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">auditor_pk</span>
     }
 
     <span class="doccomment">/// Reference to credential issuer public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cred_issuer_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">CredIssuerPubKey</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">cred_issuer_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">CredIssuerPubKey</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cred_pk</span>
     }
 
     <span class="doccomment">/// Reference to freezer public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freezer_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">FreezerPubKey</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">freezer_pub_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">FreezerPubKey</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">freezer_pk</span>
     }
 
     <span class="doccomment">/// Getter for the reveal map</span>
     <span class="doccomment">/// **USE WITH CAUTION**: in most cases, you wouldn&#39;t need to use</span>
     <span class="doccomment">/// `reveal_map` directly, try `is_reveal_xxx_set()` APIs first.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_map</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RevealMap</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_map</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">RevealMap</span> {
         <span class="self">self</span>.<span class="ident">reveal_map</span>
     }
 
     <span class="doccomment">/// Referecne to revealing threshold</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_threshold</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_threshold</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">reveal_threshold</span>
     }
 
@@ -2341,59 +2343,59 @@
     <span class="doccomment">/// **USE WITH CAUTION!**: since you might have an invalid reveal map, it is</span>
     <span class="doccomment">/// strongly recommended to construct reveal map via step-wise</span>
     <span class="doccomment">/// `reveal_xxx()` API.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_reveal_map_for_test</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_map</span>: <span class="ident">RevealMap</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_reveal_map_for_test</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_map</span>: <span class="ident">RevealMap</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">reveal_map</span> <span class="op">=</span> <span class="ident">reveal_map</span>;
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// Set revealing threshold policy</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_reveal_threshold</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_threshold</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_reveal_threshold</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">reveal_threshold</span>: <span class="ident">u64</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">reveal_threshold</span> <span class="op">=</span> <span class="ident">reveal_threshold</span>;
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// True if `reveal_threshold` is not the default value, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_reveal_threshold_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_reveal_threshold_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">reveal_threshold</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
     }
 
     <span class="doccomment">/// Set the auditor public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_auditor_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">auditor_pub_key</span>: <span class="ident">AuditorPubKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_auditor_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">auditor_pub_key</span>: <span class="ident">AuditorPubKey</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">auditor_pk</span> <span class="op">=</span> <span class="ident">auditor_pub_key</span>;
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// True if auditor public key is not the default key, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_auditor_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_auditor_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">auditor_pk</span> <span class="op">!</span><span class="op">=</span> <span class="ident">AuditorPubKey::default</span>()
     }
 
     <span class="doccomment">/// Set the credential issuer public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_cred_issuer_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cred_issuer_pub_key</span>: <span class="ident">CredIssuerPubKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_cred_issuer_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">cred_issuer_pub_key</span>: <span class="ident">CredIssuerPubKey</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">cred_pk</span> <span class="op">=</span> <span class="ident">cred_issuer_pub_key</span>;
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// True if credential issuer public key is not dummy, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_cred_issuer_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_cred_issuer_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">cred_pk</span> <span class="op">!</span><span class="op">=</span> <span class="ident">CredIssuerPubKey::default</span>()
     }
 
     <span class="doccomment">/// Set the freezer public key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_freezer_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">freezer_pub_key</span>: <span class="ident">FreezerPubKey</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_freezer_pub_key</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">freezer_pub_key</span>: <span class="ident">FreezerPubKey</span>) -&gt; <span class="self">Self</span> {
         <span class="self">self</span>.<span class="ident">freezer_pk</span> <span class="op">=</span> <span class="ident">freezer_pub_key</span>;
         <span class="self">self</span>
     }
 
     <span class="doccomment">/// True if freezer public key is not dummy, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_freezer_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_freezer_pub_key_set</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">freezer_pk</span> <span class="op">!</span><span class="op">=</span> <span class="ident">FreezerPubKey::default</span>()
     }
 
     <span class="doccomment">/// Set policy to reveal user address to auditor</span>
     <span class="doccomment">/// Return TxnApiError::InvalidParameter if auditor public key has not been</span>
     <span class="doccomment">/// specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_user_address</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_user_address</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_auditor_pub_key_set</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;Cannot reveal user address to dummy AuditorPublicKey&quot;</span>.<span class="ident">to_string</span>(),
@@ -2406,7 +2408,7 @@
     <span class="doccomment">/// Set policy to reveal amount to auditor</span>
     <span class="doccomment">/// Return TxnApiError::InvalidParameter if auditor public key has not been</span>
     <span class="doccomment">/// specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_amount</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="comment">// we cannot call directly self.reveal_map.reveal_amount() because there is no</span>
         <span class="comment">// checking the auditor pub key is present in the policy</span>
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_auditor_pub_key_set</span>() {
@@ -2421,7 +2423,7 @@
     <span class="doccomment">/// Set policy to reveal record commitment blinding factor to auditor</span>
     <span class="doccomment">/// Return TxnApiError::InvalidParameter if auditor public key has not been</span>
     <span class="doccomment">/// specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_blinding_factor</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_blinding_factor</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="comment">// we cannot call directly self.reveal_map.reveal_amount() because there is no</span>
         <span class="comment">// checking the auditor pub key is present in the policy</span>
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_auditor_pub_key_set</span>() {
@@ -2437,7 +2439,7 @@
     <span class="doccomment">/// Return TxnApiError::InvalidParameter if auditor or credential issuer</span>
     <span class="doccomment">/// public key have not been specified yet or it `i` greater or equal to</span>
     <span class="doccomment">/// ATTRS_LEN</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_ith_attribute</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_ith_attribute</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">i</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_auditor_pub_key_set</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;Cannot reveal credential attribute to dummy AuditorPublicKey&quot;</span>.<span class="ident">to_string</span>(),
@@ -2454,7 +2456,7 @@
     <span class="doccomment">/// Set policy to reveal all identity attributes to auditor</span>
     <span class="doccomment">/// Return TxnApiError::InvalidParameter if auditor or credential issuer</span>
     <span class="doccomment">/// public keys have not been specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_all_attributes</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_all_attributes</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_auditor_pub_key_set</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;Cannot reveal credential attribute to dummy AuditorPublicKey&quot;</span>.<span class="ident">to_string</span>(),
@@ -2471,7 +2473,7 @@
     <span class="doccomment">/// Set policy to reveal user address, amount and record commitment blinding</span>
     <span class="doccomment">/// factor to auditor Return TxnApiError::InvalidParameter if auditor</span>
     <span class="doccomment">/// public key have not been specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_record_opening</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_record_opening</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="comment">// we cannot call directly self.reveal_map.reveal_record_opening() because there</span>
         <span class="comment">// is no checking the auditor pub key is present in the policy</span>
         <span class="self">self</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">reveal_user_address</span>()<span class="question-mark">?</span>;
@@ -2484,7 +2486,7 @@
     <span class="doccomment">/// factor and all identity attributes to auditor Return TxnApiError::</span>
     <span class="doccomment">/// InvalidParameter if auditor or credential issuer public keys have not</span>
     <span class="doccomment">/// been specified yet</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_all</span>(<span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">reveal_all</span>(<span class="kw-2">mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="comment">// we cannot call directly self.reveal_map.reveal_all() because there is no</span>
         <span class="comment">// checking the auditor pub key or credential issuer pub key are present in the</span>
         <span class="comment">// policy</span>
@@ -2494,7 +2496,7 @@
 
     <span class="doccomment">/// Transform to a list of scalars</span>
     <span class="doccomment">/// The order: (reveal_map, auditor_pk, cred_pk, freezer_pk)</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_scalars</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_scalars</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="self">self</span>.<span class="ident">reveal_map</span>.<span class="ident">into</span>()];
         <span class="ident">result</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">auditor_pk</span>.<span class="ident">to_scalars</span>());
         <span class="ident">result</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cred_pk</span>.<span class="ident">to_scalars</span>());
@@ -2520,8 +2522,8 @@
     <span class="doccomment">/// Create a new `AssetDefinition` with specified asset code and asset</span>
     <span class="doccomment">/// policy</span>
     <span class="doccomment">/// Return Error is code AssetCode::native()</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">code</span>: <span class="ident">AssetCode</span>, <span class="ident">policy</span>: <span class="ident">AssetPolicy</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">AssetCode::native</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">code</span> <span class="op">=</span><span class="op">=</span> <span class="ident">AssetCode::dummy</span>() {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">code</span>: <span class="ident">AssetCode</span>, <span class="ident">policy</span>: <span class="ident">AssetPolicy</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">code</span> <span class="op">==</span> <span class="ident">AssetCode::native</span>() <span class="op">|</span><span class="op">|</span> <span class="ident">code</span> <span class="op">==</span> <span class="ident">AssetCode::dummy</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;Neither native or Dummy asset code can be used to create custom asset definition&quot;</span>
                     .<span class="ident">to_string</span>(),
@@ -2531,7 +2533,7 @@
     }
 
     <span class="doccomment">/// Return native asset definition: code is 1, and policy is empty</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">AssetDefinition</span> {
             <span class="ident">code</span>: <span class="ident">AssetCode::native</span>(),
             <span class="ident">policy</span>: <span class="ident">AssetPolicy::default</span>(),
@@ -2539,7 +2541,7 @@
     }
 
     <span class="doccomment">/// Return the dummy record asset definition: code is 2, and policy is empty</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dummy</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dummy</span>() -&gt; <span class="self">Self</span> {
         <span class="ident">AssetDefinition</span> {
             <span class="ident">code</span>: <span class="ident">AssetCode::dummy</span>(),
             <span class="ident">policy</span>: <span class="ident">AssetPolicy::default</span>(),
@@ -2547,17 +2549,17 @@
     }
 
     <span class="doccomment">/// returns true if it is a native asset, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_native</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::native</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_native</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::native</span>()
     }
 
     <span class="doccomment">/// returns true if it is a dummy asset, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_dummy</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::dummy</span>()
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_dummy</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::dummy</span>()
     }
 
     <span class="doccomment">/// Get reference to policy</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">policy_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">AssetPolicy</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">policy_ref</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">AssetPolicy</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">policy</span>
     }
 }
@@ -2574,7 +2576,7 @@
 
 <span class="kw">impl</span> <span class="ident">BlindFactor</span> {
     <span class="doccomment">/// Generate a random blind factor</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rand</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2583,7 +2585,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlindFactor</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">scalar</span>: <span class="ident">BaseField</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">scalar</span>: <span class="ident">BaseField</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">BlindFactor</span>(<span class="ident">scalar</span>)
     }
 }
@@ -2595,7 +2597,7 @@
 
 <span class="kw">impl</span> <span class="ident">Nullifier</span> {
     <span class="doccomment">/// Generate a random nullifier</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">random_for_test</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2609,31 +2611,31 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RecordCommitment</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">CommitmentValue</span>);
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">RecordCommitment</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">ro</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">ro</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">ro</span>.<span class="ident">derive_record_commitment</span>()
     }
 }
 
 <span class="kw">impl</span> <span class="ident">RecordCommitment</span> {
     <span class="doccomment">/// converting the record commitment to a field element</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_field_element</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BaseField</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">to_field_element</span>(<span class="self">self</span>) -&gt; <span class="ident">BaseField</span> {
         <span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// converting the record commitment to a field element</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_field_element</span>(<span class="ident">f</span>: <span class="ident">BaseField</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_field_element</span>(<span class="ident">f</span>: <span class="ident">BaseField</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">f</span>)
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RecordCommitment</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">NodeValue</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">rc</span>: <span class="ident">RecordCommitment</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">rc</span>: <span class="ident">RecordCommitment</span>) -&gt; <span class="self">Self</span> {
         <span class="ident">NodeValue::from_scalar</span>(<span class="ident">rc</span>.<span class="number">0</span>)
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">RecordCommitment</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BaseField</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">input</span>: <span class="ident">RecordCommitment</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BaseField</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">input</span>: <span class="ident">RecordCommitment</span>) -&gt; <span class="ident">BaseField</span> {
         <span class="ident">input</span>.<span class="number">0</span>
     }
 }
@@ -2649,61 +2651,61 @@
 
 <span class="kw">impl</span> <span class="ident">FreezeFlag</span> {
     <span class="doccomment">/// Flip the flag from Unfrozen/Frozen to Frozen/Unfrozen</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">flip</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FreezeFlag</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">flip</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">FreezeFlag</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">FreezeFlag::Unfrozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">FreezeFlag::Frozen</span>,
-            <span class="ident">FreezeFlag::Frozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">FreezeFlag::Unfrozen</span>,
+            <span class="ident">FreezeFlag::Unfrozen</span> =&gt; <span class="ident">FreezeFlag::Frozen</span>,
+            <span class="ident">FreezeFlag::Frozen</span> =&gt; <span class="ident">FreezeFlag::Unfrozen</span>,
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">FreezeFlag</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
         <span class="ident"><span class="self">Self</span>::Unfrozen</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">FreezeFlag</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">u8</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">flag</span> {
-            <span class="ident">FreezeFlag::Unfrozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0u8</span>,
-            <span class="ident">FreezeFlag::Frozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1u8</span>,
+            <span class="ident">FreezeFlag::Unfrozen</span> =&gt; <span class="number">0u8</span>,
+            <span class="ident">FreezeFlag::Frozen</span> =&gt; <span class="number">1u8</span>,
         }
     }
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">FreezeFlag</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">bool</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">flag</span>: <span class="ident">FreezeFlag</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">match</span> <span class="ident">flag</span> {
-            <span class="ident">FreezeFlag::Unfrozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
-            <span class="ident">FreezeFlag::Frozen</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">FreezeFlag::Unfrozen</span> =&gt; <span class="bool-val">false</span>,
+            <span class="ident">FreezeFlag::Frozen</span> =&gt; <span class="bool-val">true</span>,
         }
     }
 }
 <span class="kw">impl</span> <span class="ident">CanonicalSerialize</span> <span class="kw">for</span> <span class="ident">FreezeFlag</span> {
-    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">W</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">w</span>: <span class="ident">W</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">W</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">w</span>: <span class="ident">W</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">W</span>: <span class="ident">ark_serialize::Write</span>,
     {
         <span class="prelude-val">Ok</span>(<span class="ident">w</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span>[<span class="ident">u8::from</span>(<span class="kw-2">*</span><span class="self">self</span>)])<span class="question-mark">?</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">serialized_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">fn</span> <span class="ident">serialized_size</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="number">1</span>
     }
 }
 
 <span class="kw">impl</span> <span class="ident">CanonicalDeserialize</span> <span class="kw">for</span> <span class="ident">FreezeFlag</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">mut</span> <span class="ident">r</span>: <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
+    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="kw-2">mut</span> <span class="ident">r</span>: <span class="ident">R</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">ark_serialize::SerializationError</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">ark_serialize::Read</span>,
     {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">1</span>];
-        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">buf</span>)<span class="question-mark">?</span>;
+        <span class="ident">r</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>)<span class="question-mark">?</span>;
         <span class="kw">match</span> <span class="ident">buf</span>[<span class="number">0</span>] {
-            <span class="number">0</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">FreezeFlag::Unfrozen</span>),
-            <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">FreezeFlag::Frozen</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">SerializationError::InvalidData</span>),
+            <span class="number">0</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">FreezeFlag::Unfrozen</span>),
+            <span class="number">1</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">FreezeFlag::Frozen</span>),
+            <span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">SerializationError::InvalidData</span>),
         }
     }
 }
@@ -2738,12 +2740,12 @@
 <span class="kw">impl</span> <span class="ident">RecordOpening</span> {
     <span class="doccomment">/// Create a new RecordOpening with a random blind factor</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">amount</span>: <span class="ident">u64</span>,
         <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>,
         <span class="ident">pub_key</span>: <span class="ident">UserPubKey</span>,
         <span class="ident">freeze_flag</span>: <span class="ident">FreezeFlag</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    ) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span>,
     {
@@ -2759,7 +2761,7 @@
 
     <span class="doccomment">/// Create a new dummy record.</span>
     <span class="doccomment">/// Returns record&#39;s &quot;spending&quot; key</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dummy</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>, <span class="ident">freeze_flag</span>: <span class="ident">FreezeFlag</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="self">Self</span>, <span class="ident">UserKeyPair</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dummy</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>, <span class="ident">freeze_flag</span>: <span class="ident">FreezeFlag</span>) -&gt; (<span class="self">Self</span>, <span class="ident">UserKeyPair</span>)
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span>,
     {
@@ -2775,14 +2777,14 @@
     }
 
     <span class="doccomment">/// True if dummy record, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_dummy</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_dummy</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">asset_def</span>.<span class="ident">is_dummy</span>()
     }
 
     <span class="doccomment">/// computes record&#39;s commitment `c = comm(v, at, upk, policy, freeze_flag;</span>
     <span class="doccomment">/// r)` where v is amount/value, at is asset code, upk is user public</span>
     <span class="doccomment">/// key, policy is asset policy, and r is blind factor</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">derive_record_commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RecordCommitment</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">derive_record_commitment</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">RecordCommitment</span> {
         <span class="kw">let</span> (<span class="ident">user_pubkey_x</span>, <span class="ident">user_pubkey_y</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">pub_key</span>.<span class="ident">address</span>).<span class="ident">into</span>();
         <span class="kw">let</span> (<span class="ident">auditor_pubkey_x</span>, <span class="ident">auditor_pubkey_y</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">auditor_pk</span>.<span class="number">0</span>).<span class="ident">into</span>();
         <span class="kw">let</span> (<span class="ident">cred_pubkey_x</span>, <span class="ident">cred_pubkey_y</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">cred_pk</span>.<span class="number">0</span>).<span class="ident">into</span>();
@@ -2832,7 +2834,7 @@
 
 <span class="kw">impl</span> <span class="ident">IdentityAttribute</span> {
     <span class="doccomment">/// Create a new `IdentityAttribute` from its value in bytes.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">attr_value</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">attr_value</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">attr_value</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">PER_ATTR_BYTE_CAPACITY</span> <span class="op">|</span><span class="op">|</span> <span class="ident">attr_value</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;Each identity attribute takes at least 1 byte, at most {} bytes&quot;</span>,
@@ -2851,12 +2853,12 @@
     }
 
     <span class="doccomment">/// Getter for the attribute value in bytes.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">value</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">value</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">padded_bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">into_repr</span>().<span class="ident">to_bytes_le</span>();
 
         <span class="kw">match</span> <span class="ident">padded_bytes</span>.<span class="ident">last</span>() {
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidAttribute</span>),
-            <span class="prelude-val">Some</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidAttribute</span>),
+            <span class="prelude-val">Some</span>(<span class="ident">p</span>) =&gt; {
                 <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">p</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidAttribute</span>);
                 }
@@ -2870,7 +2872,7 @@
 
     <span class="doccomment">/// Randomly create an id attribute</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">random</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="self">Self</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2879,7 +2881,7 @@
 
     <span class="doccomment">/// Randomly create a list of `ATTR_LEN` id attributes</span>
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">random_vector</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">random_vector</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>,
     {
@@ -2889,7 +2891,7 @@
             .<span class="ident">collect</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">default_vector</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">default_vector</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
         (<span class="number">0</span>..<span class="ident">ATTRS_LEN</span>)
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">IdentityAttribute::default</span>())
@@ -2934,7 +2936,7 @@
         <span class="ident">attrs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IdentityAttribute</span><span class="op">&gt;</span>,
         <span class="ident">expiry</span>: <span class="ident">u64</span>,
         <span class="ident">issuer_keypair</span>: <span class="kw-2">&amp;</span><span class="ident">CredIssuerKeyPair</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">attrs</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">ATTRS_LEN</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedCredentialCreation</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;Wrong attribute length, expecting: {}, but got: {}&quot;</span>,
@@ -2961,7 +2963,7 @@
     }
 
     <span class="doccomment">/// Returns true if the credential expired, false otherwise</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_expired</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">now</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_expired</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">now</span>: <span class="ident">u64</span>) -&gt; <span class="ident">bool</span> {
         <span class="self">self</span>.<span class="ident">expiry</span> <span class="op">&lt;</span> <span class="ident">now</span>
     }
 
@@ -2969,7 +2971,7 @@
     <span class="doccomment">/// over claimed list of attributes</span>
     <span class="doccomment">/// * `now` - current timestamp to test whether credential is expired</span>
     <span class="doccomment">/// * returns a boolean flag, 0 for valid credential, 1 for invalid ones</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">now</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">now</span>: <span class="ident">u64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">is_expired</span>(<span class="ident">now</span>) {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedCredentialVerification</span>(
                 <span class="string">&quot;Credential has expired&quot;</span>.<span class="ident">to_string</span>(),
@@ -2986,7 +2988,7 @@
     }
 
     <span class="doccomment">/// Create a dummy unexpired ExpirableCredential as placeholder.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">dummy_unexpired</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">dummy_unexpired</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">dummy_user</span> <span class="op">=</span> <span class="ident">UserAddress::default</span>();
         <span class="kw">let</span> <span class="ident">dummy_issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::default</span>();
         <span class="kw">let</span> <span class="ident">dummy_attrs</span> <span class="op">=</span> <span class="ident">IdentityAttribute::default_vector</span>();
@@ -3001,7 +3003,7 @@
     }
 
     <span class="doccomment">/// Retrieve expiry value</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">expiry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">expiry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u64</span> {
         <span class="self">self</span>.<span class="ident">expiry</span>
     }
 }
@@ -3018,19 +3020,19 @@
     <span class="doccomment">/// **USE WITH CAUTION**: this method is only used during reconstruction</span>
     <span class="doccomment">/// from internal ciphertext of an existing `AuditMemo`, you should never</span>
     <span class="doccomment">/// pass in an arbitrary ciphertext and deem this memo as valid.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ciphertext</span>: <span class="ident">elgamal::Ciphertext</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ciphertext</span>: <span class="ident">elgamal::Ciphertext</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">ciphertext</span>)
     }
 
     <span class="doccomment">/// Getter for internal ciphertext</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">elgamal::Ciphertext</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="ident">elgamal::Ciphertext</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span> {
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>
     }
 
     <span class="doccomment">/// Create an `AuditMemo` used in minting transactions</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_for_mint_note</span>(<span class="ident">ro_mint</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>, <span class="ident">randomizer</span>: <span class="ident">ScalarField</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_for_mint_note</span>(<span class="ident">ro_mint</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>, <span class="ident">randomizer</span>: <span class="ident">ScalarField</span>) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">auditor_pk</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">ro_mint</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">auditor_pk</span>;
-        <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">auditor_pk</span> <span class="op">=</span><span class="op">=</span> <span class="ident">AuditorPubKey::default</span>() {
+        <span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">auditor_pk</span> <span class="op">==</span> <span class="ident">AuditorPubKey::default</span>() {
             <span class="macro">vec!</span>[<span class="ident">BaseField::zero</span>(); <span class="number">3</span>]
         } <span class="kw">else</span> {
             <span class="kw">let</span> (<span class="ident">addr_x</span>, <span class="ident">addr_y</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="ident">ro_mint</span>.<span class="ident">pub_key</span>.<span class="ident">address</span>).<span class="ident">into</span>();
@@ -3045,7 +3047,7 @@
         <span class="ident">output_ros</span>: <span class="kw-2">&amp;</span>[<span class="ident">RecordOpening</span>],
         <span class="ident">input_creds</span>: <span class="kw-2">&amp;</span>[<span class="ident">ExpirableCredential</span>],
         <span class="ident">randomizer</span>: <span class="ident">ScalarField</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditMemo</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditMemo</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">get_asset_def_in_transfer_txn</span>(<span class="ident">input_ros</span>)<span class="question-mark">?</span>;
         <span class="kw">if</span> <span class="ident">asset_def</span>.<span class="ident">is_dummy</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InternalError</span>(
@@ -3141,7 +3143,7 @@
         <span class="ident">input_ros_len</span>: <span class="ident">usize</span>,
         <span class="ident">output_ros_len</span>: <span class="ident">usize</span>,
         <span class="ident">randomizer</span>: <span class="ident">ScalarField</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AuditMemo</span> {
+    ) -&gt; <span class="ident">AuditMemo</span> {
         <span class="comment">// message size starts with the second input and output, (first is always</span>
         <span class="comment">// non-tracing native asset code); and for inputs, both asset</span>
         <span class="comment">// tracing and id tracing would require AUDITING_VECTOR_LEN = REVEAL_MAP_LEN + 1</span>
@@ -3152,7 +3154,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
         <span class="ident">seed</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[<span class="number">0</span>..<span class="number">32</span>]);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">rand_chacha::ChaChaRng::from_seed</span>(<span class="ident">seed</span>);
-        <span class="kw">let</span> <span class="ident">random_auditor_pk</span> <span class="op">=</span> <span class="ident">AuditorPubKey::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">random_auditor_pk</span> <span class="op">=</span> <span class="ident">AuditorPubKey::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">msg_size</span> <span class="op">=</span> (<span class="ident">input_ros_len</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">*</span> (<span class="ident">AUDIT_DATA_LEN</span>) <span class="op">+</span> (<span class="ident">output_ros_len</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">4</span> <span class="op">+</span> <span class="number">1</span>;
         <span class="ident">AuditMemo</span>(<span class="ident">random_auditor_pk</span>.<span class="ident">encrypt</span>(<span class="ident">randomizer</span>, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[<span class="ident">BaseField::zero</span>(); <span class="ident">msg_size</span>]))
     }
@@ -3183,7 +3185,7 @@
         <span class="ident">x</span>: <span class="kw-2">&amp;</span><span class="ident">BaseField</span>,
         <span class="ident">y</span>: <span class="kw-2">&amp;</span><span class="ident">BaseField</span>,
         <span class="ident">asset_definition</span>: <span class="kw-2">&amp;</span><span class="ident">AssetDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VerKey</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VerKey</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">point_affine</span> <span class="op">=</span> <span class="ident">GroupAffine</span>::<span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="kw-2">*</span><span class="ident">x</span>, <span class="kw-2">*</span><span class="ident">y</span>);
         <span class="kw">if</span> <span class="op">!</span><span class="ident">point_affine</span>.<span class="ident">is_on_curve</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">point_affine</span>.<span class="ident">is_in_correct_subgroup_assuming_on_curve</span>() {
             <span class="kw">if</span> <span class="ident">asset_definition</span>
@@ -3204,7 +3206,7 @@
             .<span class="ident">policy</span>
             .<span class="ident">reveal_map</span>
             .<span class="ident">is_user_address_revealed</span>()
-            <span class="op">|</span><span class="op">|</span> <span class="ident">ver_key</span> <span class="op">=</span><span class="op">=</span> <span class="ident">VerKey::default</span>()
+            <span class="op">|</span><span class="op">|</span> <span class="ident">ver_key</span> <span class="op">==</span> <span class="ident">VerKey::default</span>()
         {
             <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">ver_key</span>))
         } <span class="kw">else</span> {
@@ -3215,7 +3217,7 @@
     <span class="kw">fn</span> <span class="ident">fetch_blind_factor</span>(
         <span class="ident">v</span>: <span class="kw-2">&amp;</span><span class="ident">BaseField</span>,
         <span class="ident">asset_definition</span>: <span class="kw-2">&amp;</span><span class="ident">AssetDefinition</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlindFactor</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BlindFactor</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">asset_definition</span>
             .<span class="ident">policy_ref</span>()
             .<span class="ident">reveal_map</span>
@@ -3230,7 +3232,7 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_mint_note</span>(
         <span class="ident">audit_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">BaseField</span>],
         <span class="ident">mint_note</span>: <span class="kw-2">&amp;</span><span class="ident">MintNote</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditData</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditData</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">audit_data</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">3</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedAuditMemoDecryption</span>(
                 <span class="string">&quot;Invalid audit data len for mint note&quot;</span>.<span class="ident">to_ascii_lowercase</span>(),
@@ -3256,9 +3258,9 @@
         <span class="ident">asset_definition</span>: <span class="kw-2">&amp;</span><span class="ident">AssetDefinition</span>,
         <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">BaseField</span>],
         <span class="ident">in_or_out</span>: <span class="ident">InOrOut</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditData</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AuditData</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">in_or_out</span> {
-            <span class="ident">InOrOut::In</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">InOrOut::In</span> =&gt; {
                 <span class="kw">if</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">AUDIT_DATA_LEN</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedAuditMemoDecryption</span>(<span class="macro">format!</span>(
                         <span class="string">&quot;Internal Error: plaintext data unexpected length {}, expected {}&quot;</span>,
@@ -3267,7 +3269,7 @@
                     )));
                 }
             },
-            <span class="ident">InOrOut::Out</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">InOrOut::Out</span> =&gt; {
                 <span class="kw">if</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">4</span> {
                     <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::FailedAuditMemoDecryption</span>(<span class="macro">format!</span>(
                         <span class="string">&quot;Internal Error: plaintext data unexpected length {}, expected {}&quot;</span>,
@@ -3297,7 +3299,7 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">attributes</span> <span class="op">=</span> <span class="macro">vec!</span>[];
         <span class="kw">match</span> <span class="ident">in_or_out</span> {
-            <span class="ident">InOrOut::In</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">InOrOut::In</span> =&gt; {
                 <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">attr</span>) <span class="kw">in</span> <span class="ident">data</span>[<span class="number">4</span>..].<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
                     <span class="kw">if</span> <span class="ident">asset_definition</span>
                         .<span class="ident">policy</span>
@@ -3310,7 +3312,7 @@
                     }
                 }
             },
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (<span class="number">0</span>..<span class="ident">ATTRS_LEN</span>).<span class="ident">for_each</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">attributes</span>.<span class="ident">push</span>(<span class="prelude-val">None</span>)),
+            <span class="kw">_</span> =&gt; (<span class="number">0</span>..<span class="ident">ATTRS_LEN</span>).<span class="ident">for_each</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">attributes</span>.<span class="ident">push</span>(<span class="prelude-val">None</span>)),
         };
 
         <span class="prelude-val">Ok</span>(<span class="ident">AuditData</span> {
@@ -3336,10 +3338,10 @@
     <span class="doccomment">/// * `label` - optional, arbitrary label as authenticated associated data</span>
     <span class="doccomment">///   to the ciphertext</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_ro</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">ro</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>,
         <span class="ident">label</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ro_bytes</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">ro</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
             <span class="ident">DeserializationError::SerdeError</span>(
                 <span class="string">&quot;Unable to deserialize the RecordOpening during ReceiverMemo creation&quot;</span>.<span class="ident">to_string</span>(),
@@ -3359,7 +3361,7 @@
         <span class="ident">keypair</span>: <span class="kw-2">&amp;</span><span class="ident">UserKeyPair</span>,
         <span class="ident">rc</span>: <span class="kw-2">&amp;</span><span class="ident">RecordCommitment</span>,
         <span class="ident">label</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RecordOpening</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RecordOpening</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ro_bytes</span> <span class="op">=</span> <span class="ident">keypair</span>.<span class="ident">enc_keypair</span>.<span class="ident">decrypt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="ident">label</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
             <span class="ident">TxnApiError::FailedPrimitives</span>(
                 <span class="string">&quot;Failed decryption, probably wrong keypair for the receiver memo&quot;</span>.<span class="ident">to_string</span>(),
@@ -3413,10 +3415,10 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;kp</span><span class="op">&gt;</span> <span class="ident">TxnFeeInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;kp</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Create a new Fee struct from fee input and fee to pay</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">RngCore</span><span class="op">&gt;</span>(
-        <span class="ident">rng</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">R</span>,
+        <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
         <span class="ident">fee_input</span>: <span class="ident">FeeInput</span><span class="op">&lt;</span><span class="lifetime">&#39;kp</span><span class="op">&gt;</span>,
         <span class="ident">fee</span>: <span class="ident">u64</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">RecordOpening</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">RecordOpening</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">fee_input</span>.<span class="ident">ro</span>.<span class="ident">amount</span> <span class="op">&lt;</span> <span class="ident">fee</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                 <span class="string">&quot;not enough funds in fee input to pay for fees&quot;</span>.<span class="ident">to_string</span>(),
@@ -3533,8 +3535,8 @@
         };
 
         <span class="attribute">#[<span class="ident">test</span>]</span>
-        <span class="kw">fn</span> <span class="ident">mint</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+        <span class="kw">fn</span> <span class="ident">mint</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+            <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
             <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">10</span>;
             <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="number">32770</span>;
             <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup_for_test</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
@@ -3585,10 +3587,10 @@
         <span class="attribute">#[<span class="ident">test</span>]</span>
         <span class="kw">fn</span> <span class="ident">transfer</span>() {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-            <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-            <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-            <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-            <span class="kw">let</span> (..) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> (..) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">policy</span> <span class="op">=</span> <span class="ident">AssetPolicy::default</span>()
                 .<span class="ident">set_auditor_pub_key</span>(<span class="ident">auditor_keypair</span>.<span class="ident">pub_key</span>())
                 .<span class="ident">set_cred_issuer_pub_key</span>(<span class="ident">issuer_keypair</span>.<span class="ident">pub_key</span>())
@@ -3596,7 +3598,7 @@
 
             <span class="ident">policy</span>.<span class="ident">reveal_map</span>.<span class="ident">reveal_user_address</span>();
 
-            <span class="kw">let</span> (<span class="ident">asset_code</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> (<span class="ident">asset_code</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
             <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::new</span>(<span class="ident">asset_code</span>, <span class="ident">policy</span>).<span class="ident">unwrap</span>();
 
             <span class="comment">// Wrong length for In</span>
@@ -3639,22 +3641,22 @@
     }
 
     <span class="attribute">#[<span class="ident">quickcheck</span>]</span>
-    <span class="kw">fn</span> <span class="ident">id_attr_from_to_bytes_is_deterministic</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">id_attr_from_to_bytes_is_deterministic</span>(<span class="ident">bytes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">empty_bytes_should_fail</span> <span class="op">=</span> <span class="ident">bytes</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">IdentityAttribute::new</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">is_err</span>();
         <span class="kw">let</span> <span class="ident">extra_bytes_should_fail</span> <span class="op">=</span>
             <span class="ident">bytes</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">PER_ATTR_BYTE_CAPACITY</span> <span class="op">&amp;&amp;</span> <span class="ident">IdentityAttribute::new</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">is_err</span>();
 
         <span class="ident">empty_bytes_should_fail</span>
             <span class="op">|</span><span class="op">|</span> <span class="ident">extra_bytes_should_fail</span>
-            <span class="op">|</span><span class="op">|</span> <span class="ident">bytes</span> <span class="op">=</span><span class="op">=</span> <span class="ident">IdentityAttribute::new</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>().<span class="ident">value</span>().<span class="ident">unwrap</span>()
+            <span class="op">|</span><span class="op">|</span> <span class="ident">bytes</span> <span class="op">==</span> <span class="ident">IdentityAttribute::new</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">unwrap</span>().<span class="ident">value</span>().<span class="ident">unwrap</span>()
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_expirable_credential</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_expirable_credential</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">attrs</span> <span class="op">=</span> <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">attrs</span> <span class="op">=</span> <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">cred_expiry</span> <span class="op">=</span> <span class="number">1234u64</span>;
         <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="number">1000u64</span>;
 
@@ -3673,7 +3675,7 @@
 
         <span class="comment">// invalid credential with wrong upk should fail</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cred2</span> <span class="op">=</span> <span class="ident">cred</span>.<span class="ident">clone</span>();
-        <span class="ident">cred2</span>.<span class="ident">user_addr</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>).<span class="ident">address</span>();
+        <span class="ident">cred2</span>.<span class="ident">user_addr</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>).<span class="ident">address</span>();
         <span class="macro">assert!</span>(<span class="ident">cred2</span>.<span class="ident">verify</span>(<span class="ident">now</span>).<span class="ident">is_err</span>());
 
         <span class="comment">// invalid credential with wrong attribute should fail</span>
@@ -3687,16 +3689,16 @@
 
         <span class="comment">// credential with a wrong credential issuer should fail</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cred5</span> <span class="op">=</span> <span class="ident">cred</span>.<span class="ident">clone</span>();
-        <span class="ident">cred5</span>.<span class="ident">issuer_pk</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>).<span class="ident">pub_key</span>();
+        <span class="ident">cred5</span>.<span class="ident">issuer_pk</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>).<span class="ident">pub_key</span>();
         <span class="macro">assert!</span>(<span class="ident">cred5</span>.<span class="ident">verify</span>(<span class="ident">now</span>).<span class="ident">is_err</span>());
 
         <span class="comment">// overflowed attribute bytes should fail</span>
-        <span class="ident">attrs</span>.<span class="ident">push</span>(<span class="ident">IdentityAttribute::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>));
+        <span class="ident">attrs</span>.<span class="ident">push</span>(<span class="ident">IdentityAttribute::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>));
         <span class="macro">assert!</span>(<span class="ident">ExpirableCredential::issue</span>(
             <span class="ident">user_keypair</span>.<span class="ident">address</span>(),
             <span class="ident">attrs</span>,
             <span class="number">1234</span>,
-            <span class="kw-2">&amp;</span><span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>)
+            <span class="kw-2">&amp;</span><span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)
         )
         .<span class="ident">is_err</span>());
 
@@ -3705,7 +3707,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_asset_code</span>() {
-        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">ark_std::test_rng</span>();
+        <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">cap_token_description</span> <span class="op">=</span> <span class="string">b&quot;cap_usdx&quot;</span>;
         <span class="kw">let</span> <span class="ident">seed</span> <span class="op">=</span> <span class="ident">AssetCodeSeed::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">internal_asset_code</span> <span class="op">=</span> <span class="ident">InternalAssetCode::new</span>(<span class="ident">seed</span>, <span class="ident">cap_token_description</span>);
@@ -3727,10 +3729,10 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_asset_policy</span>() {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> (..) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> (..) <span class="op">=</span> <span class="ident">AssetCode::random</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">policy</span> <span class="op">=</span> <span class="ident">AssetPolicy::default</span>()
             .<span class="ident">set_auditor_pub_key</span>(<span class="ident">auditor_keypair</span>.<span class="ident">pub_key</span>())
             .<span class="ident">set_cred_issuer_pub_key</span>(<span class="ident">issuer_keypair</span>.<span class="ident">pub_key</span>())
@@ -3808,17 +3810,17 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
 
         <span class="comment">// asset code related</span>
-        <span class="kw">let</span> <span class="ident">asset_code_seed</span> <span class="op">=</span> <span class="ident">AssetCodeSeed::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">asset_code_seed</span> <span class="op">=</span> <span class="ident">AssetCodeSeed::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">ser_bytes</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">asset_code_seed</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">asset_code_seed_rec</span>: <span class="ident">AssetCodeSeed</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_bytes</span>[..]).<span class="ident">unwrap</span>();
         <span class="macro">assert_eq!</span>(<span class="ident">asset_code_seed</span>, <span class="ident">asset_code_seed_rec</span>);
 
         <span class="comment">// record related</span>
-        <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
 
         <span class="kw">let</span> <span class="ident">ro</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
-            <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>,
+            <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>,
             <span class="number">23</span>,
             <span class="ident">asset_def</span>,
             <span class="ident">user_keypair</span>.<span class="ident">pub_key</span>(),
@@ -3827,8 +3829,8 @@
         <span class="kw">let</span> <span class="ident">rc</span> <span class="op">=</span> <span class="ident">RecordCommitment::from</span>(<span class="kw-2">&amp;</span><span class="ident">ro</span>);
 
         <span class="comment">// credential related</span>
-        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">attrs</span> <span class="op">=</span> <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">CredIssuerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">attrs</span> <span class="op">=</span> <span class="ident">IdentityAttribute::random_vector</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">cred_expiry</span> <span class="op">=</span> <span class="number">1234u64</span>;
         <span class="kw">let</span> <span class="ident">cred</span> <span class="op">=</span> <span class="ident">ExpirableCredential::issue</span>(
             <span class="ident">user_keypair</span>.<span class="ident">address</span>(),
@@ -3843,17 +3845,17 @@
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::native</span>();
             <span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">auditor_pk</span> <span class="op">=</span> <span class="ident">AuditorPubKey::default</span>();
             <span class="kw">let</span> <span class="ident">ro</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
-                <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>,
+                <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>,
                 <span class="number">23</span>,
                 <span class="ident">asset_def</span>.<span class="ident">clone</span>(),
                 <span class="ident">user_keypair</span>.<span class="ident">pub_key</span>(),
                 <span class="ident">FreezeFlag::Unfrozen</span>,
             );
-            <span class="kw">let</span> <span class="ident">randomizer</span> <span class="op">=</span> <span class="ident">ScalarField::rand</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>);
+            <span class="kw">let</span> <span class="ident">randomizer</span> <span class="op">=</span> <span class="ident">ScalarField::rand</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
             <span class="ident">AuditMemo::new_for_transfer_note</span>(<span class="kw-2">&amp;</span>[<span class="ident">ro</span>.<span class="ident">clone</span>()], <span class="kw-2">&amp;</span>[<span class="ident">ro</span>], <span class="kw-2">&amp;</span>[<span class="ident">cred</span>.<span class="ident">clone</span>()], <span class="ident">randomizer</span>)
                 .<span class="ident">unwrap</span>()
         };
-        <span class="kw">let</span> <span class="ident">receiver_memo</span> <span class="op">=</span> <span class="ident">ReceiverMemo::from_ro</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">receiver_memo</span> <span class="op">=</span> <span class="ident">ReceiverMemo::from_ro</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>, <span class="kw-2">&amp;</span><span class="ident">ro</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">unwrap</span>();
 
         <span class="kw">let</span> <span class="ident">ser_bytes</span> <span class="op">=</span> <span class="ident">bincode::serialize</span>(<span class="kw-2">&amp;</span><span class="ident">ro</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">de</span>: <span class="ident">RecordOpening</span> <span class="op">=</span> <span class="ident">bincode::deserialize</span>(<span class="kw-2">&amp;</span><span class="ident">ser_bytes</span>[..]).<span class="ident">unwrap</span>();
@@ -3873,6 +3875,5 @@
     }
 }
 </code></pre></div>
-</section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="jf_cap" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
-    <script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script>
+</section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
 </body></html>
