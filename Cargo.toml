@@ -4,6 +4,7 @@ description = "CAP: configurable asset policy"
 version = "0.0.1"
 authors = ["Espresso Systems <hello@espressosys.com>"]
 edition = "2018"
+license = "GPL-3.0-or-later"
 
 [[bin]]
 name = "gen-params"
