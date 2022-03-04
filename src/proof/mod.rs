@@ -65,7 +65,6 @@ pub fn universal_setup<R: RngCore + CryptoRng>(
 #[cfg(feature = "bn254")]
 pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
     use crate::parameters::load_universal_parameter;
-    use ark_std::{fs::read, path::PathBuf};
     use hex_literal::hex;
     use sha2::{Digest, Sha256};
 
@@ -76,16 +75,12 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         ));
     }
 
-    let mut d =
-        PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
-    d.push("data");
-    d.push("aztec-crs-131072");
-    d.set_extension("bin");
+    let src = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"),"/data/aztec-crs-131072.bin"));
 
     // check integrity of the bin file
     let mut hasher = Sha256::new();
     hasher.update(
-        read(&d).map_err(|_| TxnApiError::IoError("Aztec CRS file not found".to_string()))?,
+        src,
     );
     assert_eq!(
         hasher.finalize()[..],
@@ -93,7 +88,7 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         "Mismatched sha256sum digest, file might be corrupted!"
     );
 
-    load_universal_parameter(Some(d))
+    load_universal_parameter(Some(src))
 }
 
 // add two test helper functions with uniformed API

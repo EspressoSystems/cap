@@ -56,20 +56,27 @@ pub fn store_universal_parameter_for_demo(
 /// Load universal parameter from a file.
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, TxnApiError> {
-    let src = match src {
-        Some(src) => src,
-        None => default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"),
-    };
-
-    let now = Instant::now();
-    eprint!(
-        "Loading universal parameter from: {} ...",
-        src.to_str().unwrap()
-    );
-    let param = load_data(src)?;
-    eprintln!(" done in {} ms", now.elapsed().as_millis());
-    Ok(param)
+pub fn load_universal_parameter(src: Option<&[u8]>) -> Result<UniversalParam, TxnApiError> {
+    Ok(match src {
+        Some(src) => {
+            let now = Instant::now();
+            eprint!("Upacking universal parameter...");
+            let ret = <_>::deserialize(src)?;
+            eprintln!(" done in {} ms", now.elapsed().as_millis());
+            ret
+        },
+        None => {
+            let src = default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin");
+            let now = Instant::now();
+            eprint!(
+                "Loading universal parameter from: {} ...",
+                src.to_str().unwrap()
+            );
+            let ret = load_data(src)?;
+            eprintln!(" done in {} ms", now.elapsed().as_millis());
+            ret
+        },
+    })
 }
 
 /// Create and store transfer prover's proving key
@@ -450,7 +457,7 @@ pub fn load_freeze_verifying_key(
     Ok(verifying_key)
 }
 
-// by default, all parameters are stored in `CURRENT_CARGO_ROOT/data/`
+// by default, all parameters are stored in `$CAP_UNIV_PARAM_DIR/data/`
 fn default_path(filename: &str, extension: &str) -> PathBuf {
     let mut d =
         PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
