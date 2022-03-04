@@ -201,7 +201,29 @@
 <span id="199">199</span>
 <span id="200">200</span>
 <span id="201">201</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">circuit::structs::UserAddressVar</span>, <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>};
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+</pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
+<span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
+
+<span class="comment">// This program is free software: you can redistribute it and/or modify it under</span>
+<span class="comment">// the terms of the GNU General Public License as published by the Free Software</span>
+<span class="comment">// Foundation, either version 3 of the License, or (at your option) any later</span>
+<span class="comment">// version. This program is distributed in the hope that it will be useful, but</span>
+<span class="comment">// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</span>
+<span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
+<span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">circuit::structs::UserAddressVar</span>, <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>};
 <span class="kw">use</span> <span class="ident">ark_ec</span>::{<span class="ident">twisted_edwards_extended::GroupAffine</span>, <span class="ident">AffineCurve</span>};
 <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
     <span class="ident">circuit</span>::{

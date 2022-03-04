@@ -80,7 +80,29 @@
 <span id="78">78</span>
 <span id="79">79</span>
 <span id="80">80</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree</span>, <span class="ident">schnorr_dsa</span>};
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+</pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
+<span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
+
+<span class="comment">// This program is free software: you can redistribute it and/or modify it under</span>
+<span class="comment">// the terms of the GNU General Public License as published by the Free Software</span>
+<span class="comment">// Foundation, either version 3 of the License, or (at your option) any later</span>
+<span class="comment">// version. This program is distributed in the hope that it will be useful, but</span>
+<span class="comment">// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</span>
+<span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
+<span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree</span>, <span class="ident">schnorr_dsa</span>};
 
 <span class="doccomment">/// type alias for scalar field of the jubjub curve</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>

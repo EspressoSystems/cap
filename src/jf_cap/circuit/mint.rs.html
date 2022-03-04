@@ -445,7 +445,29 @@
 <span id="443">443</span>
 <span id="444">444</span>
 <span id="445">445</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Circuit for the issuance of auditable anonymously-transferable asset.</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
+<span id="452">452</span>
+<span id="453">453</span>
+<span id="454">454</span>
+<span id="455">455</span>
+<span id="456">456</span>
+</pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
+<span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
+
+<span class="comment">// This program is free software: you can redistribute it and/or modify it under</span>
+<span class="comment">// the terms of the GNU General Public License as published by the Free Software</span>
+<span class="comment">// Foundation, either version 3 of the License, or (at your option) any later</span>
+<span class="comment">// version. This program is distributed in the hope that it will be useful, but</span>
+<span class="comment">// WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or</span>
+<span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
+<span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+
+<span class="doccomment">//! Circuit for the issuance of auditable anonymously-transferable asset.</span>
 <span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">gadgets</span>::{<span class="ident">Spender</span>, <span class="ident">TransactionGadgets</span>},
     <span class="ident">gadgets_helper::TransactionGadgetsHelper</span>,
