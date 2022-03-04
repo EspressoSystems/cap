@@ -75,13 +75,14 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         ));
     }
 
-    let src = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"),"/data/aztec-crs-131072.bin"));
+    let src = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/data/aztec-crs-131072.bin"
+    ));
 
     // check integrity of the bin file
     let mut hasher = Sha256::new();
-    hasher.update(
-        src,
-    );
+    hasher.update(src);
     assert_eq!(
         hasher.finalize()[..],
         hex!("6b81e75fb9c14fd0e58fb2b29e48978cdad5511503685a61f1391dc4a4fc7cbf")[..],
