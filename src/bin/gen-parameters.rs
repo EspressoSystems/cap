@@ -61,7 +61,13 @@ fn main() {
             circuit,
             dest,
         } => {
-            let max_degree = jf_cap::utils::compute_universal_param_size(jf_cap::structs::NoteType::Transfer, 2, 2, 10).unwrap();
+            let max_degree = jf_cap::utils::compute_universal_param_size(
+                jf_cap::structs::NoteType::Transfer,
+                2,
+                2,
+                10,
+            )
+            .unwrap();
             let universal_param = jf_cap::proof::load_srs(max_degree).unwrap();
             match circuit {
                 Circuit::Transfer => store_transfer_proving_key(
