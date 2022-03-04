@@ -53,14 +53,14 @@ pub fn store_universal_parameter_for_demo(
     Ok(())
 }
 
-/// Load universal parameter from a file.
+/// Load universal parameter from a byte buffer.
 ///
 /// if `src` is `None`, load from default path.
 pub fn load_universal_parameter(src: Option<&[u8]>) -> Result<UniversalParam, TxnApiError> {
     Ok(match src {
         Some(src) => {
             let now = Instant::now();
-            eprint!("Upacking universal parameter...");
+            eprint!("Unpacking universal parameters...");
             let ret = <_>::deserialize(src)?;
             eprintln!(" done in {} ms", now.elapsed().as_millis());
             ret
