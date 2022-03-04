@@ -40,6 +40,8 @@ enum Actions {
         tree_depth: u8,
         /// Type of circuit
         circuit: Circuit,
+        /// Path for fetching the universal srs
+        universal_srs_path: Option<PathBuf>,
         /// Path of the file that will store the prover's parameters
         dest: Option<PathBuf>,
     },
@@ -59,16 +61,10 @@ fn main() {
             n_outputs,
             tree_depth,
             circuit,
+            universal_srs_path,
             dest,
         } => {
-            let max_degree = jf_cap::utils::compute_universal_param_size(
-                jf_cap::structs::NoteType::Transfer,
-                2,
-                2,
-                10,
-            )
-            .unwrap();
-            let universal_param = jf_cap::proof::load_srs(max_degree).unwrap();
+            let universal_param = load_universal_parameter(universal_srs_path).unwrap();
             match circuit {
                 Circuit::Transfer => store_transfer_proving_key(
                     n_inputs,

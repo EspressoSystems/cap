@@ -53,30 +53,36 @@ pub fn store_universal_parameter_for_demo(
     Ok(())
 }
 
-/// Load universal parameter from a byte buffer.
+fn load_universal_parameters_from_path(src: PathBuf) -> Result<UniversalParam, TxnApiError> {
+    let now = Instant::now();
+    eprint!(
+        "Loading universal parameter from: {} ...",
+        src.to_str().unwrap()
+    );
+    let param = load_data(src)?;
+    eprintln!(" done in {} ms", now.elapsed().as_millis());
+    Ok(param)
+}
+
+#[cfg(not(feature = "bn254"))]
+fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
+    load_universal_parameters_from_path(default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"))
+}
+
+#[cfg(feature = "bn254")]
+fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
+    crate::proof::load_srs(2usize.pow(17))
+}
+
+/// Load universal parameter from a file.
 ///
-/// if `src` is `None`, load from default path.
-pub fn load_universal_parameter(src: Option<&[u8]>) -> Result<UniversalParam, TxnApiError> {
-    Ok(match src {
-        Some(src) => {
-            let now = Instant::now();
-            eprint!("Unpacking universal parameters...");
-            let ret = <_>::deserialize(src)?;
-            eprintln!(" done in {} ms", now.elapsed().as_millis());
-            ret
-        },
-        None => {
-            let src = default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin");
-            let now = Instant::now();
-            eprint!(
-                "Loading universal parameter from: {} ...",
-                src.to_str().unwrap()
-            );
-            let ret = load_data(src)?;
-            eprintln!(" done in {} ms", now.elapsed().as_millis());
-            ret
-        },
-    })
+/// if `src` is `None`, load from the included SRS (bn254) or the default path
+/// (otherwise).
+pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, TxnApiError> {
+    match src {
+        Some(src) => load_universal_parameters_from_path(src),
+        None => load_default_universal_parameters(),
+    }
 }
 
 /// Create and store transfer prover's proving key

@@ -64,9 +64,11 @@ pub fn universal_setup<R: RngCore + CryptoRng>(
 /// validity of all transactions, regardless of the transaction type.
 #[cfg(feature = "bn254")]
 pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
-    use crate::parameters::load_universal_parameter;
     use hex_literal::hex;
     use sha2::{Digest, Sha256};
+
+    use ark_serialize::CanonicalDeserialize;
+    use ark_std::{eprint, eprintln};
 
     if max_degree > 2usize.pow(17) {
         return Err(TxnApiError::FailedSnark(
@@ -89,7 +91,11 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         "Mismatched sha256sum digest, file might be corrupted!"
     );
 
-    load_universal_parameter(Some(src))
+    let now = ark_std::time::Instant::now();
+    eprint!("Unpacking universal parameters...");
+    let ret = <_>::deserialize(&src[..])?;
+    eprintln!(" done in {} ms", now.elapsed().as_millis());
+    Ok(ret)
 }
 
 // add two test helper functions with uniformed API
