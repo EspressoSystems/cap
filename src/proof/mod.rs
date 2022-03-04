@@ -75,10 +75,11 @@ pub fn universal_setup<R: RngCore + CryptoRng>(
 /// validity of all transactions, regardless of the transaction type.
 #[cfg(feature = "bn254")]
 pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
-    use crate::parameters::load_universal_parameter;
-    use ark_std::{fs::read, path::PathBuf};
     use hex_literal::hex;
     use sha2::{Digest, Sha256};
+
+    use ark_serialize::CanonicalDeserialize;
+    use ark_std::{eprint, eprintln};
 
     if max_degree > 2usize.pow(17) {
         return Err(TxnApiError::FailedSnark(
@@ -87,23 +88,25 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
         ));
     }
 
-    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    d.push("data");
-    d.push("aztec-crs-131072");
-    d.set_extension("bin");
+    let src = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/data/aztec-crs-131072.bin"
+    ));
 
     // check integrity of the bin file
     let mut hasher = Sha256::new();
-    hasher.update(
-        read(&d).map_err(|_| TxnApiError::IoError("Aztec CRS file not found".to_string()))?,
-    );
+    hasher.update(src);
     assert_eq!(
         hasher.finalize()[..],
         hex!("6b81e75fb9c14fd0e58fb2b29e48978cdad5511503685a61f1391dc4a4fc7cbf")[..],
         "Mismatched sha256sum digest, file might be corrupted!"
     );
 
-    load_universal_parameter(Some(d))
+    let now = ark_std::time::Instant::now();
+    eprint!("Unpacking universal parameters...");
+    let ret = <_>::deserialize(&src[..])?;
+    eprintln!(" done in {} ms", now.elapsed().as_millis());
+    Ok(ret)
 }
 
 // add two test helper functions with uniformed API

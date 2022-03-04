@@ -64,15 +64,7 @@ pub fn store_universal_parameter_for_demo(
     Ok(())
 }
 
-/// Load universal parameter from a file.
-///
-/// if `src` is `None`, load from default path.
-pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, TxnApiError> {
-    let src = match src {
-        Some(src) => src,
-        None => default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"),
-    };
-
+fn load_universal_parameters_from_path(src: PathBuf) -> Result<UniversalParam, TxnApiError> {
     let now = Instant::now();
     eprint!(
         "Loading universal parameter from: {} ...",
@@ -81,6 +73,27 @@ pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, 
     let param = load_data(src)?;
     eprintln!(" done in {} ms", now.elapsed().as_millis());
     Ok(param)
+}
+
+#[cfg(not(feature = "bn254"))]
+fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
+    load_universal_parameters_from_path(default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"))
+}
+
+#[cfg(feature = "bn254")]
+fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
+    crate::proof::load_srs(2usize.pow(17))
+}
+
+/// Load universal parameter from a file.
+///
+/// if `src` is `None`, load from the included SRS (bn254) or the default path
+/// (otherwise).
+pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, TxnApiError> {
+    match src {
+        Some(src) => load_universal_parameters_from_path(src),
+        None => load_default_universal_parameters(),
+    }
 }
 
 /// Create and store transfer prover's proving key
@@ -461,9 +474,10 @@ pub fn load_freeze_verifying_key(
     Ok(verifying_key)
 }
 
-// by default, all parameters are stored in `CURRENT_CARGO_ROOT/data/`
+// by default, all parameters are stored in `$CAP_UNIV_PARAM_DIR/data/`
 fn default_path(filename: &str, extension: &str) -> PathBuf {
-    let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let mut d =
+        PathBuf::from(ark_std::env::var("CAP_UNIV_PARAM_DIR").unwrap_or_else(|_| ".".to_string()));
     d.push("data");
     d.push(filename);
     d.set_extension(extension);
