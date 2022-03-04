@@ -196,7 +196,7 @@ mod tests {
     use super::{Spender, TransactionGadgets};
     use crate::{
         circuit::structs::RecordOpeningVar,
-        constants::AUDIT_DATA_LEN,
+        constants::VIEWABLE_DATA_LEN,
         keys::{FreezerKeyPair, FreezerPubKey, UserKeyPair},
         structs::{AssetPolicy, RecordCommitment, RecordOpening, RevealMap},
         BaseField, CurveParam,
@@ -408,7 +408,7 @@ mod tests {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let reveal_map_var = circuit.create_variable(BaseField::from(*reveal_map))?;
         let bit_map_vars: Vec<Variable> = circuit
-            .unpack(reveal_map_var, AUDIT_DATA_LEN)?
+            .unpack(reveal_map_var, VIEWABLE_DATA_LEN)?
             .into_iter()
             .rev()
             .collect();
@@ -432,17 +432,17 @@ mod tests {
     fn test_hadamard_product() -> Result<(), PlonkError> {
         let mut reveal_map = RevealMap::default();
         reveal_map.reveal_all();
-        let vals: Vec<BaseField> = (0..AUDIT_DATA_LEN)
+        let vals: Vec<BaseField> = (0..VIEWABLE_DATA_LEN)
             .map(|i| BaseField::from(i as u32))
             .collect();
-        check_hadamard_product(&reveal_map, &vals, AUDIT_DATA_LEN)?;
+        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
         let reveal_map = RevealMap::default();
-        check_hadamard_product(&reveal_map, &vals, AUDIT_DATA_LEN)?;
+        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
         let rng = &mut ark_std::test_rng();
         let reveal_map = RevealMap::rand_for_test(rng);
-        check_hadamard_product(&reveal_map, &vals, AUDIT_DATA_LEN)?;
+        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
         check_hadamard_product(&reveal_map, &vals, 4)?;
         Ok(())

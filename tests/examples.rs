@@ -26,8 +26,8 @@ use jf_cap::{
     errors::TxnApiError,
     freeze::FreezeNote,
     keys::{
-        AuditorKeyPair, AuditorPubKey, CredIssuerKeyPair, FreezerKeyPair, FreezerPubKey,
-        UserAddress, UserKeyPair, UserPubKey,
+        CredIssuerKeyPair, FreezerKeyPair, FreezerPubKey, UserAddress, UserKeyPair, UserPubKey,
+        ViewerKeyPair, ViewerPubKey,
     },
     mint::MintNote,
     proof::{
@@ -38,9 +38,9 @@ use jf_cap::{
     },
     sign_receiver_memos,
     structs::{
-        AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditData, BlindFactor,
-        ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, Nullifier, ReceiverMemo,
-        RecordCommitment, RecordOpening, TxnFeeInfo,
+        AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, BlindFactor, ExpirableCredential,
+        FeeInput, FreezeFlag, IdentityAttribute, Nullifier, ReceiverMemo, RecordCommitment,
+        RecordOpening, TxnFeeInfo, ViewableData,
     },
     transfer::{TransferNote, TransferNoteInput},
     txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey,
@@ -503,65 +503,65 @@ impl<'a> ValidatorMock<'a> {
     }
 }
 
-/// Simple Auditor that scan Transfer note and attempt to decrypt AuditMemos
-pub struct AuditorMock {
-    keypair: AuditorKeyPair,
+/// Simple Viewer that scan Transfer note and attempt to decrypt ViewableMemos
+pub struct ViewerMock {
+    keypair: ViewerKeyPair,
     asset_def: AssetDefinition,
 }
 
-impl AuditorMock {
-    /// Create a new auditor
-    pub fn new(keypair: AuditorKeyPair, asset_def: AssetDefinition) -> AuditorMock {
-        AuditorMock { keypair, asset_def }
+impl ViewerMock {
+    /// Create a new viewer
+    pub fn new(keypair: ViewerKeyPair, asset_def: AssetDefinition) -> ViewerMock {
+        ViewerMock { keypair, asset_def }
     }
 
-    pub fn pub_key(&self) -> AuditorPubKey {
+    pub fn pub_key(&self) -> ViewerPubKey {
         self.keypair.pub_key()
     }
-    /// Scan transfer note audit memos and attempt to open them
+    /// Scan transfer note viewing memos and attempt to open them
     /// Return Error if asset policy does not math of error in decryption
     pub fn scan_xfr(
         &self,
         xfr_note: &TransferNote,
         uid_offset: u64,
-    ) -> Result<(Vec<AuditData>, Vec<(AuditData, u64)>)> {
+    ) -> Result<(Vec<ViewableData>, Vec<(ViewableData, u64)>)> {
         let n_inputs = xfr_note.inputs_nullifiers.len() - 1;
         let n_outputs = xfr_note.output_commitments.len() - 1;
-        let (input_audit_data, output_audit_data) = self
+        let (input_visible_data, output_visible_data) = self
             .keypair
-            .open_transfer_audit_memo(&self.asset_def, &xfr_note)?;
+            .open_transfer_viewing_memo(&self.asset_def, &xfr_note)?;
 
-        if input_audit_data.len() > 0 && input_audit_data.len() > n_inputs {
-            // input can be dummy and contain no audit data, so we allow
-            // input_audit_data.len() < n_inputs
-            return Err(anyhow!("bug: unexpected audit data len"));
+        if input_visible_data.len() > 0 && input_visible_data.len() > n_inputs {
+            // input can be dummy and contain noviewing data, so we allow
+            // input_visible_data.len() < n_inputs
+            return Err(anyhow!("bug: unexpectedviewing data len"));
         }
 
-        if output_audit_data.len() > 0 && output_audit_data.len() != n_outputs {
-            return Err(anyhow!("bug: unexpected audit data len"));
+        if output_visible_data.len() > 0 && output_visible_data.len() != n_outputs {
+            return Err(anyhow!("bug: unexpectedviewing data len"));
         }
 
         let mut uid = uid_offset + 1; // skip fee change
-        let mut output_audit_data_uids = vec![];
-        for output_record_audit_data in output_audit_data.into_iter() {
-            output_audit_data_uids.push((output_record_audit_data, uid));
+        let mut output_visible_data_uids = vec![];
+        for output_record_visible_data in output_visible_data.into_iter() {
+            output_visible_data_uids.push((output_record_visible_data, uid));
             uid += 1;
         }
-        Ok((input_audit_data, output_audit_data_uids))
+        Ok((input_visible_data, output_visible_data_uids))
     }
 
-    pub fn scan_mint(&self, mint_note: &MintNote, uid_offset: u64) -> Result<(AuditData, u64)> {
-        let audit_data = self.keypair.open_mint_audit_memo(mint_note)?;
-        Ok((audit_data, uid_offset + 1)) // skip fee change record
+    pub fn scan_mint(&self, mint_note: &MintNote, uid_offset: u64) -> Result<(ViewableData, u64)> {
+        let visible_data = self.keypair.open_mint_viewing_memo(mint_note)?;
+        Ok((visible_data, uid_offset + 1)) // skip fee change record
     }
 }
 
-/// Simple freezer who is also an auditor that trace record openings (but for
-/// simplicity does not trace identity attributes)
+/// Simple freezer who is also an viewer that views record openings (but for
+/// simplicity does not view identity attributes)
 pub struct FreezerMock<'a> {
-    // Auditor: freezer needs audit data and hence we assume that a freezer is also an auditor.
-    // Alternatively, freezer and auditor can be independent entities and communicate via RPC
-    auditor: AuditorMock,
+    // Viewer: freezer needsviewing data and hence we assume that a freezer is also an viewer.
+    // Alternatively, freezer and viewer can be independent entities and communicate via RPC
+    viewer: ViewerMock,
     keypair: FreezerKeyPair,
     srs: &'a UniversalParam,
     proving_keys: HashMap<String, FreezeProvingKey<'a>>,
@@ -585,7 +585,7 @@ pub struct FreezerMock<'a> {
     // freezaable_records.
     unconfirmed_released_records:
         HashMap<Nullifier, (UserAddress, (RecordOpening, u64), RecordOpening)>, /* address, (frozen record, uid), released record opening */
-    // user_keys_orable: The user address is detected via audit memo, but we assume freezer can
+    // user_keys_orable: The user address is detected via viewing memo, but we assume freezer can
     // find out the entirety of user's public key (including the encryption key for ReceiverMemo)
     // either via direct channel with the user, or via public bulletin board.
     user_keys_oracle: HashMap<UserAddress, UserPubKey>,
@@ -599,19 +599,19 @@ impl<'a> FreezerMock<'a> {
         asset_code: AssetCode,
     ) -> FreezerMock<'a> {
         let freezer_keypair = FreezerKeyPair::generate(rng);
-        let auditor_keypair = AuditorKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
         let asset_policy = AssetPolicy::default()
-            .set_auditor_pub_key(auditor_keypair.pub_key())
+            .set_viewer_pub_key(viewer_keypair.pub_key())
             .set_freezer_pub_key(freezer_keypair.pub_key())
             .reveal_record_opening()
             .unwrap();
         let asset_definition = AssetDefinition::new(asset_code, asset_policy).unwrap();
-        let auditor = AuditorMock::new(auditor_keypair, asset_definition);
+        let viewer = ViewerMock::new(viewer_keypair, asset_definition);
         let wallet = SimpleUserWalletMock::generate(rng, srs);
 
         FreezerMock {
             keypair: freezer_keypair,
-            auditor,
+            viewer,
             srs,
             proving_keys: HashMap::new(),
             freezable_records: HashMap::new(),
@@ -624,7 +624,7 @@ impl<'a> FreezerMock<'a> {
     }
 
     pub fn asset_def(&self) -> AssetDefinition {
-        self.auditor.asset_def.clone()
+        self.viewer.asset_def.clone()
     }
 
     pub fn pub_key(&self) -> FreezerPubKey {
@@ -694,18 +694,18 @@ impl<'a> FreezerMock<'a> {
     // check if created record is freezable
     // Store record opening of freezable minted record
     fn scan_mint(&mut self, mint_note: &MintNote, uid_offset: u64) -> Result<()> {
-        let (audit_data, uid) = self.auditor.scan_mint(mint_note, uid_offset)?;
-        let user_address = audit_data.user_address.as_ref().unwrap();
+        let (visible_data, uid) = self.viewer.scan_mint(mint_note, uid_offset)?;
+        let user_address = visible_data.user_address.as_ref().unwrap();
         let ro = RecordOpening {
-            amount: audit_data.amount.unwrap(),
-            asset_def: self.auditor.asset_def.clone(),
+            amount: visible_data.amount.unwrap(),
+            asset_def: self.viewer.asset_def.clone(),
             pub_key: self.user_keys_oracle.get(user_address).unwrap().clone(),
             freeze_flag: FreezeFlag::Unfrozen,
-            blind: audit_data.blinding_factor.unwrap(),
+            blind: visible_data.blinding_factor.unwrap(),
         };
         match self
             .freezable_records
-            .get_mut(audit_data.user_address.as_ref().unwrap())
+            .get_mut(visible_data.user_address.as_ref().unwrap())
         {
             Some(set) => {
                 set.insert((ro, uid));
@@ -714,7 +714,7 @@ impl<'a> FreezerMock<'a> {
                 let mut hash_set = HashSet::new();
                 hash_set.insert((ro, uid));
                 self.freezable_records
-                    .insert(audit_data.user_address.clone().unwrap(), hash_set);
+                    .insert(visible_data.user_address.clone().unwrap(), hash_set);
             },
         }
         Ok(())
@@ -723,20 +723,20 @@ impl<'a> FreezerMock<'a> {
     // scan a transfer looking for freezable records and store their openings
     fn scan_xfr(&mut self, xfr_note: &TransferNote, uid_offset: u64) -> Result<()> {
         let (_input_records, output_records_and_uids) =
-            self.auditor.scan_xfr(xfr_note, uid_offset)?;
+            self.viewer.scan_xfr(xfr_note, uid_offset)?;
         // take only outputs
-        for (transfer_audit_data, uid) in output_records_and_uids.iter() {
-            let user_address = transfer_audit_data.user_address.as_ref().unwrap();
+        for (transfer_visible_data, uid) in output_records_and_uids.iter() {
+            let user_address = transfer_visible_data.user_address.as_ref().unwrap();
             let ro = RecordOpening {
-                amount: transfer_audit_data.amount.unwrap(),
-                asset_def: self.auditor.asset_def.clone(),
+                amount: transfer_visible_data.amount.unwrap(),
+                asset_def: self.viewer.asset_def.clone(),
                 pub_key: self.user_keys_oracle.get(user_address).unwrap().clone(),
                 freeze_flag: FreezeFlag::Unfrozen,
-                blind: transfer_audit_data.blinding_factor.unwrap(),
+                blind: transfer_visible_data.blinding_factor.unwrap(),
             };
             match self
                 .freezable_records
-                .get_mut(transfer_audit_data.user_address.as_ref().unwrap())
+                .get_mut(transfer_visible_data.user_address.as_ref().unwrap())
             {
                 Some(set) => {
                     set.insert((ro, *uid));
@@ -744,8 +744,10 @@ impl<'a> FreezerMock<'a> {
                 None => {
                     let mut hash_set = HashSet::new();
                     hash_set.insert((ro, *uid));
-                    self.freezable_records
-                        .insert(transfer_audit_data.user_address.clone().unwrap(), hash_set);
+                    self.freezable_records.insert(
+                        transfer_visible_data.user_address.clone().unwrap(),
+                        hash_set,
+                    );
                 },
             }
         }
@@ -1798,10 +1800,10 @@ pub fn example_non_native_asset_transfer() {
 }
 
 /// This tests shows how to generate and verify transfer notes transferring non
-/// native asset with an auditor policy on records' opening.
+/// native asset with an viewer policy on records' opening.
 ///  1. simulate ledger state with two unspent records, one with a
 ///     native asset used to pay fees
-///     and one with another asset with associated policy tracing policy.
+///     and one with another asset with associated policy viewing policy.
 ///  2. create a transfer note that spends the records by transferring the
 /// second record and     paying fee with native asset record.
 ///  3. simulate verifier node validating the transfer note
@@ -1810,9 +1812,9 @@ pub fn example_non_native_asset_transfer() {
 ///    3.3: verify receiver memos signature
 ///    3.4: update state with transfer note output commitments
 ///    3.5: update state with input nullifiers
-///  4. Auditor decrypts tracing memos
+///  4. Viewer decrypts viewing memos
 #[test]
-pub fn example_test_traced_asset_transfer() {
+pub fn example_test_viewed_asset_transfer() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
@@ -1825,14 +1827,14 @@ pub fn example_test_traced_asset_transfer() {
     let native_amount = 10;
     let non_native_amount = 15;
 
-    let auditor_keypair = AuditorKeyPair::generate(rng);
+    let viewer_keypair = ViewerKeyPair::generate(rng);
     let policy = AssetPolicy::default()
-        .set_auditor_pub_key(auditor_keypair.pub_key())
+        .set_viewer_pub_key(viewer_keypair.pub_key())
         .reveal_record_opening()
         .unwrap();
     let (code, ..) = AssetCode::random(rng);
     let asset_def = AssetDefinition::new(code, policy.clone()).unwrap();
-    let auditor = AuditorMock::new(auditor_keypair, asset_def.clone());
+    let viewer = ViewerMock::new(viewer_keypair, asset_def.clone());
 
     let (record_opening_in_fee, uid) =
         ledger_state.mock_mint_native_asset(rng, sender_wallet.pub_key(), native_amount);
@@ -1867,19 +1869,20 @@ pub fn example_test_traced_asset_transfer() {
         .and_then(|_| Ok(ledger_state.insert_transfer_note(&xfr_note, true)))
         .unwrap();
 
-    // auditor
-    let (input_audit_data, output_audit_data) = auditor.scan_xfr(&xfr_note, mt_size_prev).unwrap();
-    assert_eq!(input_audit_data.len(), 1);
-    assert_eq!(output_audit_data.len(), 1);
+    // viewer
+    let (input_visible_data, output_visible_data) =
+        viewer.scan_xfr(&xfr_note, mt_size_prev).unwrap();
+    assert_eq!(input_visible_data.len(), 1);
+    assert_eq!(output_visible_data.len(), 1);
 
     // Bulleting board or users verify receiver memos
     let txn: TransactionNote = xfr_note.into();
     txn.verify_receiver_memos_signature(&recv_memos, &recv_memos_sig)
         .unwrap();
 
-    check_transfer_audit_data(
-        &input_audit_data[0],
-        auditor.asset_def.code,
+    check_transfer_visible_data(
+        &input_visible_data[0],
+        viewer.asset_def.code,
         Some(sender_wallet.pub_key().address()),
         Some(non_native_amount),
         Some(record_opening_in.blind),
@@ -1888,9 +1891,9 @@ pub fn example_test_traced_asset_transfer() {
 
     let record_opening_recv = &receiver_wallet.scan_txn(&txn, &recv_memos, mt_size_prev)[0];
 
-    check_transfer_audit_data(
-        &output_audit_data[0].0,
-        auditor.asset_def.code,
+    check_transfer_visible_data(
+        &output_visible_data[0].0,
+        viewer.asset_def.code,
         Some(recv_pub_key.address()),
         Some(non_native_amount),
         Some(record_opening_recv.blind),
@@ -1910,11 +1913,11 @@ pub fn example_test_traced_asset_transfer() {
 }
 
 /// This tests shows how to generate and verify transfer notes transferring non
-/// native asset with an auditor policy tracing credential attributes.
+/// native asset with an viewer policy viewing credential attributes.
 ///  1. simulate ledger state with two unspent records, one with a
 ///     native asset used to pay fees
 ///     and one with another asset with associated policy
-///     tracing credential attributed.
+///     viewing credential attributed.
 ///  2. create a transfer note that spends the records by transferring the
 /// second record and     paying fee with native asset record.
 ///  3. simulate verifier node validating the transfer note
@@ -1923,9 +1926,9 @@ pub fn example_test_traced_asset_transfer() {
 ///    3.3: verify receiver memos signature
 ///    3.4: update state with transfer note output commitments
 ///    3.5: update state with input nullifiers
-///  4. Auditor decrypts tracing memos
+///  4. Viewer decrypts viewing memos
 #[test]
-pub fn example_traced_non_native_asset_with_credentials() {
+pub fn example_viewed_non_native_asset_with_credentials() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
@@ -1938,8 +1941,8 @@ pub fn example_traced_non_native_asset_with_credentials() {
     let native_amount = 10;
     let non_native_amount = 15;
 
-    let auditor_keypair = AuditorKeyPair::generate(rng);
-    let cred_issuer_keypair = CredIssuerKeyPair::generate(rng);
+    let viewer_keypair = ViewerKeyPair::generate(rng);
+    let cred_creator_keypair = CredIssuerKeyPair::generate(rng);
     let expiry = 10;
     let mut attributes = vec![];
     attributes.push(IdentityAttribute::new(b"attr0").unwrap());
@@ -1951,17 +1954,17 @@ pub fn example_traced_non_native_asset_with_credentials() {
     attributes.push(IdentityAttribute::new(b"attr6").unwrap());
     attributes.push(IdentityAttribute::new(b"attr7").unwrap());
     sender_wallet.set_credential(
-        ExpirableCredential::issue(
+        ExpirableCredential::create(
             sender_wallet.pub_key().address(),
             attributes,
             expiry,
-            &cred_issuer_keypair,
+            &cred_creator_keypair,
         )
         .unwrap(),
     );
     let policy = AssetPolicy::default()
-        .set_auditor_pub_key(auditor_keypair.pub_key())
-        .set_cred_issuer_pub_key(cred_issuer_keypair.pub_key())
+        .set_viewer_pub_key(viewer_keypair.pub_key())
+        .set_cred_creator_pub_key(cred_creator_keypair.pub_key())
         .reveal_record_opening()
         .unwrap()
         .reveal_ith_attribute(0)
@@ -1970,7 +1973,7 @@ pub fn example_traced_non_native_asset_with_credentials() {
         .unwrap();
     let (code, ..) = AssetCode::random(rng);
     let asset_def = AssetDefinition::new(code, policy.clone()).unwrap();
-    let auditor = AuditorMock::new(auditor_keypair, asset_def.clone());
+    let viewer = ViewerMock::new(viewer_keypair, asset_def.clone());
 
     let (record_opening_in_fee, uid) =
         ledger_state.mock_mint_native_asset(rng, sender_wallet.pub_key(), native_amount);
@@ -2011,10 +2014,11 @@ pub fn example_traced_non_native_asset_with_credentials() {
         .validate_single_xfr_note(&ledger_state, &xfr_note, mock_timestamp)
         .is_err());
 
-    // auditor
-    let (input_audit_data, output_audit_data) = auditor.scan_xfr(&xfr_note, mt_size_prev).unwrap();
-    assert_eq!(input_audit_data.len(), 1);
-    assert_eq!(output_audit_data.len(), 1);
+    // viewer
+    let (input_visible_data, output_visible_data) =
+        viewer.scan_xfr(&xfr_note, mt_size_prev).unwrap();
+    assert_eq!(input_visible_data.len(), 1);
+    assert_eq!(output_visible_data.len(), 1);
 
     // Bulleting board or users verify receiver memos
     let txn: TransactionNote = xfr_note.into();
@@ -2026,17 +2030,17 @@ pub fn example_traced_non_native_asset_with_credentials() {
     let mut expected_attributes = vec![None; ATTRS_LEN];
     expected_attributes[0] = Some(IdentityAttribute::new(b"attr0").unwrap());
     expected_attributes[4] = Some(IdentityAttribute::new(b"attr4").unwrap());
-    check_transfer_audit_data(
-        &input_audit_data[0],
-        auditor.asset_def.code,
+    check_transfer_visible_data(
+        &input_visible_data[0],
+        viewer.asset_def.code,
         Some(sender_wallet.pub_key().address()),
         Some(non_native_amount),
         Some(record_opening_in.blind),
         expected_attributes,
     );
-    check_transfer_audit_data(
-        &output_audit_data[0].0,
-        auditor.asset_def.code,
+    check_transfer_visible_data(
+        &output_visible_data[0].0,
+        viewer.asset_def.code,
         Some(receiver_wallet.pub_key().address()),
         Some(non_native_amount),
         Some(record_opening_recv.blind),
@@ -2045,8 +2049,8 @@ pub fn example_traced_non_native_asset_with_credentials() {
 }
 
 // Only use for testing
-fn check_transfer_audit_data(
-    data: &AuditData,
+fn check_transfer_visible_data(
+    data: &ViewableData,
     expected_code: AssetCode,
     expected_user_address: Option<UserAddress>,
     expected_amount: Option<u64>,
@@ -2145,22 +2149,24 @@ fn example_mint() {
     let srs = mock_retrieve_srs();
 
     // setting up wallets
-    let mut asset_issuer = AssetIssuerMock::new(rng, &srs);
+    let mut asset_creator = AssetIssuerMock::new(rng, &srs);
     let mut owner_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let owner_pub_key = owner_wallet.pub_key();
     // initialize the wallet with some native asset to be used to pay txn fee
     {
         let amount = 10;
         let (init_balance_ro, uid) =
-            ledger_state.mock_mint_native_asset(rng, asset_issuer.wallet.pub_key(), amount);
-        asset_issuer.wallet.add_record_opening(init_balance_ro, uid);
+            ledger_state.mock_mint_native_asset(rng, asset_creator.wallet.pub_key(), amount);
+        asset_creator
+            .wallet
+            .add_record_opening(init_balance_ro, uid);
     }
 
-    // issue/mint a new asset
+    // create/mint a new asset
     let mint_amount: u64 = 1000000;
-    let asset_code = asset_issuer.new_asset_definition(rng, b"BankX USD", AssetPolicy::default());
+    let asset_code = asset_creator.new_asset_definition(rng, b"BankX USD", AssetPolicy::default());
     let fee = 1;
-    let (mint_note, _sig, fee_chg_recv_memo) = asset_issuer
+    let (mint_note, _sig, fee_chg_recv_memo) = asset_creator
         .mint(
             rng,
             fee,
@@ -2346,18 +2352,18 @@ fn example_freeze() {
     check_freezer_status(&freezer, native_amount - fee, &user2, 0, 1, 0, 1);
 
     // add a minting note with another freezable record
-    let mut issuer = AssetIssuerMock::new(rng, &srs);
+    let mut creator = AssetIssuerMock::new(rng, &srs);
     let new_asset_policy = AssetPolicy::default()
-        .set_auditor_pub_key(freezer.auditor.pub_key())
+        .set_viewer_pub_key(freezer.viewer.pub_key())
         .reveal_record_opening()
         .unwrap()
         .set_freezer_pub_key(freezer.pub_key());
-    let new_asset_code = issuer.new_asset_definition(rng, b"freezable asset", new_asset_policy);
+    let new_asset_code = creator.new_asset_definition(rng, b"freezable asset", new_asset_policy);
     let (record, uid) =
-        ledger_state.mock_mint_native_asset(rng, issuer.wallet.pub_key(), native_amount);
-    issuer.wallet.add_record_opening(record, uid);
+        ledger_state.mock_mint_native_asset(rng, creator.wallet.pub_key(), native_amount);
+    creator.wallet.add_record_opening(record, uid);
     let new_asset_amount = 20u64;
-    let (mint_note, _sig, fee_ch_recv_memo) = issuer
+    let (mint_note, _sig, fee_ch_recv_memo) = creator
         .mint(
             rng,
             fee,

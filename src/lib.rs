@@ -11,7 +11,7 @@
 
 //! API library for the _configurable asset policy_ system which allows for
 //! issuance, transfers and (un)freezing of arbitrary asset that are fully
-//! private, yet publicly verifiable and auditable. It is strongly recommended
+//! private, yet publicly verifiable and viewable. It is strongly recommended
 //! to refer to at least the first two chapters of [Spec] for an introduction to
 //! core concepts, data structures and main workflows.
 //!
@@ -19,8 +19,8 @@
 //! As explained in Chapter 1.2 of [Spec], there are 5 main roles and all their
 //! public/private key related materials can be found under the [keys] module.
 //! Common actions involving a key can usually be found as associated methods
-//! of the key struct -- e.g. for an auditor/tracer to decrypt memos for
-//! him/her, use [`keys::AuditorKeyPair::open_transfer_audit_memo()`].
+//! of the key struct -- e.g. for an viewer to decrypt memos for
+//! him/her, use [`keys::ViewerKeyPair::open_transfer_viewing_memo()`].
 //!
 //! # 3 Types of Transaction and Their Workflows
 //! As explained in Chapter 2.1 of [Spec], we support 3 types of transaction

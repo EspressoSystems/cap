@@ -20,8 +20,8 @@ use crate::{
     errors::TxnApiError,
     keys::UserKeyPair,
     structs::{
-        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditMemo,
-        InternalAssetCode, Nullifier, RecordCommitment, RecordOpening,
+        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy, InternalAssetCode,
+        Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
     },
     BaseField, CurveParam, PairingEngine, ScalarField,
 };
@@ -145,18 +145,18 @@ pub(crate) fn verify(
 
 #[derive(Debug, Clone)]
 pub(crate) struct MintWitness<'a> {
-    pub(crate) issuer_keypair: &'a UserKeyPair,
+    pub(crate) creator_keypair: &'a UserKeyPair,
     pub(crate) acc_member_witness: AccMemberWitness<BaseField>,
     pub(crate) fee_ro: RecordOpening,
     pub(crate) mint_ro: RecordOpening,
     pub(crate) chg_ro: RecordOpening,
     pub(crate) ac_seed: AssetCodeSeed,
     pub(crate) ac_digest: AssetCodeDigest,
-    pub(crate) audit_memo_enc_rand: ScalarField,
+    pub(crate) viewing_memo_enc_rand: ScalarField,
 }
 
 impl<'a> MintWitness<'a> {
-    pub(crate) fn dummy(tree_depth: u8, issuer_keypair: &'a UserKeyPair) -> Self {
+    pub(crate) fn dummy(tree_depth: u8, creator_keypair: &'a UserKeyPair) -> Self {
         let fee_ro = RecordOpening {
             asset_def: AssetDefinition::native(),
             ..Default::default()
@@ -170,14 +170,14 @@ impl<'a> MintWitness<'a> {
             .unwrap()
             .1; // safe unwrap()
         Self {
-            issuer_keypair,
+            creator_keypair,
             acc_member_witness,
             fee_ro,
             mint_ro: RecordOpening::default(),
             chg_ro,
             ac_seed: AssetCodeSeed::default(),
             ac_digest: AssetCodeDigest::default(),
-            audit_memo_enc_rand: ScalarField::default(),
+            viewing_memo_enc_rand: ScalarField::default(),
         }
     }
 }
@@ -195,7 +195,7 @@ pub(crate) struct MintPublicInput {
     pub(crate) mint_ac: AssetCode,
     pub(crate) mint_internal_ac: InternalAssetCode,
     pub(crate) mint_policy: AssetPolicy,
-    pub(crate) audit_memo: AuditMemo,
+    pub(crate) viewing_memo: ViewableMemo,
 }
 
 impl MintPublicInput {
@@ -222,7 +222,7 @@ impl MintPublicInput {
         let uid = witness.acc_member_witness.uid;
         let fee_rc = witness.fee_ro.derive_record_commitment();
         let input_nullifier = witness
-            .issuer_keypair
+            .creator_keypair
             .derive_nullifier_key(&witness.fee_ro.asset_def.policy.freezer_pk)
             .nullify(uid as u64, &fee_rc);
         let mint_rc = RecordCommitment::from(&witness.mint_ro);
@@ -231,8 +231,8 @@ impl MintPublicInput {
         let mint_internal_ac = InternalAssetCode::new_internal(witness.ac_seed, witness.ac_digest);
         let mint_ac = AssetCode::new_domestic_from_internal(&mint_internal_ac);
         let mint_policy = witness.mint_ro.asset_def.policy.clone();
-        let audit_memo =
-            AuditMemo::new_for_mint_note(&witness.mint_ro, witness.audit_memo_enc_rand);
+        let viewing_memo =
+            ViewableMemo::new_for_mint_note(&witness.mint_ro, witness.viewing_memo_enc_rand);
         Ok(Self {
             merkle_root: witness.acc_member_witness.root,
             native_asset_code,
@@ -244,14 +244,14 @@ impl MintPublicInput {
             mint_ac,
             mint_internal_ac,
             mint_policy,
-            audit_memo,
+            viewing_memo,
         })
     }
 
     /// Flatten out all pubic input fields into a vector of BaseFields.
     /// Note that the order matters.
     /// The order: (root, native_ac, input_nullifier, fee, mint_rc, chg_rc,
-    /// mint_amount, mint_ac, mint_policy, audit_memo)
+    /// mint_amount, mint_ac, mint_policy, viewing_memo)
     pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
         let mut result = vec![
             self.merkle_root.to_scalar(),
@@ -265,7 +265,7 @@ impl MintPublicInput {
             self.mint_internal_ac.0,
         ];
         result.extend_from_slice(&self.mint_policy.to_scalars());
-        result.extend_from_slice(&self.audit_memo.0.to_scalars());
+        result.extend_from_slice(&self.viewing_memo.0.to_scalars());
         result
     }
 }
@@ -275,7 +275,7 @@ mod test {
     use super::MintPublicInput;
     use crate::{
         errors::TxnApiError,
-        keys::{AuditorKeyPair, UserKeyPair},
+        keys::{UserKeyPair, ViewerKeyPair},
         proof::{mint, universal_setup_for_staging},
         utils::params_builder::MintParamsBuilder,
     };
@@ -289,9 +289,9 @@ mod test {
         let input_amount = 30;
         let fee = 10;
         let mint_amount = 15;
-        let issuer_keypair = UserKeyPair::generate(rng);
+        let creator_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
-        let auditor_keypair = AuditorKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
 
         // transfer non-native asset type
         let builder = MintParamsBuilder::new(
@@ -300,9 +300,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &creator_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         );
         let witness = builder.build_witness(rng);
         assert!(
@@ -318,9 +318,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &creator_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         );
         let mut witness = builder.build_witness(rng);
         witness.chg_ro.amount = bad_fee;
@@ -343,9 +343,9 @@ mod test {
         let input_amount = 10;
         let fee = 4;
         let mint_amount = 35;
-        let issuer_keypair = UserKeyPair::generate(rng);
+        let creator_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
-        let auditor_keypair = AuditorKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
         let recv_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
 
         let builder = MintParamsBuilder::new(
@@ -354,9 +354,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &creator_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         );
         let witness = builder.build_witness(rng);
         let public_inputs_1 = MintPublicInput::from_witness(&witness)?;
@@ -393,9 +393,9 @@ mod test {
         let input_amount = rng.next_u32() as u64;
         let fee = rng.gen_range(1..input_amount);
         let mint_amount = rng.next_u32() as u64;
-        let issuer_keypair = UserKeyPair::generate(rng);
+        let creator_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
-        let auditor_keypair = AuditorKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
 
         let builder = MintParamsBuilder::new(
             rng,
@@ -403,9 +403,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &creator_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         );
         let witness = builder.build_witness(rng);
         let public_inputs_2 = MintPublicInput::from_witness(&witness)?;
