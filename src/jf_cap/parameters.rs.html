@@ -648,6 +648,20 @@
 <span id="646">646</span>
 <span id="647">647</span>
 <span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -714,15 +728,7 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="doccomment">/// Load universal parameter from a file.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_universal_parameter</span>(<span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">src</span>) =&gt; <span class="ident">src</span>,
-        <span class="prelude-val">None</span> =&gt; <span class="ident">default_path</span>(<span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>, <span class="string">&quot;bin&quot;</span>),
-    };
-
+<span class="kw">fn</span> <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">src</span>: <span class="ident">PathBuf</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">eprint!</span>(
         <span class="string">&quot;Loading universal parameter from: {} ...&quot;</span>,
@@ -731,6 +737,27 @@
     <span class="kw">let</span> <span class="ident">param</span> <span class="op">=</span> <span class="ident">load_data</span>(<span class="ident">src</span>)<span class="question-mark">?</span>;
     <span class="macro">eprintln!</span>(<span class="string">&quot; done in {} ms&quot;</span>, <span class="ident">now</span>.<span class="ident">elapsed</span>().<span class="ident">as_millis</span>());
     <span class="prelude-val">Ok</span>(<span class="ident">param</span>)
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>))]</span>
+<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">default_path</span>(<span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>, <span class="string">&quot;bin&quot;</span>))
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
+<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="ident"><span class="kw">crate</span>::proof::load_srs</span>(<span class="number">2usize</span>.<span class="ident">pow</span>(<span class="number">17</span>))
+}
+
+<span class="doccomment">/// Load universal parameter from a file.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// if `src` is `None`, load from the included SRS (bn254) or the default path</span>
+<span class="doccomment">/// (otherwise).</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_universal_parameter</span>(<span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="kw">match</span> <span class="ident">src</span> {
+        <span class="prelude-val">Some</span>(<span class="ident">src</span>) =&gt; <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">src</span>),
+        <span class="prelude-val">None</span> =&gt; <span class="ident">load_default_universal_parameters</span>(),
+    }
 }
 
 <span class="doccomment">/// Create and store transfer prover&#39;s proving key</span>
@@ -1111,9 +1138,10 @@
     <span class="prelude-val">Ok</span>(<span class="ident">verifying_key</span>)
 }
 
-<span class="comment">// by default, all parameters are stored in `CURRENT_CARGO_ROOT/data/`</span>
+<span class="comment">// by default, all parameters are stored in `$CAP_UNIV_PARAM_DIR/data/`</span>
 <span class="kw">fn</span> <span class="ident">default_path</span>(<span class="ident">filename</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">extension</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">PathBuf</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">d</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_MANIFEST_DIR&quot;</span>));
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">d</span> <span class="op">=</span>
+        <span class="ident">PathBuf::from</span>(<span class="ident">ark_std::env::var</span>(<span class="string">&quot;CAP_UNIV_PARAM_DIR&quot;</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;.&quot;</span>.<span class="ident">to_string</span>()));
     <span class="ident">d</span>.<span class="ident">push</span>(<span class="string">&quot;data&quot;</span>);
     <span class="ident">d</span>.<span class="ident">push</span>(<span class="ident">filename</span>);
     <span class="ident">d</span>.<span class="ident">set_extension</span>(<span class="ident">extension</span>);
