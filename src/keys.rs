@@ -88,6 +88,13 @@ impl UserPubKey {
         Self { address, enc_key }
     }
 
+    /// Clone the Encryption key.
+    /// Enc key does not impl Copy so we have to clone here.
+    /// The caller is responsible for clearing the memory.
+    pub fn enc_key(&self) -> aead::EncKey {
+        self.enc_key.clone()
+    }
+
     /// Verify a signature
     pub fn verify_sig(&self, msg: &[u8], sig: &Signature<CurveParam>) -> Result<(), TxnApiError> {
         let bls_scalars = hash_to_field::<_, BaseField>(msg);
