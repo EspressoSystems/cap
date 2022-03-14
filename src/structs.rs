@@ -1270,10 +1270,7 @@ impl AuditData {
     ) -> Result<Option<VerKey>, TxnApiError> {
         let point_affine = GroupAffine::<CurveParam>::new(*x, *y);
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
-            if asset_definition
-                .policy
-                .is_user_address_revealed()
-            {
+            if asset_definition.policy.is_user_address_revealed() {
                 return Err(TxnApiError::FailedAuditMemoDecryption(
                     "Invalid user address".to_ascii_lowercase(),
                 ));
@@ -1283,11 +1280,7 @@ impl AuditData {
         }
 
         let ver_key = VerKey::from(point_affine);
-        if asset_definition
-            .policy
-            .is_user_address_revealed()
-            || ver_key == VerKey::default()
-        {
+        if asset_definition.policy.is_user_address_revealed() || ver_key == VerKey::default() {
             Ok(Some(ver_key))
         } else {
             Ok(None)
