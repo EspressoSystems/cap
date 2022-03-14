@@ -477,6 +477,11 @@ impl AssetPolicy {
         Ok(self)
     }
 
+    /// Check if the policy is set to reveal user address
+    pub fn is_user_address_revealed(&self) -> bool {
+        self.reveal_map.is_user_address_revealed()
+    }
+
     /// Set policy to reveal amount to auditor
     /// Return TxnApiError::InvalidParameter if auditor public key has not been
     /// specified yet
@@ -490,6 +495,11 @@ impl AssetPolicy {
         }
         self.reveal_map.reveal_amount();
         Ok(self)
+    }
+
+    /// Check if the policy is set to reveal amount
+    pub fn is_amount_revealed(&self) -> bool {
+        self.reveal_map.is_amount_revealed()
     }
 
     /// Set policy to reveal record commitment blinding factor to auditor
@@ -1262,7 +1272,6 @@ impl AuditData {
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
             if asset_definition
                 .policy
-                .reveal_map
                 .is_user_address_revealed()
             {
                 return Err(TxnApiError::FailedAuditMemoDecryption(
@@ -1276,7 +1285,6 @@ impl AuditData {
         let ver_key = VerKey::from(point_affine);
         if asset_definition
             .policy
-            .reveal_map
             .is_user_address_revealed()
             || ver_key == VerKey::default()
         {
@@ -1312,7 +1320,7 @@ impl AuditData {
         }
         let asset_def = &mint_note.mint_asset_def;
         let user_address = AuditData::fetch_address(&audit_data[0], &audit_data[1], asset_def)?;
-        let amount = if asset_def.policy_ref().reveal_map.is_amount_revealed() {
+        let amount = if asset_def.policy_ref().is_amount_revealed() {
             Some(mint_note.mint_amount)
         } else {
             None
@@ -1353,7 +1361,7 @@ impl AuditData {
         }
         let user_address = AuditData::fetch_address(&data[0], &data[1], asset_definition)?;
 
-        let amount = if asset_definition.policy.reveal_map.is_amount_revealed() {
+        let amount = if asset_definition.policy.is_amount_revealed() {
             let big_int = data[2].into_repr();
             if big_int > BigInteger256::from(u64::MAX) {
                 return Err(TxnApiError::FailedAuditMemoDecryption(
