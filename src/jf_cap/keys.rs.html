@@ -554,6 +554,13 @@
 <span id="552">552</span>
 <span id="553">553</span>
 <span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -642,6 +649,13 @@
     <span class="doccomment">/// Constructor</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">address</span>: <span class="ident">UserAddress</span>, <span class="ident">enc_key</span>: <span class="ident">aead::EncKey</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> { <span class="ident">address</span>, <span class="ident">enc_key</span> }
+    }
+
+    <span class="doccomment">/// Clone the Encryption key.</span>
+    <span class="doccomment">/// Enc key does not impl Copy so we have to clone here.</span>
+    <span class="doccomment">/// The caller is responsible for clearing the memory.</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">enc_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">aead::EncKey</span> {
+        <span class="self">self</span>.<span class="ident">enc_key</span>.<span class="ident">clone</span>()
     }
 
     <span class="doccomment">/// Verify a signature</span>
