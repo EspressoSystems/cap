@@ -291,6 +291,7 @@ pub(crate) mod txn_helpers {
         vec::Vec,
     };
     use itertools::Itertools;
+    use jf_primitives::merkle_tree::{MerkleLeaf, MerkleLeafProof, MerkleTree};
     use jf_utils::hash_to_field;
     use rand::{CryptoRng, RngCore};
 
@@ -616,6 +617,28 @@ pub(crate) mod txn_helpers {
                 "Fee input and fee change records' public key do not match".to_string(),
             ));
         }
+        // Check that the merkle path is valid w.r.t. ro, path and root.
+        // Only turned on in debugging mode.
+        #[cfg(debug_assertions)]
+        MerkleTree::check_proof(
+            fee.fee_input.acc_member_witness.root,
+            fee.fee_input.acc_member_witness.uid,
+            &MerkleLeafProof {
+                leaf: MerkleLeaf(
+                    fee.fee_input
+                        .ro
+                        .derive_record_commitment()
+                        .to_field_element(),
+                ),
+                path: fee.fee_input.acc_member_witness.merkle_path.clone(),
+            },
+        )
+        .map_err(|e| {
+            TxnApiError::InvalidParameter(format!(
+                "Incorrect Merkle path on fee input; got a different merkle root: {:?}",
+                e
+            ))
+        })?;
         Ok(())
     }
 
