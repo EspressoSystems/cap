@@ -618,8 +618,6 @@ pub(crate) mod txn_helpers {
             ));
         }
         // Check that the merkle path is valid w.r.t. ro, path and root.
-        // Only turned on in debugging mode.
-        #[cfg(debug_assertions)]
         MerkleTree::check_proof(
             fee.fee_input.acc_member_witness.root,
             fee.fee_input.acc_member_witness.uid,
@@ -638,8 +636,7 @@ pub(crate) mod txn_helpers {
                 "Incorrect Merkle path on fee input; got a different merkle root: {:?}",
                 e
             ))
-        })?;
-        Ok(())
+        })
     }
 
     /// check the sum of inputs equals to sum of output and returns the fee if
