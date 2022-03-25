@@ -18,7 +18,7 @@
 
 use crate::{
     errors::TxnApiError,
-    proof::{self, freeze::FreezeVerifyingKey, transfer::TransferVerifyingKey, UniversalParam},
+    proof::{self, freeze::FreezeVerifyingKey, transfer::TransferVerifyingKey},
     structs::{AssetCode, AuditMemo, Nullifier, RecordCommitment},
     transfer::TransferNote,
     BaseField, MintVerifyingKey, PairingEngine,
@@ -47,14 +47,6 @@ impl FreezeVerifyingKey {
     pub fn get_verifying_key(&self) -> VerifyingKey<PairingEngine> {
         self.verifying_key.clone()
     }
-}
-
-/// load Aztec's universal setup CRS for testing
-pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
-    max_degree: usize,
-    rng: &mut R,
-) -> Result<UniversalParam, TxnApiError> {
-    proof::universal_setup_for_test(max_degree, rng)
 }
 
 /// Public inputs of a transfer transaction

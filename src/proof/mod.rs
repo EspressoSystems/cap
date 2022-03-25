@@ -59,6 +59,9 @@ pub type UniversalParam = UniversalSrs<PairingEngine>;
 
 /// One-time universal setup for parameters to be used in proving validity of
 /// all transactions, regardless of the transaction type.
+///
+/// NOTE: this API is reserved for production usage. For now, in testing or
+/// staging environment, please use `universal_setup_for_test()` instead!
 pub fn universal_setup<R: RngCore + CryptoRng>(
     max_degree: usize,
     rng: &mut R,
@@ -112,7 +115,14 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
 // add two test helper functions with uniformed API
 /// load Aztec's universal setup CRS
 #[cfg(feature = "bn254")]
-pub(crate) fn universal_setup_for_test<R: RngCore + CryptoRng>(
+/// A unified API for SRS generation for testing/staging environment.
+///
+/// # Feature Flags
+/// - `feature("bn254")`: by default, we load SRS from Aztec's Ignition
+///   Ceremony.
+/// - otherwise: we generates fresh SRS on the spot (not secure for production
+///   use! toxic waste not thrown away).
+pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
     max_degree: usize,
     _rng: &mut R,
 ) -> Result<UniversalParam, TxnApiError> {
@@ -120,7 +130,14 @@ pub(crate) fn universal_setup_for_test<R: RngCore + CryptoRng>(
 }
 
 #[cfg(not(feature = "bn254"))]
-pub(crate) fn universal_setup_for_test<R: RngCore + CryptoRng>(
+/// A unified API for SRS generation for testing/staging environment.
+///
+/// # Feature Flags
+/// - `feature("bn254")`: by default, we load SRS from Aztec's Ignition
+///   Ceremony.
+/// - otherwise: we generates fresh SRS on the spot (not secure for production
+///   use! toxic waste not thrown away).
+pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
     max_degree: usize,
     rng: &mut R,
 ) -> Result<UniversalParam, TxnApiError> {
