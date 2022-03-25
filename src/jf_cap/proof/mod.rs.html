@@ -128,6 +128,23 @@
 <span id="126">126</span>
 <span id="127">127</span>
 <span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -189,6 +206,9 @@
 
 <span class="doccomment">/// One-time universal setup for parameters to be used in proving validity of</span>
 <span class="doccomment">/// all transactions, regardless of the transaction type.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// NOTE: this API is reserved for production usage. For now, in testing or</span>
+<span class="doccomment">/// staging environment, please use `universal_setup_for_test()` instead!</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
@@ -242,7 +262,14 @@
 <span class="comment">// add two test helper functions with uniformed API</span>
 <span class="doccomment">/// load Aztec&#39;s universal setup CRS</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">universal_setup_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="doccomment">/// A unified API for SRS generation for testing/staging environment.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Feature Flags</span>
+<span class="doccomment">/// - `feature(&quot;bn254&quot;)`: by default, we load SRS from Aztec&#39;s Ignition</span>
+<span class="doccomment">///   Ceremony.</span>
+<span class="doccomment">/// - otherwise: we generates fresh SRS on the spot (not secure for production</span>
+<span class="doccomment">///   use! toxic waste not thrown away).</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">_rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
@@ -250,7 +277,14 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>))]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">universal_setup_for_test</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="doccomment">/// A unified API for SRS generation for testing/staging environment.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// # Feature Flags</span>
+<span class="doccomment">/// - `feature(&quot;bn254&quot;)`: by default, we load SRS from Aztec&#39;s Ignition</span>
+<span class="doccomment">///   Ceremony.</span>
+<span class="doccomment">/// - otherwise: we generates fresh SRS on the spot (not secure for production</span>
+<span class="doccomment">///   use! toxic waste not thrown away).</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {

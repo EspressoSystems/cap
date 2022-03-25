@@ -1488,7 +1488,7 @@
             <span class="ident">tree_depth</span>,
         )
         .<span class="ident">unwrap</span>();
-        <span class="kw">let</span> <span class="ident">srs</span> <span class="op">=</span> <span class="ident">proof::universal_setup_for_test</span>(<span class="ident">domain_size</span>, <span class="ident">rng</span>).<span class="ident">unwrap</span>();
+        <span class="kw">let</span> <span class="ident">srs</span> <span class="op">=</span> <span class="ident">proof::universal_setup_for_staging</span>(<span class="ident">domain_size</span>, <span class="ident">rng</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> (<span class="ident">transfer_prover_key</span>, <span class="ident">transfer_verifier_key</span>, <span class="kw">_</span>) <span class="op">=</span>
             <span class="ident">transfer::preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">srs</span>, <span class="ident">transfer_num_input</span>, <span class="ident">transfer_num_output</span>, <span class="ident">tree_depth</span>)
                 .<span class="ident">unwrap</span>();
