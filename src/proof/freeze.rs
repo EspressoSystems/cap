@@ -347,7 +347,7 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
-        proof::{freeze, universal_setup_for_test},
+        proof::{freeze, universal_setup_for_staging},
         utils::params_builder::FreezeParamsBuilder,
         KeyPair,
     };
@@ -427,7 +427,7 @@ mod test {
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
-        let universal_param = universal_setup_for_test(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 

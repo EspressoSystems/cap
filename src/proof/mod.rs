@@ -122,7 +122,7 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
 ///   Ceremony.
 /// - otherwise: we generates fresh SRS on the spot (not secure for production
 ///   use! toxic waste not thrown away).
-pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
+pub fn universal_setup_for_staging<R: RngCore + CryptoRng>(
     max_degree: usize,
     _rng: &mut R,
 ) -> Result<UniversalParam, TxnApiError> {
@@ -137,7 +137,7 @@ pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
 ///   Ceremony.
 /// - otherwise: we generates fresh SRS on the spot (not secure for production
 ///   use! toxic waste not thrown away).
-pub fn universal_setup_for_test<R: RngCore + CryptoRng>(
+pub fn universal_setup_for_staging<R: RngCore + CryptoRng>(
     max_degree: usize,
     rng: &mut R,
 ) -> Result<UniversalParam, TxnApiError> {

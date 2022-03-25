@@ -203,7 +203,7 @@ mod test {
         keys::{FreezerKeyPair, UserKeyPair},
         proof::{
             freeze::{self, FreezeProvingKey, FreezeVerifyingKey},
-            universal_setup_for_test,
+            universal_setup_for_staging,
         },
         sign_receiver_memos,
         structs::{AssetDefinition, AssetPolicy, FreezeFlag, ReceiverMemo},
@@ -219,7 +219,7 @@ mod test {
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
-        let universal_param = universal_setup_for_test(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 

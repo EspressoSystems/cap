@@ -459,7 +459,7 @@ mod test {
         constants::MAX_TIMESTAMP_LEN,
         errors::TxnApiError,
         keys::{CredIssuerPubKey, UserAddress, UserKeyPair},
-        proof::universal_setup_for_test,
+        proof::universal_setup_for_staging,
         structs::{AssetDefinition, ExpirableCredential},
         utils::params_builder::TransferParamsBuilder,
     };
@@ -598,7 +598,7 @@ mod test {
         let num_input = 2;
         let num_output = 6;
         let depth = 10;
-        let universal_param = universal_setup_for_test(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key_1, verifying_key_1, _) =
             super::preprocess(&universal_param, num_input, num_output, depth)?;
 

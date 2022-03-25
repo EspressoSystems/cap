@@ -79,7 +79,7 @@ impl TxnsParams {
             tree_depth,
         )
         .unwrap();
-        let srs = proof::universal_setup_for_test(domain_size, rng).unwrap();
+        let srs = proof::universal_setup_for_staging(domain_size, rng).unwrap();
         let (transfer_prover_key, transfer_verifier_key, _) =
             transfer::preprocess(&srs, transfer_num_input, transfer_num_output, tree_depth)
                 .unwrap();

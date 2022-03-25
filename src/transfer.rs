@@ -390,7 +390,7 @@ mod tests {
         keys::UserKeyPair,
         proof::{
             transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
-            universal_setup_for_test,
+            universal_setup_for_staging,
         },
         structs::{AssetDefinition, ExpirableCredential, NoteType},
         transfer::TransferNote,
@@ -415,7 +415,7 @@ mod tests {
         let mut prng = ark_std::test_rng();
         let domain_size =
             compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth).unwrap();
-        let srs = universal_setup_for_test(domain_size, &mut prng).unwrap();
+        let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
         let keypair1 = UserKeyPair::generate(&mut prng);
@@ -583,7 +583,7 @@ mod tests {
             let domain_size =
                 compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth)
                     .unwrap();
-            let srs = universal_setup_for_test(domain_size, &mut prng).unwrap();
+            let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
 
             let (prover_key, ..) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
@@ -720,7 +720,7 @@ mod tests {
         let mut prng = ark_std::test_rng();
         let domain_size =
             compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth).unwrap();
-        let srs = universal_setup_for_test(domain_size, &mut prng).unwrap();
+        let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
         let fee_input = 30;

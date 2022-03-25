@@ -276,7 +276,7 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{AuditorKeyPair, UserKeyPair},
-        proof::{mint, universal_setup_for_test},
+        proof::{mint, universal_setup_for_staging},
         utils::params_builder::MintParamsBuilder,
     };
     use jf_primitives::schnorr_dsa;
@@ -337,7 +337,7 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 10;
         let max_degree = 32770;
-        let universal_param = universal_setup_for_test(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) = mint::preprocess(&universal_param, tree_depth)?;
 
         let input_amount = 10;

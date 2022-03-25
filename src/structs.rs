@@ -1603,7 +1603,7 @@ mod test {
         use super::*;
         use crate::{
             proof,
-            proof::universal_setup_for_test,
+            proof::universal_setup_for_staging,
             utils::params_builder::{MintParamsBuilder, PolicyRevealAttr},
         };
 
@@ -1612,7 +1612,7 @@ mod test {
             let rng = &mut ark_std::test_rng();
             let tree_depth = 10;
             let max_degree = 32770;
-            let universal_param = universal_setup_for_test(max_degree, rng)?;
+            let universal_param = universal_setup_for_staging(max_degree, rng)?;
             let (proving_key, ..) = proof::mint::preprocess(&universal_param, tree_depth)?;
 
             let input_amount = 10;
