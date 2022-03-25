@@ -213,7 +213,7 @@ mod test {
         proof::{
             self,
             mint::{MintProvingKey, MintVerifyingKey},
-            universal_setup_for_test,
+            universal_setup_for_staging,
         },
         sign_receiver_memos,
         structs::{AssetCodeSeed, AssetDefinition, FreezeFlag, ReceiverMemo},
@@ -228,7 +228,7 @@ mod test {
         let tree_depth = 10;
         // increasing the max_degree since bls12_377 requires a larger one
         let max_degree = 32770;
-        let universal_param = universal_setup_for_test(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             proof::mint::preprocess(&universal_param, tree_depth)?;
 
