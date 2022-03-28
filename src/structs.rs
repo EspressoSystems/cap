@@ -517,6 +517,11 @@ impl AssetPolicy {
         Ok(self)
     }
 
+    /// Check if the policy is set to reveal blinding factor
+    pub fn is_blinding_factor_revealed(&self) -> bool {
+        self.reveal_map.is_blinding_factor_revealed()
+    }
+
     /// Set policy to reveal ith identity attribute to auditor
     /// Return TxnApiError::InvalidParameter if auditor or credential issuer
     /// public key have not been specified yet or it `i` greater or equal to
