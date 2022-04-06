@@ -22,7 +22,6 @@ use ark_std::{
 };
 use jf_cap::{
     constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
-    derive_txns_fee_record,
     errors::TxnApiError,
     freeze::FreezeNote,
     keys::{
@@ -241,8 +240,14 @@ impl MockBlock {
     /// scan the block and derive record commitment corresponding to the
     /// collected fee owned by block proposer
     pub fn derive_fee_record_commitment(&self) -> Result<RecordCommitment> {
-        let rc = derive_txns_fee_record(&self.txns, self.proposer_pub_key.clone(), self.fee_blind)?;
-        Ok(rc)
+        let total_fee = TransactionNote::calculate_fee(&self.txns)?;
+        Ok(RecordCommitment::from(&RecordOpening {
+            amount: total_fee,
+            asset_def: AssetDefinition::native(),
+            pub_key: self.proposer_pub_key.clone(),
+            freeze_flag: FreezeFlag::Unfrozen,
+            blind: self.fee_blind,
+        }))
     }
 }
 
