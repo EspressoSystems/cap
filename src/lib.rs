@@ -567,7 +567,7 @@ where
     Ok(ro)
 }
 
-/// Derive the a list of record commitments corresponding to fees from a list of
+/// Derive a list of record commitments corresponding to fees from a list of
 /// transaction notes (within a block). The result is a vector of record
 /// commitment which may be further aggregated into a single one by the caller.
 /// This function is intended to be called by nodes validating blocks.
