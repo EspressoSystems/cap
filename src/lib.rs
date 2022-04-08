@@ -588,7 +588,7 @@ mod test {
         structs::{AssetDefinition, BlindFactor, FreezeFlag, RecordOpening},
         txn_batch_verify,
         utils::params_builder::TxnsParams,
-        KeyPair, TransactionNote,
+        KeyPair, TransactionNote, calculate_fee,
     };
     use ark_std::{
         rand::{CryptoRng, RngCore},
@@ -619,7 +619,7 @@ mod test {
                 "Require at least 1 transaction to collect fee".to_string(),
             ));
         }
-        let total_fee = TransactionNote::calculate_fee(txns)?;
+        let total_fee = calculate_fee(txns)?;
         let ro = RecordOpening::new(
             rng,
             total_fee,
@@ -677,7 +677,7 @@ mod test {
 
         // Test calculate fee
         // todo: check this fee is correct
-        let fee = TransactionNote::calculate_fee(&params.txns).unwrap();
+        let fee = calculate_fee(&params.txns).unwrap();
         assert_eq!(fee, 5_u64);
 
         // Overflow
@@ -692,7 +692,7 @@ mod test {
         let mut txns = params.txns.clone();
         txns.push(TransactionNote::Transfer(v));
 
-        assert!(TransactionNote::calculate_fee(&txns).is_err());
+        assert!(calculate_fee(&txns).is_err());
 
         // test fee collection
         let validator_keypair = UserKeyPair::generate(rng);
@@ -704,7 +704,7 @@ mod test {
         assert_eq!(fee_ro.asset_def, AssetDefinition::native());
         assert_eq!(fee_ro.pub_key, validator_keypair.pub_key());
         assert_eq!(fee_ro.freeze_flag, FreezeFlag::Unfrozen);
-        assert_eq!(fee_ro.amount, TransactionNote::calculate_fee(&params.txns)?);
+        assert_eq!(fee_ro.amount, calculate_fee(&params.txns)?);
 
         // test derive_txns_fee_record()
         let rng = &mut ark_std::test_rng();

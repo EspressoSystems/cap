@@ -42,7 +42,7 @@ use jf_cap::{
         RecordCommitment, RecordOpening, TxnFeeInfo,
     },
     transfer::{TransferNote, TransferNoteInput},
-    txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey,
+    txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey, calculate_fee,
 };
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
@@ -239,7 +239,7 @@ impl MockBlock {
     /// scan the block and derive record commitment corresponding to the
     /// collected fee owned by block proposer
     pub fn derive_fee_record_commitment(&self) -> Result<RecordCommitment> {
-        let total_fee = TransactionNote::calculate_fee(&self.txns)?;
+        let total_fee = calculate_fee(&self.txns)?;
         Ok(RecordCommitment::from(&RecordOpening {
             amount: total_fee,
             asset_def: AssetDefinition::native(),
@@ -329,7 +329,7 @@ impl<'a> ValidatorMock<'a> {
         txns: Vec<TransactionNote>,
     ) -> Result<(RecordOpening, MockBlock, Signature<CurveParam>)> {
         // 1. sample collected fee record
-        let total_fee = TransactionNote::calculate_fee(&txns)?;
+        let total_fee = calculate_fee(&txns)?;
         let record_opening = RecordOpening::new(
             rng,
             total_fee,
