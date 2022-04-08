@@ -29,7 +29,6 @@ use jf_cap::{
         UserAddress, UserKeyPair, UserPubKey,
     },
     mint::MintNote,
-    prepare_txns_fee_record,
     proof::{
         freeze::FreezeProvingKey,
         mint::MintProvingKey,
@@ -330,7 +329,14 @@ impl<'a> ValidatorMock<'a> {
         txns: Vec<TransactionNote>,
     ) -> Result<(RecordOpening, MockBlock, Signature<CurveParam>)> {
         // 1. sample collected fee record
-        let record_opening = prepare_txns_fee_record(rng, &txns, self.wallet.pub_key())?;
+        let total_fee = TransactionNote::calculate_fee(&txns)?;
+        let record_opening = RecordOpening::new(
+            rng,
+            total_fee,
+            AssetDefinition::native(),
+            self.wallet.pub_key(),
+            FreezeFlag::Unfrozen,
+        );
 
         // 2. build block
         let block = MockBlock {
