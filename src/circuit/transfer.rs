@@ -207,7 +207,7 @@ impl TransferCircuit {
         let dummy_key = UserAddressVar::dummy(circuit);
         for input in witness.input_secrets.iter().skip(1) {
             let is_dummy_record = input.ro.is_asset_code_dummy(circuit)?;
-            // if record is dummy, then add dummy key to viewing memoso that viewer can
+            // if record is dummy, then add dummy key to viewing memo so that viewer can
             // recognize dummy records by looking at the key
             let addr_x = circuit.conditional_select(
                 is_dummy_record,

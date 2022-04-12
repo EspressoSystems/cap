@@ -1182,7 +1182,7 @@ impl ViewableMemo {
                 }
                 let mut reveal_vals = asset_def.policy.reveal_map.hadamard_product(&vals);
                 // when the record is dummy, we replace the random secret key with a dummy one
-                // on the viewing memoso that viewer can recognize the record as
+                // on the viewing memo so that viewer can recognize the record as
                 // dummy. Recall that random address on the record is needed for
                 // security reasons (it hides the nullifier key)
                 let (dummy_x, dummy_y) = (&UserAddress::default()).into();
