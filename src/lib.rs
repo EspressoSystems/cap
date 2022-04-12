@@ -582,53 +582,11 @@ pub fn sign_receiver_memos(
 #[cfg(test)]
 mod test {
     use crate::{
-        calculate_fee, derive_txns_fee_records,
-        errors::TxnApiError,
-        keys::{UserKeyPair, UserPubKey},
-        structs::{AssetDefinition, BlindFactor, FreezeFlag, RecordOpening},
-        txn_batch_verify,
-        utils::params_builder::TxnsParams,
-        KeyPair, TransactionNote,
+        calculate_fee, derive_txns_fee_records, errors::TxnApiError, keys::UserPubKey,
+        structs::BlindFactor, txn_batch_verify, utils::params_builder::TxnsParams, KeyPair,
+        TransactionNote,
     };
-    use ark_std::{
-        rand::{CryptoRng, RngCore},
-        string::ToString,
-        vec,
-        vec::Vec,
-    };
-
-    /// Prepare the record opening corresponding to collected fee from a list of
-    /// transaction notes (within a block). The result is a record opening whose
-    /// blinding factor should be directly appended to the same block before
-    /// being disseminated to other nodes. This function is intended to be
-    /// called by nodes proposing blocks.
-    ///
-    /// * `txns` - List of verified transaction notes within a block
-    /// * `owner_pk` - Public key of the owner of the collected fee, usually the
-    ///   block proposer's public key
-    pub(crate) fn prepare_txns_fee_record<R>(
-        rng: &mut R,
-        txns: &[TransactionNote],
-        owner_pk: UserPubKey,
-    ) -> Result<RecordOpening, TxnApiError>
-    where
-        R: RngCore + CryptoRng,
-    {
-        if txns.is_empty() {
-            return Err(TxnApiError::InvalidParameter(
-                "Require at least 1 transaction to collect fee".to_string(),
-            ));
-        }
-        let total_fee = calculate_fee(txns)?;
-        let ro = RecordOpening::new(
-            rng,
-            total_fee,
-            AssetDefinition::native(),
-            owner_pk,
-            FreezeFlag::Unfrozen,
-        );
-        Ok(ro)
-    }
+    use ark_std::{vec, vec::Vec};
 
     #[test]
     fn test_transaction_note() -> Result<(), TxnApiError> {
@@ -693,18 +651,6 @@ mod test {
         txns.push(TransactionNote::Transfer(v));
 
         assert!(calculate_fee(&txns).is_err());
-
-        // test fee collection
-        let validator_keypair = UserKeyPair::generate(rng);
-        let fee_ro = prepare_txns_fee_record(rng, &params.txns, validator_keypair.pub_key())?;
-
-        // Cannot compute fees for an empty list of transactions
-        assert!(prepare_txns_fee_record(rng, &[], validator_keypair.pub_key()).is_err());
-
-        assert_eq!(fee_ro.asset_def, AssetDefinition::native());
-        assert_eq!(fee_ro.pub_key, validator_keypair.pub_key());
-        assert_eq!(fee_ro.freeze_flag, FreezeFlag::Unfrozen);
-        assert_eq!(fee_ro.amount, calculate_fee(&params.txns)?);
 
         // test derive_txns_fee_record()
         let rng = &mut ark_std::test_rng();
