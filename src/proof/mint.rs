@@ -145,7 +145,7 @@ pub(crate) fn verify(
 
 #[derive(Debug, Clone)]
 pub(crate) struct MintWitness<'a> {
-    pub(crate) creator_keypair: &'a UserKeyPair,
+    pub(crate) minter_keypair: &'a UserKeyPair,
     pub(crate) acc_member_witness: AccMemberWitness<BaseField>,
     pub(crate) fee_ro: RecordOpening,
     pub(crate) mint_ro: RecordOpening,
@@ -156,7 +156,7 @@ pub(crate) struct MintWitness<'a> {
 }
 
 impl<'a> MintWitness<'a> {
-    pub(crate) fn dummy(tree_depth: u8, creator_keypair: &'a UserKeyPair) -> Self {
+    pub(crate) fn dummy(tree_depth: u8, minter_keypair: &'a UserKeyPair) -> Self {
         let fee_ro = RecordOpening {
             asset_def: AssetDefinition::native(),
             ..Default::default()
@@ -170,7 +170,7 @@ impl<'a> MintWitness<'a> {
             .unwrap()
             .1; // safe unwrap()
         Self {
-            creator_keypair,
+            minter_keypair,
             acc_member_witness,
             fee_ro,
             mint_ro: RecordOpening::default(),
@@ -222,7 +222,7 @@ impl MintPublicInput {
         let uid = witness.acc_member_witness.uid;
         let fee_rc = witness.fee_ro.derive_record_commitment();
         let input_nullifier = witness
-            .creator_keypair
+            .minter_keypair
             .derive_nullifier_key(&witness.fee_ro.asset_def.policy.freezer_pk)
             .nullify(uid as u64, &fee_rc);
         let mint_rc = RecordCommitment::from(&witness.mint_ro);
@@ -289,7 +289,7 @@ mod test {
         let input_amount = 30;
         let fee = 10;
         let mint_amount = 15;
-        let creator_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
 
@@ -300,7 +300,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         );
@@ -318,7 +318,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         );
@@ -343,7 +343,7 @@ mod test {
         let input_amount = 10;
         let fee = 4;
         let mint_amount = 35;
-        let creator_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let recv_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
@@ -354,7 +354,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         );
@@ -393,7 +393,7 @@ mod test {
         let input_amount = rng.next_u32() as u64;
         let fee = rng.gen_range(1..input_amount);
         let mint_amount = rng.next_u32() as u64;
-        let creator_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
 
@@ -403,7 +403,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         );

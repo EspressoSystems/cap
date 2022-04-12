@@ -461,12 +461,12 @@ mod tests {
     #[test]
     fn test_verify_expirable_credential() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
-        let creator_keypair = CredIssuerKeyPair::generate(rng);
+        let minter_keypair = CredIssuerKeyPair::generate(rng);
         let user = UserKeyPair::generate(rng);
         let expiry = 9999u64;
         let attrs = IdentityAttribute::random_vector(rng);
         let expirable_cred =
-            ExpirableCredential::create(user.address(), attrs, expiry, &creator_keypair).unwrap();
+            ExpirableCredential::create(user.address(), attrs, expiry, &minter_keypair).unwrap();
 
         // Happy path
         let valid_until = BaseField::from(expiry - 100u64);
@@ -558,7 +558,7 @@ mod tests {
     }
 
     ////////////////////////////////////////////////////////////
-    // Audit memo related tests ////////////////////////////////
+    // Viewer memo related tests ////////////////////////////////
     ////////////////////////////////////////////////////////////
 
     #[test]

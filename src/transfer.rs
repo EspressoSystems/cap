@@ -104,7 +104,7 @@ pub struct TransferNoteInput<'kp> {
     /// Reference of the record owner's key pair.
     pub owner_keypair: &'kp UserKeyPair,
     /// The identity credential of the user. Optional, only needed if asset
-    /// policy has a non-empty `AuditPubKey`.
+    /// policy has a non-empty `ViewerPubKey`.
     pub cred: Option<ExpirableCredential>,
 }
 

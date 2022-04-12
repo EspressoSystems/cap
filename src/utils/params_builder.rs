@@ -107,11 +107,11 @@ impl TxnsParams {
             })
             .collect();
 
-        let mut creator_keypairs = vec![];
+        let mut minter_keypairs = vec![];
         let mut recv_keypairs = vec![];
         let mut viewer_keypairs = vec![];
         (0..num_mint_txn).for_each(|_| {
-            creator_keypairs.push(UserKeyPair::generate(rng));
+            minter_keypairs.push(UserKeyPair::generate(rng));
             recv_keypairs.push(UserKeyPair::generate(rng));
             viewer_keypairs.push(ViewerKeyPair::generate(rng));
         });
@@ -122,7 +122,7 @@ impl TxnsParams {
                 MintParamsBuilder::rand(
                     rng,
                     tree_depth,
-                    &creator_keypairs[i],
+                    &minter_keypairs[i],
                     &recv_keypairs[i],
                     &viewer_keypairs[i],
                 )
@@ -574,7 +574,7 @@ impl<'a> TransferParamsBuilder<'a> {
                         self.input_upk_at(i).address,
                         IdentityAttribute::random_vector(&mut self.rng),
                         cred_expiry,
-                        &transfer_asset_def.creator_keypair,
+                        &transfer_asset_def.minter_keypair,
                     )
                     .unwrap(),
                 )
@@ -873,25 +873,25 @@ impl<'a> TransferParamsBuilder<'a> {
 pub(crate) struct NonNativeAssetDefinition {
     pub(crate) asset_def: AssetDefinition,
     pub(crate) viewer_keypair: ViewerKeyPair,
-    pub(crate) creator_keypair: CredIssuerKeyPair,
+    pub(crate) minter_keypair: CredIssuerKeyPair,
     pub(crate) freezer_keypair: FreezerKeyPair,
 }
 
 impl NonNativeAssetDefinition {
     fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let viewer_keypair = ViewerKeyPair::generate(rng);
-        let creator_keypair = CredIssuerKeyPair::generate(rng);
+        let minter_keypair = CredIssuerKeyPair::generate(rng);
         let freezer_keypair = FreezerKeyPair::generate(rng);
         let (code, _seed) = AssetCode::random(rng);
         let policy = AssetPolicy::default()
             .set_viewer_pub_key(viewer_keypair.pub_key())
-            .set_cred_creator_pub_key(creator_keypair.pub_key())
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
             .set_freezer_pub_key(freezer_keypair.pub_key());
         let asset_def = AssetDefinition::new(code, policy).unwrap();
         Self {
             asset_def,
             viewer_keypair,
-            creator_keypair,
+            minter_keypair,
             freezer_keypair,
         }
     }
@@ -901,7 +901,7 @@ impl NonNativeAssetDefinition {
 /// Struct containing the parameters needed to build a Mint note
 pub struct MintParamsBuilder<'a> {
     tree_depth: u8,
-    pub(crate) creator_keypair: &'a UserKeyPair,
+    pub(crate) minter_keypair: &'a UserKeyPair,
     pub(crate) fee_ro: RecordOpening,
     pub(crate) fee: u64,
     pub(crate) mint_ro: RecordOpening,
@@ -922,7 +922,7 @@ impl<'a> MintParamsBuilder<'a> {
         input_amount: u64,
         fee: u64,
         mint_amount: u64,
-        creator_keypair: &'a UserKeyPair,
+        minter_keypair: &'a UserKeyPair,
         receiver_keypair: &'a UserKeyPair,
         viewer_keypair: &'a ViewerKeyPair,
     ) -> Self
@@ -933,7 +933,7 @@ impl<'a> MintParamsBuilder<'a> {
             rng,
             input_amount,
             AssetDefinition::native(),
-            creator_keypair.pub_key(),
+            minter_keypair.pub_key(),
             FreezeFlag::Unfrozen,
         );
 
@@ -959,7 +959,7 @@ impl<'a> MintParamsBuilder<'a> {
 
         let mut builder = Self {
             tree_depth,
-            creator_keypair,
+            minter_keypair,
             fee_ro,
             fee,
             mint_ro,
@@ -1007,7 +1007,7 @@ impl<'a> MintParamsBuilder<'a> {
             FreezeFlag::Unfrozen,
         );
         MintWitness {
-            creator_keypair: self.creator_keypair,
+            minter_keypair: self.minter_keypair,
             acc_member_witness: self.acc_member_witness.clone(),
             fee_ro: self.fee_ro.clone(),
             mint_ro: self.mint_ro.clone(),
@@ -1070,7 +1070,7 @@ impl<'a> MintParamsBuilder<'a> {
         let fee_input = FeeInput {
             ro: self.fee_ro.clone(),
             acc_member_witness: self.acc_member_witness.clone(),
-            owner_keypair: self.creator_keypair,
+            owner_keypair: self.minter_keypair,
         };
         let (txn_fee_info, fee_chg_ro) = TxnFeeInfo::new(rng, fee_input, self.fee)?;
         let (note, key_pair) = MintNote::generate(
@@ -1088,7 +1088,7 @@ impl<'a> MintParamsBuilder<'a> {
     pub(crate) fn rand<R>(
         rng: &mut R,
         tree_depth: u8,
-        creator_keypair: &'a UserKeyPair,
+        minter_keypair: &'a UserKeyPair,
         receiver_keypair: &'a UserKeyPair,
         viewer_keypair: &'a ViewerKeyPair,
     ) -> Self
@@ -1104,7 +1104,7 @@ impl<'a> MintParamsBuilder<'a> {
             input_amount,
             fee,
             mint_amount,
-            creator_keypair,
+            minter_keypair,
             receiver_keypair,
             viewer_keypair,
         )

@@ -175,7 +175,7 @@ impl TransferCircuit {
             &amounts_out,
         )?;
 
-        // Audit memo is correctly constructed when `viewer_pk` is not null and
+        // Viewer memo is correctly constructed when `viewer_pk` is not null and
         // `transfer_amount > asset_policy.reveal_threshold`
         let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
         let b_under_limit = circuit.is_in_range(amount_diff, AMOUNT_LEN)?;

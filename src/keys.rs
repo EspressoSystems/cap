@@ -15,7 +15,7 @@
 //! | ---- | --------------- |
 //! | User (incl Asset Issuer, Validators) | [UserKeyPair], [UserPubKey] |
 //! | Credential Issuer | [CredIssuerKeyPair], [CredIssuerPubKey] |
-//! | Tracer/Viewer | [ViewerKeyPair], [ViewerPubKey] |
+//! | Viewer | [ViewerKeyPair], [ViewerPubKey] |
 //! | Freezer | [FreezerKeyPair], [FreezerPubKey] |
 use crate::{
     constants::VIEWABLE_DATA_LEN,
@@ -535,7 +535,7 @@ mod test {
     fn test_serde() {
         let mut rng = ark_std::test_rng();
         let user_keypair = UserKeyPair::generate(&mut rng);
-        let creator_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let viewer_keypair = ViewerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
         let nullifier_key = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
@@ -548,9 +548,9 @@ mod test {
             user_keypair.addr_keypair.ver_key()
         );
 
-        let ser_bytes = bincode::serialize(&creator_keypair).unwrap();
+        let ser_bytes = bincode::serialize(&minter_keypair).unwrap();
         let de: CredIssuerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
-        assert_eq!(de.0.ver_key(), creator_keypair.0.ver_key());
+        assert_eq!(de.0.ver_key(), minter_keypair.0.ver_key());
         let ser_bytes = bincode::serialize(&viewer_keypair).unwrap();
         let de: ViewerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de.0.enc_key(), viewer_keypair.0.enc_key());

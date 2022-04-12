@@ -1013,7 +1013,7 @@ impl ExpirableCredential {
     /// * `user_addr` - User address that this credential is issuing to
     /// * `attrs` - identity attributes of the user
     /// * `expiry` - expiry date of the credential (specified by the creator)
-    /// * `creator_keypair` - credential creator's key
+    /// * `minter_keypair` - credential creator's key
     ///
     /// If the attribute list is not the same length as `ATTRS_LEN`, or each
     /// attribute bytes go beyond 32 bytes, then will return error.
@@ -1022,7 +1022,7 @@ impl ExpirableCredential {
         user_addr: UserAddress,
         attrs: Vec<IdentityAttribute>,
         expiry: u64,
-        creator_keypair: &CredIssuerKeyPair,
+        minter_keypair: &CredIssuerKeyPair,
     ) -> Result<Self, TxnApiError> {
         if attrs.len() != ATTRS_LEN {
             return Err(TxnApiError::FailedCredentialCreation(format!(
@@ -1038,14 +1038,14 @@ impl ExpirableCredential {
 
             [vec![BaseField::from(expiry), upk_x, upk_y], attrs].concat()
         };
-        let cred = creator_keypair.sign(&msg);
+        let cred = minter_keypair.sign(&msg);
 
         Ok(ExpirableCredential {
             user_addr,
             attrs,
             expiry,
             cred,
-            creator_pk: creator_keypair.pub_key(),
+            creator_pk: minter_keypair.pub_key(),
         })
     }
 
@@ -1077,19 +1077,16 @@ impl ExpirableCredential {
     /// Create a dummy unexpired ExpirableCredential as placeholder.
     pub(crate) fn dummy_unexpired() -> Result<Self, TxnApiError> {
         let dummy_user = UserAddress::default();
-        let dummy_creator_keypair = CredIssuerKeyPair::default();
+        let dummy_minter_keypair = CredIssuerKeyPair::default();
         let dummy_attrs = IdentityAttribute::default_vector();
         let dummy_expiry = 2u64.pow(MAX_TIMESTAMP_LEN as u32) - 1;
 
-        ExpirableCredential::create(
-            dummy_user,
-            dummy_attrs,
-            dummy_expiry,
-            &dummy_creator_keypair,
-        )
-        .map_err(|_| {
-            TxnApiError::InternalError("Failed to create dummy unexpired credential".to_string())
-        })
+        ExpirableCredential::create(dummy_user, dummy_attrs, dummy_expiry, &dummy_minter_keypair)
+            .map_err(|_| {
+                TxnApiError::InternalError(
+                    "Failed to create dummy unexpired credential".to_string(),
+                )
+            })
     }
 
     /// Retrieve expiry value
@@ -1224,7 +1221,7 @@ impl ViewableMemo {
         Ok(viewer_memo)
     }
 
-    // Create a dummy viewing memofor transaction transferring non-viewing asset
+    // Create a dummy viewing memo for transaction transferring non-viewing asset
     // code Use a random viewer public key to encrypt a zeroed vector.
     // Encryption scheme must be key-private (we use ElGamal which is key-private)
     // noted that the length would be the same as that of a viewing asset code to
@@ -1236,7 +1233,7 @@ impl ViewableMemo {
     ) -> ViewableMemo {
         // message size starts with the second input and output, (first is always
         // non-viewing native asset code); and for inputs, both asset
-        // viewing and id viewing would require AUDITING_VECTOR_LEN = REVEAL_MAP_LEN + 1
+        // viewing and id viewing would require VIEWING_VECTOR_LEN = REVEAL_MAP_LEN + 1
         // msg length, as upk takes two scalars; for outputs, only asset
         // viewing is on, thus only 4 scalars viewed; finally, the asset
         // code is always revealed, thus + 1 in the end.
@@ -1631,7 +1628,7 @@ mod test {
             let input_amount = 10;
             let fee = 4;
             let mint_amount = 35;
-            let creator_keypair = UserKeyPair::generate(rng);
+            let minter_keypair = UserKeyPair::generate(rng);
             let receiver_keypair = UserKeyPair::generate(rng);
             let viewer_keypair = ViewerKeyPair::generate(rng);
 
@@ -1641,7 +1638,7 @@ mod test {
                 input_amount,
                 fee,
                 mint_amount,
-                &creator_keypair,
+                &minter_keypair,
                 &receiver_keypair,
                 &viewer_keypair,
             )
@@ -1675,12 +1672,12 @@ mod test {
         fn transfer() {
             let mut rng = ark_std::test_rng();
             let viewer_keypair = ViewerKeyPair::generate(&mut rng);
-            let creator_keypair = CredIssuerKeyPair::generate(&mut rng);
+            let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
             let freezer_keypair = FreezerKeyPair::generate(&mut rng);
             let (..) = AssetCode::random(&mut rng);
             let mut policy = AssetPolicy::default()
                 .set_viewer_pub_key(viewer_keypair.pub_key())
-                .set_cred_creator_pub_key(creator_keypair.pub_key())
+                .set_cred_creator_pub_key(minter_keypair.pub_key())
                 .set_freezer_pub_key(freezer_keypair.pub_key());
 
             policy.reveal_map.reveal_user_address();
@@ -1746,7 +1743,7 @@ mod test {
     fn test_expirable_credential() -> Result<(), TxnApiError> {
         let mut rng = ark_std::test_rng();
         let user_keypair = UserKeyPair::generate(&mut rng);
-        let creator_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let mut attrs = IdentityAttribute::random_vector(&mut rng);
         let cred_expiry = 1234u64;
         let now = 1000u64;
@@ -1756,7 +1753,7 @@ mod test {
             user_keypair.address(),
             attrs.clone(),
             cred_expiry,
-            &creator_keypair,
+            &minter_keypair,
         )?;
         assert!(cred.verify(now).is_ok());
 
@@ -1821,16 +1818,16 @@ mod test {
     fn test_asset_policy() {
         let mut rng = ark_std::test_rng();
         let viewer_keypair = ViewerKeyPair::generate(&mut rng);
-        let creator_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
         let (..) = AssetCode::random(&mut rng);
         let policy = AssetPolicy::default()
             .set_viewer_pub_key(viewer_keypair.pub_key())
-            .set_cred_creator_pub_key(creator_keypair.pub_key())
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
             .set_freezer_pub_key(freezer_keypair.pub_key());
 
         assert_eq!(*policy.viewer_pub_key(), viewer_keypair.pub_key());
-        assert_eq!(*policy.cred_creator_pub_key(), creator_keypair.pub_key());
+        assert_eq!(*policy.cred_creator_pub_key(), minter_keypair.pub_key());
         assert_eq!(*policy.freezer_pub_key(), freezer_keypair.pub_key());
 
         assert!(policy.is_viewer_pub_key_set());
@@ -1875,7 +1872,7 @@ mod test {
 
         let policy = policy_aux;
         let policy = policy
-            .set_cred_creator_pub_key(creator_keypair.pub_key())
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
             .set_viewer_pub_key(ViewerPubKey::default());
         let policy_aux = policy.clone();
         for i in 0..ATTRS_LEN {
@@ -1920,14 +1917,14 @@ mod test {
         let rc = RecordCommitment::from(&ro);
 
         // credential related
-        let creator_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let attrs = IdentityAttribute::random_vector(&mut rng);
         let cred_expiry = 1234u64;
         let cred = ExpirableCredential::create(
             user_keypair.address(),
             attrs.clone(),
             cred_expiry,
-            &creator_keypair,
+            &minter_keypair,
         )
         .unwrap();
 

@@ -290,7 +290,7 @@ pub fn get_builder_freeze<'a>(
 
 pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
     rng: &mut R,
-    creator_keypair: &'a UserKeyPair,
+    minter_keypair: &'a UserKeyPair,
     receiver_keypair: &'a UserKeyPair,
     viewer_keypair: &'a ViewerKeyPair,
     tree_depth: u8,
@@ -305,7 +305,7 @@ pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
         input_amount,
         fee,
         mint_amount,
-        creator_keypair,
+        minter_keypair,
         receiver_keypair,
         viewer_keypair,
     )

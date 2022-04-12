@@ -38,8 +38,8 @@ impl MintCircuit {
     /// Build a circuit during preprocessing for derivation of proving key and
     /// verifying key.
     pub(crate) fn build_for_preprocessing(tree_depth: u8) -> Result<(Self, usize), TxnApiError> {
-        let creator_keypair = UserKeyPair::default();
-        let dummy_witness = MintWitness::dummy(tree_depth, &creator_keypair);
+        let minter_keypair = UserKeyPair::default();
+        let dummy_witness = MintWitness::dummy(tree_depth, &minter_keypair);
         let dummy_pub_input = MintPublicInput::from_witness(&dummy_witness)?;
         Self::build(&dummy_witness, &dummy_pub_input)
             .map_err(|e| TxnApiError::FailedSnark(format!("{:?}", e)))
@@ -106,7 +106,7 @@ impl MintCircuit {
         // Input/Change records should have identical user addresses
         circuit.point_equal_gate(&witness.fee_ro.owner_addr.0, &witness.chg_ro.owner_addr.0)?;
 
-        // Audit memo is correctly constructed when `viewer_pk` is not null
+        // Viewer memo is correctly constructed when `viewer_pk` is not null
         let b_dummy_viewing_pk = pub_input.mint_policy.is_dummy_viewing_pk(&mut circuit)?;
         let b_correct_viewing_memo =
             Self::is_correct_viewing_memo(&mut circuit, &witness, &pub_input.viewing_memo)?;
@@ -166,7 +166,7 @@ impl MintWitnessVar {
     ) -> Result<Self, PlonkError> {
         let mint_ro = RecordOpeningVar::new(circuit, &witness.mint_ro)?;
         let creator_sk = circuit.create_variable(fr_to_fq::<_, CurveParam>(
-            witness.creator_keypair.address_secret_ref(),
+            witness.minter_keypair.address_secret_ref(),
         ))?;
         let fee_ro = RecordOpeningVar::new(circuit, &witness.fee_ro)?;
         let acc_member_witness =
@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn test_mint_circuit_build() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
-        let creator_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let tree_depth = 2;
@@ -306,7 +306,7 @@ mod tests {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         );

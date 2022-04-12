@@ -107,11 +107,11 @@ impl MintNote {
     {
         let acc_member_witness = &txn_fee_info.fee_input.acc_member_witness;
         let merkle_root = acc_member_witness.root;
-        let creator_keypair = txn_fee_info.fee_input.owner_keypair;
+        let minter_keypair = txn_fee_info.fee_input.owner_keypair;
         let ac_digest = AssetCodeDigest::from_description(ac_description);
         // check note input
         check_proving_key_consistency(proving_key, acc_member_witness)?;
-        check_input_pub_key(&txn_fee_info.fee_input.ro, creator_keypair)?;
+        check_input_pub_key(&txn_fee_info.fee_input.ro, minter_keypair)?;
         check_mint_asset_code(&mint_ro, ac_seed, ac_digest)?;
         check_fee(&txn_fee_info)?;
         let outputs = vec![&txn_fee_info.fee_chg_ro, &mint_ro];
@@ -121,7 +121,7 @@ impl MintNote {
         let signing_keypair = KeyPair::generate(rng);
         let viewing_memo_enc_rand = ScalarField::rand(rng);
         let witness = MintWitness {
-            creator_keypair,
+            minter_keypair,
             acc_member_witness: txn_fee_info.fee_input.acc_member_witness,
             fee_ro: txn_fee_info.fee_input.ro,
             mint_ro: mint_ro.clone(),
@@ -234,7 +234,7 @@ mod test {
 
         let input_amount = 10;
         let mint_amount = 35;
-        let creator_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
 
@@ -248,7 +248,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         )
@@ -276,7 +276,7 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &creator_keypair,
+            &minter_keypair,
             &receiver_keypair,
             &viewer_keypair,
         )
@@ -308,8 +308,8 @@ mod test {
         // inconsistent creator keypair
         {
             let mut bad_builder = builder.clone();
-            let bad_creator_keypair = UserKeyPair::generate(rng);
-            bad_builder.creator_keypair = &bad_creator_keypair;
+            let bad_minter_keypair = UserKeyPair::generate(rng);
+            bad_builder.minter_keypair = &bad_minter_keypair;
             assert!(bad_builder.build_mint_note(rng, &proving_key).is_err());
         }
 

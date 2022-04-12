@@ -331,9 +331,9 @@ pub(crate) mod txn_helpers {
 
         pub(crate) fn check_input_pub_key(
             ro_fee: &RecordOpening,
-            creator_keypair: &UserKeyPair,
+            minter_keypair: &UserKeyPair,
         ) -> Result<(), TxnApiError> {
-            if ro_fee.pub_key != creator_keypair.pub_key() {
+            if ro_fee.pub_key != minter_keypair.pub_key() {
                 return Err(TxnApiError::InvalidParameter(
                     "The key pair does not match the public key in the input record".to_string(),
                 ));

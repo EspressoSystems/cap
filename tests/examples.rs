@@ -1942,7 +1942,7 @@ pub fn example_viewed_non_native_asset_with_credentials() {
     let non_native_amount = 15;
 
     let viewer_keypair = ViewerKeyPair::generate(rng);
-    let cred_creator_keypair = CredIssuerKeyPair::generate(rng);
+    let cred_minter_keypair = CredIssuerKeyPair::generate(rng);
     let expiry = 10;
     let mut attributes = vec![];
     attributes.push(IdentityAttribute::new(b"attr0").unwrap());
@@ -1958,13 +1958,13 @@ pub fn example_viewed_non_native_asset_with_credentials() {
             sender_wallet.pub_key().address(),
             attributes,
             expiry,
-            &cred_creator_keypair,
+            &cred_minter_keypair,
         )
         .unwrap(),
     );
     let policy = AssetPolicy::default()
         .set_viewer_pub_key(viewer_keypair.pub_key())
-        .set_cred_creator_pub_key(cred_creator_keypair.pub_key())
+        .set_cred_creator_pub_key(cred_minter_keypair.pub_key())
         .reveal_record_opening()
         .unwrap()
         .reveal_ith_attribute(0)
