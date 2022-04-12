@@ -13,8 +13,8 @@
 //!
 //! | Role | Data Structures |
 //! | ---- | --------------- |
-//! | User (incl Asset Issuer, Validators) | [UserKeyPair],[UserPubKey] |
-//! | Credential Issuer | [CredIssuerKeyPair], [CredIssuerPubKey]|
+//! | User (incl Asset Issuer, Validators) | [UserKeyPair], [UserPubKey] |
+//! | Credential Issuer | [CredIssuerKeyPair], [CredIssuerPubKey] |
 //! | Tracer/Auditor | [AuditorKeyPair], [AuditorPubKey] |
 //! | Freezer | [FreezerKeyPair], [FreezerPubKey] |
 use crate::{

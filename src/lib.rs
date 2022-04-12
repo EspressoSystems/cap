@@ -176,14 +176,7 @@ use crate::{
     utils::txn_helpers::get_receiver_memos_digest,
 };
 use ark_serialize::*;
-use ark_std::{
-    boxed::Box,
-    format,
-    rand::{CryptoRng, RngCore},
-    string::ToString,
-    vec,
-    vec::Vec,
-};
+use ark_std::{boxed::Box, format, string::ToString, vec, vec::Vec};
 use errors::TxnApiError;
 use freeze::FreezeNote;
 use jf_plonk::{proof_system::structs::Proof, transcript::SolidityTranscript};
@@ -520,81 +513,51 @@ pub fn txn_batch_verify(
     })
 }
 
-/// Prepare the record opening corresponding to collected fee from a list of
-/// transaction notes (within a block). The result is a record opening whose
-/// blinding factor should be directly appended to the same block before being
-/// disseminated to other nodes. This function is intended to be called by nodes
-/// proposing blocks.
-///
-/// * `txns` - List of verified transaction notes within a block
-/// * `owner_pk` - Public key of the owner of the collected fee, usually the
-///   block proposer's public key
-pub fn prepare_txns_fee_record<R>(
-    rng: &mut R,
-    txns: &[TransactionNote],
-    owner_pk: UserPubKey,
-) -> Result<RecordOpening, TxnApiError>
-where
-    R: RngCore + CryptoRng,
-{
-    if txns.is_empty() {
-        return Err(TxnApiError::InvalidParameter(
-            "Require at least 1 transaction to collect fee".to_string(),
-        ));
-    }
-    let total_fee = calculate_fee(txns)?;
-    let ro = RecordOpening::new(
-        rng,
-        total_fee,
-        AssetDefinition::native(),
-        owner_pk,
-        FreezeFlag::Unfrozen,
-    );
-    Ok(ro)
-}
-
-/// Derive the record commitment corresponding to collected fee from a list of
-/// transaction notes (within a block). The result is a record commitment to be
-/// inserted in the ledger. This function is intended to be called by nodes
-/// validating blocks.
+/// Derive a list of record commitments corresponding to fees from a list of
+/// transaction notes (within a block). The result is a vector of record
+/// commitment which may be further aggregated into a single one by the caller.
+/// This function is intended to be called by nodes validating blocks.
 ///
 /// * `txns` - List of verified transaction notes within a block
 /// * `owner_pk` - Public key of the owner of the collected fee, usually the
 ///   block proposer's public key
 /// * `blind` - blinding factor of the record commitment
-pub fn derive_txns_fee_record(
-    txns: &[TransactionNote],
-    owner_pk: UserPubKey,
-    blind: BlindFactor,
-) -> Result<RecordCommitment, TxnApiError> {
-    if txns.is_empty() {
+pub fn derive_txns_fee_records(
+    fee_collectors: &[UserPubKey],
+    fees: &[u64],
+    blinds: &[BlindFactor],
+) -> Result<Vec<RecordCommitment>, TxnApiError> {
+    if fees.is_empty() {
         return Err(TxnApiError::InvalidParameter(
             "Require at least 1 transaction to collect fee".to_string(),
         ));
     }
-    let total_fee = calculate_fee(txns)?;
-    let ro = RecordOpening {
-        amount: total_fee,
-        asset_def: AssetDefinition::native(),
-        pub_key: owner_pk,
-        freeze_flag: FreezeFlag::Unfrozen,
-        blind,
-    };
+    if fees.len() != fee_collectors.len() || fees.len() != blinds.len() {
+        return Err(TxnApiError::InvalidParameter(format!(
+            "fee_collectors ({}), fees ({}) and blinds ({}) lengths do not match ",
+            fee_collectors.len(),
+            fees.len(),
+            blinds.len()
+        )));
+    }
 
-    Ok(RecordCommitment::from(&ro))
+    Ok(fees
+        .iter()
+        .zip(fee_collectors.iter().zip(blinds.iter()))
+        .map(|(&fee, (fee_collector_pk, &blind))| {
+            RecordCommitment::from(&RecordOpening {
+                amount: fee,
+                asset_def: AssetDefinition::native(),
+                pub_key: fee_collector_pk.clone(),
+                freeze_flag: FreezeFlag::Unfrozen,
+                blind,
+            })
+        })
+        .collect::<Vec<RecordCommitment>>())
 }
 
-/// Compute signature over a list of receiver memos
-pub fn sign_receiver_memos(
-    keypair: &KeyPair,
-    recv_memos: &[ReceiverMemo],
-) -> Result<Signature, TxnApiError> {
-    let digest = get_receiver_memos_digest(recv_memos)?;
-    Ok(keypair.sign(&[digest]))
-}
-
-// Compute amount of claimable transaction fee
-pub(crate) fn calculate_fee(txns: &[TransactionNote]) -> Result<u64, TxnApiError> {
+/// Compute amount of claimable transaction fee
+pub fn calculate_fee(txns: &[TransactionNote]) -> Result<u64, TxnApiError> {
     let fee_amounts: Vec<u64> = txns
         .iter()
         .map(|txn| match txn {
@@ -607,17 +570,21 @@ pub(crate) fn calculate_fee(txns: &[TransactionNote]) -> Result<u64, TxnApiError
         .ok_or_else(|| TxnApiError::IncorrectFee("Overflow in total fee".to_string()))
 }
 
+/// Compute signature over a list of receiver memos
+pub fn sign_receiver_memos(
+    keypair: &KeyPair,
+    recv_memos: &[ReceiverMemo],
+) -> Result<Signature, TxnApiError> {
+    let digest = get_receiver_memos_digest(recv_memos)?;
+    Ok(keypair.sign(&[digest]))
+}
+
 #[cfg(test)]
 mod test {
     use crate::{
-        calculate_fee, derive_txns_fee_record,
-        errors::TxnApiError,
-        keys::{UserKeyPair, UserPubKey},
-        prepare_txns_fee_record,
-        structs::{AssetDefinition, BlindFactor, FreezeFlag},
-        txn_batch_verify,
-        utils::params_builder::TxnsParams,
-        KeyPair, TransactionNote,
+        calculate_fee, derive_txns_fee_records, errors::TxnApiError, keys::UserPubKey,
+        structs::BlindFactor, txn_batch_verify, utils::params_builder::TxnsParams, KeyPair,
+        TransactionNote,
     };
     use ark_std::{vec, vec::Vec};
 
@@ -685,29 +652,26 @@ mod test {
 
         assert!(calculate_fee(&txns).is_err());
 
-        // test fee collection
-        let validator_keypair = UserKeyPair::generate(rng);
-        let fee_ro = prepare_txns_fee_record(rng, &params.txns, validator_keypair.pub_key())?;
-
-        // Cannot compute fees for an empty list of transactions
-        assert!(prepare_txns_fee_record(rng, &[], validator_keypair.pub_key()).is_err());
-
-        assert_eq!(fee_ro.asset_def, AssetDefinition::native());
-        assert_eq!(fee_ro.pub_key, validator_keypair.pub_key());
-        assert_eq!(fee_ro.freeze_flag, FreezeFlag::Unfrozen);
-        assert_eq!(fee_ro.amount, calculate_fee(&params.txns)?);
-
         // test derive_txns_fee_record()
         let rng = &mut ark_std::test_rng();
-        let params = TxnsParams::generate_txns(rng, 2, 3, 4, tree_depth);
-        assert!(derive_txns_fee_record(
-            &params.txns,
-            UserPubKey::default(),
-            BlindFactor::rand(rng)
-        )
-        .is_ok());
+        let pks = (0..7)
+            .map(|_| UserPubKey::default())
+            .collect::<Vec<UserPubKey>>();
+        let blinds = (0..7)
+            .map(|_| BlindFactor::rand(rng))
+            .collect::<Vec<BlindFactor>>();
+        let fee_amounts: Vec<u64> = txns
+            .iter()
+            .map(|txn| match txn {
+                TransactionNote::Transfer(note) => note.aux_info.fee,
+                TransactionNote::Mint(note) => note.aux_info.fee,
+                TransactionNote::Freeze(note) => note.aux_info.fee,
+            })
+            .collect();
+        assert!(derive_txns_fee_records(&pks, &fee_amounts, &blinds).is_ok());
         assert!(
-            derive_txns_fee_record(&[], UserPubKey::default(), BlindFactor::rand(rng)).is_err()
+            derive_txns_fee_records(&[UserPubKey::default()], &[], &[BlindFactor::rand(rng)])
+                .is_err()
         );
 
         Ok(())

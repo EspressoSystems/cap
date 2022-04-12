@@ -21,8 +21,8 @@ use ark_std::{
     rc::Rc,
 };
 use jf_cap::{
+    calculate_fee,
     constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
-    derive_txns_fee_record,
     errors::TxnApiError,
     freeze::FreezeNote,
     keys::{
@@ -30,7 +30,6 @@ use jf_cap::{
         UserAddress, UserKeyPair, UserPubKey,
     },
     mint::MintNote,
-    prepare_txns_fee_record,
     proof::{
         freeze::FreezeProvingKey,
         mint::MintProvingKey,
@@ -241,8 +240,14 @@ impl MockBlock {
     /// scan the block and derive record commitment corresponding to the
     /// collected fee owned by block proposer
     pub fn derive_fee_record_commitment(&self) -> Result<RecordCommitment> {
-        let rc = derive_txns_fee_record(&self.txns, self.proposer_pub_key.clone(), self.fee_blind)?;
-        Ok(rc)
+        let total_fee = calculate_fee(&self.txns)?;
+        Ok(RecordCommitment::from(&RecordOpening {
+            amount: total_fee,
+            asset_def: AssetDefinition::native(),
+            pub_key: self.proposer_pub_key.clone(),
+            freeze_flag: FreezeFlag::Unfrozen,
+            blind: self.fee_blind,
+        }))
     }
 }
 
@@ -325,7 +330,14 @@ impl<'a> ValidatorMock<'a> {
         txns: Vec<TransactionNote>,
     ) -> Result<(RecordOpening, MockBlock, Signature<CurveParam>)> {
         // 1. sample collected fee record
-        let record_opening = prepare_txns_fee_record(rng, &txns, self.wallet.pub_key())?;
+        let total_fee = calculate_fee(&txns)?;
+        let record_opening = RecordOpening::new(
+            rng,
+            total_fee,
+            AssetDefinition::native(),
+            self.wallet.pub_key(),
+            FreezeFlag::Unfrozen,
+        );
 
         // 2. build block
         let block = MockBlock {
