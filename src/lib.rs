@@ -582,13 +582,13 @@ pub fn sign_receiver_memos(
 #[cfg(test)]
 mod test {
     use crate::{
-        derive_txns_fee_records,
+        calculate_fee, derive_txns_fee_records,
         errors::TxnApiError,
         keys::{UserKeyPair, UserPubKey},
         structs::{AssetDefinition, BlindFactor, FreezeFlag, RecordOpening},
         txn_batch_verify,
         utils::params_builder::TxnsParams,
-        KeyPair, TransactionNote, calculate_fee,
+        KeyPair, TransactionNote,
     };
     use ark_std::{
         rand::{CryptoRng, RngCore},

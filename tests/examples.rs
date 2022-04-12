@@ -21,6 +21,7 @@ use ark_std::{
     rc::Rc,
 };
 use jf_cap::{
+    calculate_fee,
     constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
     errors::TxnApiError,
     freeze::FreezeNote,
@@ -42,7 +43,7 @@ use jf_cap::{
         RecordCommitment, RecordOpening, TxnFeeInfo,
     },
     transfer::{TransferNote, TransferNoteInput},
-    txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey, calculate_fee,
+    txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey,
 };
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
