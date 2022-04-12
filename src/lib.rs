@@ -708,11 +708,10 @@ mod test {
 
         // test derive_txns_fee_record()
         let rng = &mut ark_std::test_rng();
-        let _params = TxnsParams::generate_txns(rng, 2, 3, 4, tree_depth);
-        let pks = (0..9)
+        let pks = (0..7)
             .map(|_| UserPubKey::default())
             .collect::<Vec<UserPubKey>>();
-        let blinds = (0..9)
+        let blinds = (0..7)
             .map(|_| BlindFactor::rand(rng))
             .collect::<Vec<BlindFactor>>();
         let fee_amounts: Vec<u64> = txns
