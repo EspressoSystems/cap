@@ -1,17 +1,21 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API library for the configurable asset policy system which allows for issuance, transfers and (un)freezing of arbitrary asset that are fully private, yet publicly verifiable and auditable. It is strongly recommended to refer to at least the first two chapters of [Spec] for an introduction to core concepts, data structures and main workflows."><meta name="keywords" content="rust, rustlang, rust-lang, jf_cap"><title>jf_cap - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../dark.css" disabled><link rel="stylesheet" type="text/css" href="../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../storage.js"></script><script src="../crates.js"></script><script defer src="../main.js"></script>
-    <noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a class="sidebar-logo" href="../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.png" alt="logo"></div>
-        </a><h2 class="location">Crate jf_cap</h2><div class="block version"><div class="narrow-helper"></div><p>Version 0.0.1</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all jf_cap's items</p></a><div class="block items"><ul><li><a href="#modules">Modules</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Definitions</a></li></ul></div><div id="sidebar-vars" data-name="jf_cap" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../jf_cap/index.html"><img class="rust-logo" src="../rust-logo.png" alt="logo"></a><nav class="sub"><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="18" height="18" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="18" height="18" alt="Change settings" src="../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">jf_cap</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/jf_cap/lib.rs.html#12-803" title="goto source code">[src]</a></span></h1><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>API library for the <em>configurable asset policy</em> system which allows for
+    <noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../favicon.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"><a href="#">Crate jf_cap</a></h2><div class="sidebar-elems"><div class="block"><ul><li class="version">Version 0.0.1</li><li><a id="all-types" href="all.html">All Items</a></li></div></ul><section><div class="block"><ul><li><a href="#modules">Modules</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Definitions</a></li></ul></div></section><div id="sidebar-vars" data-name="jf_cap" data-ty="mod" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../jf_cap/index.html"><img class="rust-logo" src="../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="main-heading">
+    <h1 class="fqn"><span class="in-band">Crate <a class="mod" href="#">jf_cap</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../src/jf_cap/lib.rs.html#12-767">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>API library for the <em>configurable asset policy</em> system which allows for
 issuance, transfers and (un)freezing of arbitrary asset that are fully
 private, yet publicly verifiable and auditable. It is strongly recommended
 to refer to at least the first two chapters of [Spec] for an introduction to
 core concepts, data structures and main workflows.</p>
-<h2 id="entities-and-their-keys" class="section-header"><a href="#entities-and-their-keys">Entities and Their Keys</a></h2>
+<h2 id="entities-and-their-keys"><a href="#entities-and-their-keys">Entities and Their Keys</a></h2>
 <p>As explained in Chapter 1.2 of [Spec], there are 5 main roles and all their
 public/private key related materials can be found under the <a href="keys/index.html" title="keys">keys</a> module.
 Common actions involving a key can usually be found as associated methods
 of the key struct – e.g. for an auditor/tracer to decrypt memos for
 him/her, use <a href="keys/struct.AuditorKeyPair.html#method.open_transfer_audit_memo" title="keys::AuditorKeyPair::open_transfer_audit_memo()"><code>keys::AuditorKeyPair::open_transfer_audit_memo()</code></a>.</p>
-<h2 id="3-types-of-transaction-and-their-workflows" class="section-header"><a href="#3-types-of-transaction-and-their-workflows">3 Types of Transaction and Their Workflows</a></h2>
+<h2 id="3-types-of-transaction-and-their-workflows"><a href="#3-types-of-transaction-and-their-workflows">3 Types of Transaction and Their Workflows</a></h2>
 <p>As explained in Chapter 2.1 of [Spec], we support 3 types of transaction
 (txn) – <strong>transfer</strong>, <strong>mint</strong> and <strong>freeze</strong>.</p>
 <p>While an actual transaction may contain extra information such as metadata
@@ -20,7 +24,7 @@ body of a transaction which we call a <a href="enum.TransactionNote.html" title=
 verify a transaction note of a certain type, go to respective module under
 the same type name – e.g. <a href="transfer/struct.TransferNote.html#method.generate_native" title="transfer::TransferNote::generate_native()"><code>transfer::TransferNote::generate_native()</code></a> or
 <a href="freeze/struct.FreezeNote.html#method.verify" title="freeze::FreezeNote::verify()"><code>freeze::FreezeNote::verify()</code></a>.</p>
-<h3 id="general-workflow" class="section-header"><a href="#general-workflow">General Workflow</a></h3>
+<h3 id="general-workflow"><a href="#general-workflow">General Workflow</a></h3>
 <p>The “privacy-preserving” property of our payment system is largely
 the result of how each transaction demonstrates its validity and how
 validators/miners verify them.
@@ -58,7 +62,7 @@ verification passed.</li>
 find record openings designated to him which enables him to spend them
 further.</li>
 </ol>
-<h3 id="proving-keys--verifying-keys" class="section-header"><a href="#proving-keys--verifying-keys">Proving Keys &amp; Verifying Keys</a></h3>
+<h3 id="proving-keys--verifying-keys"><a href="#proving-keys--verifying-keys">Proving Keys &amp; Verifying Keys</a></h3>
 <p>Ideally, users and validators should have a copy of the proving and
 verifying keys locally as binary files, and load to memory on demand –
 utility functions to help with this can be found under <a href="parameters/index.html" title="parameters">parameters</a> module.</p>
@@ -72,7 +76,7 @@ loaded to memory <sup id="fnref3"><a href="#fn3">3</a></sup>.</p>
 the same txn type but with different number of inputs, outputs and depth of
 the Merkle Tree accumulating record commitments. Thus, you have to be
 careful to use the correct ones, or else you will get an Error.</p>
-<h3 id="transaction-note-generation-fee-and-fee-change" class="section-header"><a href="#transaction-note-generation-fee-and-fee-change">Transaction Note Generation: Fee and Fee Change</a></h3>
+<h3 id="transaction-note-generation-fee-and-fee-change"><a href="#transaction-note-generation-fee-and-fee-change">Transaction Note Generation: Fee and Fee Change</a></h3>
 <p>Each transaction could decide to include a non-negative fee in <em>native asset
 type</em>.
 This is achieved by providing a <a href="structs/struct.FeeInput.html" title="structs::FeeInput"><code>structs::FeeInput</code></a> and specify the
@@ -80,26 +84,26 @@ actual amount of <code>fee: u64</code> to pay whenever you generate a note.
 Be careful: the value of <code>FeeInput</code> has to be no smaller than <code>fee</code>, and the
 difference is <em>fee change</em> which would be included in the output with the
 same owner as the fee payer.</p>
-<h3 id="transaction-note-generation-assembling-all-necessary-witnesses" class="section-header"><a href="#transaction-note-generation-assembling-all-necessary-witnesses">Transaction Note Generation: Assembling All Necessary Witnesses</a></h3>
+<h3 id="transaction-note-generation-assembling-all-necessary-witnesses"><a href="#transaction-note-generation-assembling-all-necessary-witnesses">Transaction Note Generation: Assembling All Necessary Witnesses</a></h3>
 <p>There are a dozen of secret witness data required to feed into the txn note
 generation as inputs, all necessary data structures can be found under
 <a href="structs/index.html" title="structs">structs</a> module, and the best place to learn about how to assemble those
 input parameters is through our integration test examples.</p>
 <p>Let us strongly recommend again: <strong>please read example workflows in
 <a href="https://github.com/EspressoSystems/cap/blob/main/src/transfer.rs">integration test</a>!</strong></p>
-<h3 id="transaction-note-verification-batch-verification" class="section-header"><a href="#transaction-note-verification-batch-verification">Transaction Note Verification: Batch Verification</a></h3>
+<h3 id="transaction-note-verification-batch-verification"><a href="#transaction-note-verification-batch-verification">Transaction Note Verification: Batch Verification</a></h3>
 <p>In addition to verification on a single txn note, we also offers batch
 verification which has lower amortized cost – this is offered at
 <a href="fn.txn_batch_verify.html" title="txn_batch_verify()"><code>txn_batch_verify()</code></a>.</p>
-<h2 id="transaction-fee-collection-for-validators" class="section-header"><a href="#transaction-fee-collection-for-validators">Transaction Fee Collection for Validators</a></h2>
+<h2 id="transaction-fee-collection-for-validators"><a href="#transaction-fee-collection-for-validators">Transaction Fee Collection for Validators</a></h2>
 <p>At the ledger level, when a validator proposes a block containing a list of
 transactions, the validator is entitled to claim all the txn fee specified
 within the block. We have deviced two APIs regarding txn fee collection:</p>
 <ul>
-<li>for block proposer: <a href="fn.prepare_txns_fee_record.html" title="prepare_txns_fee_record()"><code>prepare_txns_fee_record()</code></a></li>
+<li>for block proposer: [<code>prepare_txns_fee_record()</code>]</li>
 <li>for the rest of validators who upon validating the block, try to credit
 the txn fee record to rightful block proposer:
-<a href="fn.derive_txns_fee_record.html" title="derive_txns_fee_record()"><code>derive_txns_fee_record()</code></a></li>
+[<code>derive_txns_fee_record()</code>]</li>
 </ul>
 <p>Again, we recommend readers take a look at the <a href="https://github.com/EspressoSystems/cap/blob/main/src/transfer.rs">integration test</a> to get an
 idea of this workflow in actual mock code.</p>
@@ -129,15 +133,11 @@ including transfer, mint and freeze.</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.TransactionVerifyingKey.html" title="jf_cap::TransactionVerifyingKey enum">TransactionVerifyingKey</a></div><div class="item-right docblock-short"><p>A transaction verifying key contains a proof verification key of possibly
 various transaction types, including transfer, mint and freeze.</p>
 </div></div></div><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2>
-<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.derive_txns_fee_record.html" title="jf_cap::derive_txns_fee_record fn">derive_txns_fee_record</a></div><div class="item-right docblock-short"><p>Derive the record commitment corresponding to collected fee from a list of
-transaction notes (within a block). The result is a record commitment to be
-inserted in the ledger. This function is intended to be called by nodes
-validating blocks.</p>
-</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.prepare_txns_fee_record.html" title="jf_cap::prepare_txns_fee_record fn">prepare_txns_fee_record</a></div><div class="item-right docblock-short"><p>Prepare the record opening corresponding to collected fee from a list of
-transaction notes (within a block). The result is a record opening whose
-blinding factor should be directly appended to the same block before being
-disseminated to other nodes. This function is intended to be called by nodes
-proposing blocks.</p>
+<div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.calculate_fee.html" title="jf_cap::calculate_fee fn">calculate_fee</a></div><div class="item-right docblock-short"><p>Compute amount of claimable transaction fee</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.derive_txns_fee_records.html" title="jf_cap::derive_txns_fee_records fn">derive_txns_fee_records</a></div><div class="item-right docblock-short"><p>Derive a list of record commitments corresponding to fees from a list of
+transaction notes (within a block). The result is a vector of record
+commitment which may be further aggregated into a single one by the caller.
+This function is intended to be called by nodes validating blocks.</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.sign_receiver_memos.html" title="jf_cap::sign_receiver_memos fn">sign_receiver_memos</a></div><div class="item-right docblock-short"><p>Compute signature over a list of receiver memos</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="fn" href="fn.txn_batch_verify.html" title="jf_cap::txn_batch_verify fn">txn_batch_verify</a></div><div class="item-right docblock-short"><p>Batch verification for transaction</p>
 </div></div></div><h2 id="types" class="small-section-header"><a href="#types">Type Definitions</a></h2>
@@ -157,5 +157,5 @@ proposing blocks.</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="type" href="type.Signature.html" title="jf_cap::Signature type">Signature</a></div><div class="item-right docblock-short"><p>The signature of Schnorr signature scheme</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="type" href="type.VerKey.html" title="jf_cap::VerKey type">VerKey</a></div><div class="item-right docblock-short"><p>The verification key of Schnorr signature scheme</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="type" href="type.VerifyingKey.html" title="jf_cap::VerifyingKey type">VerifyingKey</a></div><div class="item-right docblock-short"><p>plonk</p>
-</div></div></div></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0 (9d1b2106e 2022-02-23)" ></div>
+</div></div></div></section><section id="search" class="content hidden"></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.60.0 (7737e0b5c 2022-04-04)" ></div>
 </body></html>
