@@ -14,12 +14,11 @@
 #![allow(dead_code)]
 use super::txn_helpers::freeze::get_output_ros;
 use crate::{
-    constants::{AUDIT_DATA_LEN, MAX_TIMESTAMP_LEN},
+    constants::{MAX_TIMESTAMP_LEN, VIEWABLE_DATA_LEN},
     errors::TxnApiError,
     freeze::{FreezeNote, FreezeNoteInput},
     keys::{
-        AuditorKeyPair, CredIssuerKeyPair, CredIssuerPubKey, FreezerKeyPair, UserKeyPair,
-        UserPubKey,
+        CredIssuerKeyPair, CredIssuerPubKey, FreezerKeyPair, UserKeyPair, UserPubKey, ViewerKeyPair,
     },
     mint::MintNote,
     proof::{
@@ -108,13 +107,13 @@ impl TxnsParams {
             })
             .collect();
 
-        let mut issuer_keypairs = vec![];
+        let mut minter_keypairs = vec![];
         let mut recv_keypairs = vec![];
-        let mut auditor_keypairs = vec![];
+        let mut viewer_keypairs = vec![];
         (0..num_mint_txn).for_each(|_| {
-            issuer_keypairs.push(UserKeyPair::generate(rng));
+            minter_keypairs.push(UserKeyPair::generate(rng));
             recv_keypairs.push(UserKeyPair::generate(rng));
-            auditor_keypairs.push(AuditorKeyPair::generate(rng));
+            viewer_keypairs.push(ViewerKeyPair::generate(rng));
         });
         let mut mint_builders: Vec<_> = (0..num_mint_txn)
             .into_par_iter()
@@ -123,9 +122,9 @@ impl TxnsParams {
                 MintParamsBuilder::rand(
                     rng,
                     tree_depth,
-                    &issuer_keypairs[i],
+                    &minter_keypairs[i],
                     &recv_keypairs[i],
-                    &auditor_keypairs[i],
+                    &viewer_keypairs[i],
                 )
             })
             .collect();
@@ -571,11 +570,11 @@ impl<'a> TransferParamsBuilder<'a> {
             } else {
                 let transfer_asset_def = self.transfer_asset_def.as_ref().unwrap();
                 Some(
-                    ExpirableCredential::issue(
+                    ExpirableCredential::create(
                         self.input_upk_at(i).address,
                         IdentityAttribute::random_vector(&mut self.rng),
                         cred_expiry,
-                        &transfer_asset_def.issuer_keypair,
+                        &transfer_asset_def.minter_keypair,
                     )
                     .unwrap(),
                 )
@@ -873,26 +872,26 @@ impl<'a> TransferParamsBuilder<'a> {
 #[derive(Debug)]
 pub(crate) struct NonNativeAssetDefinition {
     pub(crate) asset_def: AssetDefinition,
-    pub(crate) auditor_keypair: AuditorKeyPair,
-    pub(crate) issuer_keypair: CredIssuerKeyPair,
+    pub(crate) viewer_keypair: ViewerKeyPair,
+    pub(crate) minter_keypair: CredIssuerKeyPair,
     pub(crate) freezer_keypair: FreezerKeyPair,
 }
 
 impl NonNativeAssetDefinition {
     fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        let auditor_keypair = AuditorKeyPair::generate(rng);
-        let issuer_keypair = CredIssuerKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
+        let minter_keypair = CredIssuerKeyPair::generate(rng);
         let freezer_keypair = FreezerKeyPair::generate(rng);
         let (code, _seed) = AssetCode::random(rng);
         let policy = AssetPolicy::default()
-            .set_auditor_pub_key(auditor_keypair.pub_key())
-            .set_cred_issuer_pub_key(issuer_keypair.pub_key())
+            .set_viewer_pub_key(viewer_keypair.pub_key())
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
             .set_freezer_pub_key(freezer_keypair.pub_key());
         let asset_def = AssetDefinition::new(code, policy).unwrap();
         Self {
             asset_def,
-            auditor_keypair,
-            issuer_keypair,
+            viewer_keypair,
+            minter_keypair,
             freezer_keypair,
         }
     }
@@ -902,14 +901,14 @@ impl NonNativeAssetDefinition {
 /// Struct containing the parameters needed to build a Mint note
 pub struct MintParamsBuilder<'a> {
     tree_depth: u8,
-    pub(crate) issuer_keypair: &'a UserKeyPair,
+    pub(crate) minter_keypair: &'a UserKeyPair,
     pub(crate) fee_ro: RecordOpening,
     pub(crate) fee: u64,
     pub(crate) mint_ro: RecordOpening,
     pub(crate) ac_seed: AssetCodeSeed,
     pub(crate) ac_description: Vec<u8>,
     pub(crate) asset_def: AssetDefinition,
-    pub(crate) auditor_keypair: &'a AuditorKeyPair,
+    pub(crate) viewer_keypair: &'a ViewerKeyPair,
     pub(crate) receiver_keypair: &'a UserKeyPair,
     pub(crate) acc_member_witness: AccMemberWitness,
 }
@@ -923,9 +922,9 @@ impl<'a> MintParamsBuilder<'a> {
         input_amount: u64,
         fee: u64,
         mint_amount: u64,
-        issuer_keypair: &'a UserKeyPair,
+        minter_keypair: &'a UserKeyPair,
         receiver_keypair: &'a UserKeyPair,
-        auditor_keypair: &'a AuditorKeyPair,
+        viewer_keypair: &'a ViewerKeyPair,
     ) -> Self
     where
         R: RngCore + CryptoRng,
@@ -934,7 +933,7 @@ impl<'a> MintParamsBuilder<'a> {
             rng,
             input_amount,
             AssetDefinition::native(),
-            issuer_keypair.pub_key(),
+            minter_keypair.pub_key(),
             FreezeFlag::Unfrozen,
         );
 
@@ -948,7 +947,7 @@ impl<'a> MintParamsBuilder<'a> {
 
         mint_asset_def.policy = mint_asset_def
             .policy
-            .set_auditor_pub_key(auditor_keypair.pub_key());
+            .set_viewer_pub_key(viewer_keypair.pub_key());
 
         let mint_ro = RecordOpening::new(
             rng,
@@ -960,7 +959,7 @@ impl<'a> MintParamsBuilder<'a> {
 
         let mut builder = Self {
             tree_depth,
-            issuer_keypair,
+            minter_keypair,
             fee_ro,
             fee,
             mint_ro,
@@ -968,7 +967,7 @@ impl<'a> MintParamsBuilder<'a> {
             asset_def: mint_asset_def,
             ac_description,
             receiver_keypair,
-            auditor_keypair,
+            viewer_keypair,
             acc_member_witness: AccMemberWitness::default(),
         };
         builder.refresh_merkle_root();
@@ -1008,14 +1007,14 @@ impl<'a> MintParamsBuilder<'a> {
             FreezeFlag::Unfrozen,
         );
         MintWitness {
-            issuer_keypair: self.issuer_keypair,
+            minter_keypair: self.minter_keypair,
             acc_member_witness: self.acc_member_witness.clone(),
             fee_ro: self.fee_ro.clone(),
             mint_ro: self.mint_ro.clone(),
             chg_ro,
             ac_seed: self.ac_seed,
             ac_digest,
-            audit_memo_enc_rand: ScalarField::rand(rng),
+            viewing_memo_enc_rand: ScalarField::rand(rng),
         }
     }
 
@@ -1071,7 +1070,7 @@ impl<'a> MintParamsBuilder<'a> {
         let fee_input = FeeInput {
             ro: self.fee_ro.clone(),
             acc_member_witness: self.acc_member_witness.clone(),
-            owner_keypair: self.issuer_keypair,
+            owner_keypair: self.minter_keypair,
         };
         let (txn_fee_info, fee_chg_ro) = TxnFeeInfo::new(rng, fee_input, self.fee)?;
         let (note, key_pair) = MintNote::generate(
@@ -1089,9 +1088,9 @@ impl<'a> MintParamsBuilder<'a> {
     pub(crate) fn rand<R>(
         rng: &mut R,
         tree_depth: u8,
-        issuer_keypair: &'a UserKeyPair,
+        minter_keypair: &'a UserKeyPair,
         receiver_keypair: &'a UserKeyPair,
-        auditor_keypair: &'a AuditorKeyPair,
+        viewer_keypair: &'a ViewerKeyPair,
     ) -> Self
     where
         R: RngCore + CryptoRng,
@@ -1105,9 +1104,9 @@ impl<'a> MintParamsBuilder<'a> {
             input_amount,
             fee,
             mint_amount,
-            issuer_keypair,
+            minter_keypair,
             receiver_keypair,
-            auditor_keypair,
+            viewer_keypair,
         )
     }
 }
@@ -1356,7 +1355,7 @@ impl RevealMap {
 
     /// Generate a random reveal map
     pub fn rand_for_test<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        let mut reveal_map = [false; AUDIT_DATA_LEN];
+        let mut reveal_map = [false; VIEWABLE_DATA_LEN];
         for bit in reveal_map.iter_mut().skip(1) {
             *bit = rng.gen_bool(0.5);
         }
@@ -1386,7 +1385,7 @@ impl AssetPolicy {
         R: CryptoRng + RngCore,
     {
         AssetPolicy {
-            auditor_pk: AuditorKeyPair::generate(rng).pub_key(),
+            viewer_pk: ViewerKeyPair::generate(rng).pub_key(),
             cred_pk: CredIssuerKeyPair::generate(rng).pub_key(),
             freezer_pk: FreezerKeyPair::generate(rng).pub_key(),
             reveal_map: RevealMap::rand_for_test(rng),

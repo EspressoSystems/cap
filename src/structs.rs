@@ -86,7 +86,7 @@ impl AssetCodeDigest {
 
 impl InternalAssetCode {
     /// Derive an Asset code from its seed and digest
-    /// `seed`:  only known by the asset issuer.
+    /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
     pub fn new(seed: AssetCodeSeed, description: &[u8]) -> Self {
         let digest = AssetCodeDigest::from_description(description);
@@ -137,7 +137,7 @@ impl AssetCode {
     }
 
     /// Derive a domestic cap Asset code from its seed and digest
-    /// `seed`:  only known by the asset issuer.
+    /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
     pub fn new_domestic(seed: AssetCodeSeed, description: &[u8]) -> AssetCode {
         let internal = InternalAssetCode::new(seed, description);
@@ -145,7 +145,7 @@ impl AssetCode {
     }
 
     /// Derive a domestic cap Asset code from its seed and digest
-    /// `seed`:  only known by the asset issuer.
+    /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
     pub(crate) fn new_domestic_from_digest(
         seed: AssetCodeSeed,
@@ -201,7 +201,7 @@ impl AssetCode {
 /// the same. Also note that asset code code is compulsorily revealed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct RevealMap(pub(crate) [bool; AUDIT_DATA_LEN]);
+pub struct RevealMap(pub(crate) [bool; VIEWABLE_DATA_LEN]);
 
 deserialize_canonical_bytes!(RevealMap);
 
@@ -210,14 +210,14 @@ impl CanonicalSerialize for RevealMap {
     where
         W: ark_serialize::Write,
     {
-        w.write_all(&AUDIT_DATA_LEN.to_le_bytes())?;
+        w.write_all(&VIEWABLE_DATA_LEN.to_le_bytes())?;
         let tmp: Vec<u8> = self.0.iter().map(|x| (*x) as u8).collect();
         w.write_all(&tmp[..])?;
         Ok(())
     }
 
     fn serialized_size(&self) -> usize {
-        AUDIT_DATA_LEN + 8
+        VIEWABLE_DATA_LEN + 8
     }
 }
 
@@ -230,13 +230,13 @@ impl CanonicalDeserialize for RevealMap {
         r.read_exact(&mut len_buf)?;
         let len = usize::from_le_bytes(len_buf);
 
-        if len != AUDIT_DATA_LEN {
+        if len != VIEWABLE_DATA_LEN {
             return Err(ark_serialize::SerializationError::InvalidData);
         }
 
-        let mut buf = [0u8; AUDIT_DATA_LEN];
+        let mut buf = [0u8; VIEWABLE_DATA_LEN];
         r.read_exact(&mut buf)?;
-        let mut map = [true; AUDIT_DATA_LEN];
+        let mut map = [true; VIEWABLE_DATA_LEN];
         for (&b, e) in buf.iter().zip(map.iter_mut()) {
             *e = match b {
                 0 => false,
@@ -255,11 +255,11 @@ impl RevealMap {
     /// `AssetPolicy.reveal_xxx()` API.
     /// This API may be useful when deserialize into a `RevealMap` given its
     /// internal representation.
-    pub fn new(internal_repr: [bool; AUDIT_DATA_LEN]) -> Self {
+    pub fn new(internal_repr: [bool; VIEWABLE_DATA_LEN]) -> Self {
         Self(internal_repr)
     }
     /// Get the internal reveal map representation
-    pub fn internal(&self) -> [bool; AUDIT_DATA_LEN] {
+    pub fn internal(&self) -> [bool; VIEWABLE_DATA_LEN] {
         self.0
     }
 
@@ -345,7 +345,7 @@ impl RevealMap {
     /// two Scalars: `(upk_x, upk_y)` thus vals.len() == REVEAL_MAP_LEN + 1
     pub(crate) fn hadamard_product(&self, vals: &[BaseField]) -> Vec<BaseField> {
         assert!(
-            vals.len() <= AUDIT_DATA_LEN,
+            vals.len() <= VIEWABLE_DATA_LEN,
             "Internal Error: number of attributes larger than expected"
         );
         self.0
@@ -357,11 +357,11 @@ impl RevealMap {
 }
 
 /// Policies related to asset record
-/// * `auditor_pk` - auditor public key
+/// * `viewer_pk` - viewer public key
 /// * `cred_pk` - credential public key
 /// * `freezer_pk` - freezer public key
 /// * `reveal_map` - a binary vector indicating the subset of asset record info
-///   and identity attributes to be revealed to the auditor
+///   and identity attributes to be revealed to the viewer
 #[derive(
     Debug,
     PartialEq,
@@ -375,22 +375,22 @@ impl RevealMap {
     Deserialize,
 )]
 pub struct AssetPolicy {
-    pub(crate) auditor_pk: AuditorPubKey,
+    pub(crate) viewer_pk: ViewerPubKey,
     pub(crate) cred_pk: CredIssuerPubKey,
     pub(crate) freezer_pk: FreezerPubKey,
     pub(crate) reveal_map: RevealMap,
-    // the asset auditing is applied only when the transfer amount exceeds `reveal_threshold`.
+    // the asset viewing is applied only when the transfer amount exceeds `reveal_threshold`.
     pub(crate) reveal_threshold: u64,
 }
 
 impl AssetPolicy {
-    /// Reference to auditor public key
-    pub fn auditor_pub_key(&self) -> &AuditorPubKey {
-        &self.auditor_pk
+    /// Reference to viewer public key
+    pub fn viewer_pub_key(&self) -> &ViewerPubKey {
+        &self.viewer_pk
     }
 
-    /// Reference to credential issuer public key
-    pub fn cred_issuer_pub_key(&self) -> &CredIssuerPubKey {
+    /// Reference to credential creator public key
+    pub fn cred_creator_pub_key(&self) -> &CredIssuerPubKey {
         &self.cred_pk
     }
 
@@ -431,25 +431,25 @@ impl AssetPolicy {
         self.reveal_threshold != 0
     }
 
-    /// Set the auditor public key
-    pub fn set_auditor_pub_key(mut self, auditor_pub_key: AuditorPubKey) -> Self {
-        self.auditor_pk = auditor_pub_key;
+    /// Set the viewer public key
+    pub fn set_viewer_pub_key(mut self, viewer_pub_key: ViewerPubKey) -> Self {
+        self.viewer_pk = viewer_pub_key;
         self
     }
 
-    /// True if auditor public key is not the default key, false otherwise
-    pub fn is_auditor_pub_key_set(&self) -> bool {
-        self.auditor_pk != AuditorPubKey::default()
+    /// True if viewer public key is not the default key, false otherwise
+    pub fn is_viewer_pub_key_set(&self) -> bool {
+        self.viewer_pk != ViewerPubKey::default()
     }
 
-    /// Set the credential issuer public key
-    pub fn set_cred_issuer_pub_key(mut self, cred_issuer_pub_key: CredIssuerPubKey) -> Self {
-        self.cred_pk = cred_issuer_pub_key;
+    /// Set the credential creator public key
+    pub fn set_cred_creator_pub_key(mut self, cred_creator_pub_key: CredIssuerPubKey) -> Self {
+        self.cred_pk = cred_creator_pub_key;
         self
     }
 
-    /// True if credential issuer public key is not dummy, false otherwise
-    pub fn is_cred_issuer_pub_key_set(&self) -> bool {
+    /// True if credential creator public key is not dummy, false otherwise
+    pub fn is_cred_creator_pub_key_set(&self) -> bool {
         self.cred_pk != CredIssuerPubKey::default()
     }
 
@@ -464,13 +464,13 @@ impl AssetPolicy {
         self.freezer_pk != FreezerPubKey::default()
     }
 
-    /// Set policy to reveal user address to auditor
-    /// Return TxnApiError::InvalidParameter if auditor public key has not been
+    /// Set policy to reveal user address to viewer
+    /// Return TxnApiError::InvalidParameter if viewer public key has not been
     /// specified yet
     pub fn reveal_user_address(mut self) -> Result<Self, TxnApiError> {
-        if !self.is_auditor_pub_key_set() {
+        if !self.is_viewer_pub_key_set() {
             return Err(TxnApiError::InvalidParameter(
-                "Cannot reveal user address to dummy AuditorPublicKey".to_string(),
+                "Cannot reveal user address to dummy ViewerPublicKey".to_string(),
             )); // TODO crate InvalidStructure error type
         }
         self.reveal_map.reveal_user_address();
@@ -482,15 +482,15 @@ impl AssetPolicy {
         self.reveal_map.is_user_address_revealed()
     }
 
-    /// Set policy to reveal amount to auditor
-    /// Return TxnApiError::InvalidParameter if auditor public key has not been
+    /// Set policy to reveal amount to viewer
+    /// Return TxnApiError::InvalidParameter if viewer public key has not been
     /// specified yet
     pub fn reveal_amount(mut self) -> Result<Self, TxnApiError> {
         // we cannot call directly self.reveal_map.reveal_amount() because there is no
-        // checking the auditor pub key is present in the policy
-        if !self.is_auditor_pub_key_set() {
+        // checking the viewer pub key is present in the policy
+        if !self.is_viewer_pub_key_set() {
             return Err(TxnApiError::InvalidParameter(
-                "Cannot reveal amount to dummy AuditorPublicKey".to_string(),
+                "Cannot reveal amount to dummy ViewerPublicKey".to_string(),
             )); // TODO crate InvalidStructure error type
         }
         self.reveal_map.reveal_amount();
@@ -502,15 +502,15 @@ impl AssetPolicy {
         self.reveal_map.is_amount_revealed()
     }
 
-    /// Set policy to reveal record commitment blinding factor to auditor
-    /// Return TxnApiError::InvalidParameter if auditor public key has not been
+    /// Set policy to reveal record commitment blinding factor to viewer
+    /// Return TxnApiError::InvalidParameter if viewer public key has not been
     /// specified yet
     pub fn reveal_blinding_factor(mut self) -> Result<Self, TxnApiError> {
         // we cannot call directly self.reveal_map.reveal_amount() because there is no
-        // checking the auditor pub key is present in the policy
-        if !self.is_auditor_pub_key_set() {
+        // checking the viewer pub key is present in the policy
+        if !self.is_viewer_pub_key_set() {
             return Err(TxnApiError::InvalidParameter(
-                "Cannot reveal blinding factor to dummy AuditorPublicKey".to_string(),
+                "Cannot reveal blinding factor to dummy ViewerPublicKey".to_string(),
             )); // TODO crate InvalidStructure error type
         }
         self.reveal_map.reveal_blinding_factor();
@@ -522,35 +522,35 @@ impl AssetPolicy {
         self.reveal_map.is_blinding_factor_revealed()
     }
 
-    /// Set policy to reveal ith identity attribute to auditor
-    /// Return TxnApiError::InvalidParameter if auditor or credential issuer
+    /// Set policy to reveal ith identity attribute to viewer
+    /// Return TxnApiError::InvalidParameter if viewer or credential creator
     /// public key have not been specified yet or it `i` greater or equal to
     /// ATTRS_LEN
     pub fn reveal_ith_attribute(mut self, i: usize) -> Result<Self, TxnApiError> {
-        if !self.is_auditor_pub_key_set() {
+        if !self.is_viewer_pub_key_set() {
             return Err(TxnApiError::InvalidParameter(
-                "Cannot reveal credential attribute to dummy AuditorPublicKey".to_string(),
+                "Cannot reveal credential attribute to dummy ViewerPublicKey".to_string(),
             )); // TODO crate InvalidStructure error type
         }
-        if !self.is_cred_issuer_pub_key_set() {
-            return Err(TxnApiError::InvalidParameter("Cannot reveal credential attribute when no credential issuer pub key has been defined".to_string()));
+        if !self.is_cred_creator_pub_key_set() {
+            return Err(TxnApiError::InvalidParameter("Cannot reveal credential attribute when no credential creator pub key has been defined".to_string()));
             // TODO crate InvalidStructure error type
         }
         self.reveal_map.reveal_ith_id_attribute(i)?;
         Ok(self)
     }
 
-    /// Set policy to reveal all identity attributes to auditor
-    /// Return TxnApiError::InvalidParameter if auditor or credential issuer
+    /// Set policy to reveal all identity attributes to viewer
+    /// Return TxnApiError::InvalidParameter if viewer or credential creator
     /// public keys have not been specified yet
     pub fn reveal_all_attributes(mut self) -> Result<Self, TxnApiError> {
-        if !self.is_auditor_pub_key_set() {
+        if !self.is_viewer_pub_key_set() {
             return Err(TxnApiError::InvalidParameter(
-                "Cannot reveal credential attribute to dummy AuditorPublicKey".to_string(),
+                "Cannot reveal credential attribute to dummy ViewerPublicKey".to_string(),
             )); // TODO crate InvalidStructure error type
         }
-        if !self.is_cred_issuer_pub_key_set() {
-            return Err(TxnApiError::InvalidParameter("Cannot reveal credential attribute when no credential issuer pub key has been defined".to_string()));
+        if !self.is_cred_creator_pub_key_set() {
+            return Err(TxnApiError::InvalidParameter("Cannot reveal credential attribute when no credential creator pub key has been defined".to_string()));
             // TODO crate InvalidStructure error type
         }
         self.reveal_map.reveal_all_id_attributes();
@@ -558,11 +558,11 @@ impl AssetPolicy {
     }
 
     /// Set policy to reveal user address, amount and record commitment blinding
-    /// factor to auditor Return TxnApiError::InvalidParameter if auditor
+    /// factor to viewer Return TxnApiError::InvalidParameter if viewer
     /// public key have not been specified yet
     pub fn reveal_record_opening(mut self) -> Result<Self, TxnApiError> {
         // we cannot call directly self.reveal_map.reveal_record_opening() because there
-        // is no checking the auditor pub key is present in the policy
+        // is no checking the viewer pub key is present in the policy
         self = self.reveal_user_address()?;
         self = self.reveal_amount()?;
         self = self.reveal_blinding_factor()?;
@@ -570,22 +570,22 @@ impl AssetPolicy {
     }
 
     /// Set policy to reveal user address, amount, record commitment blinding
-    /// factor and all identity attributes to auditor Return TxnApiError::
-    /// InvalidParameter if auditor or credential issuer public keys have not
+    /// factor and all identity attributes to viewer Return TxnApiError::
+    /// InvalidParameter if viewer or credential creator public keys have not
     /// been specified yet
     pub fn reveal_all(mut self) -> Result<Self, TxnApiError> {
         // we cannot call directly self.reveal_map.reveal_all() because there is no
-        // checking the auditor pub key or credential issuer pub key are present in the
+        // checking the viewer pub key or credential creator pub key are present in the
         // policy
         self = self.reveal_record_opening()?;
         self.reveal_all_attributes()
     }
 
     /// Transform to a list of scalars
-    /// The order: (reveal_map, auditor_pk, cred_pk, freezer_pk)
+    /// The order: (reveal_map, viewer_pk, cred_pk, freezer_pk)
     pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
         let mut result = vec![self.reveal_map.into()];
-        result.extend_from_slice(&self.auditor_pk.to_scalars());
+        result.extend_from_slice(&self.viewer_pk.to_scalars());
         result.extend_from_slice(&self.cred_pk.to_scalars());
         result.extend_from_slice(&self.freezer_pk.to_scalars());
         result.push(BaseField::from(self.reveal_threshold));
@@ -873,7 +873,7 @@ impl RecordOpening {
     /// key, policy is asset policy, and r is blind factor
     pub(crate) fn derive_record_commitment(&self) -> RecordCommitment {
         let (user_pubkey_x, user_pubkey_y) = (&self.pub_key.address).into();
-        let (auditor_pubkey_x, auditor_pubkey_y) = (&self.asset_def.policy.auditor_pk.0).into();
+        let (viewer_pubkey_x, viewer_pubkey_y) = (&self.asset_def.policy.viewer_pk.0).into();
         let (cred_pubkey_x, cred_pubkey_y) = (&self.asset_def.policy.cred_pk.0).into();
         let (freezer_pubkey_x, freezer_pubkey_y) = (&self.asset_def.policy.freezer_pk).into();
 
@@ -892,8 +892,8 @@ impl RecordOpening {
                     BaseField::from(&self.asset_def.code),
                     user_pubkey_x,
                     user_pubkey_y,
-                    auditor_pubkey_x,
-                    auditor_pubkey_y,
+                    viewer_pubkey_x,
+                    viewer_pubkey_y,
                     cred_pubkey_x,
                     cred_pubkey_y,
                     freezer_pubkey_x,
@@ -914,7 +914,7 @@ impl RecordOpening {
 pub(crate) struct Credential(pub(crate) Signature);
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
-/// issued by an identity issuer.
+/// created by an identity creator.
 #[tagged_blob("ID")]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub struct IdentityAttribute(pub(crate) BaseField);
@@ -986,8 +986,8 @@ impl IdentityAttribute {
     }
 }
 
-/// A credential with expiry issued by a credential issuer for a user testifying
-/// user's identity attributes
+/// A credential with expiry created by a credential creator for a user
+/// testifying user's identity attributes
 #[derive(
     Debug,
     Clone,
@@ -1004,7 +1004,7 @@ pub struct ExpirableCredential {
     pub(crate) attrs: Vec<IdentityAttribute>,
     pub(crate) expiry: u64,
     pub(crate) cred: Credential,
-    pub(crate) issuer_pk: CredIssuerPubKey,
+    pub(crate) creator_pk: CredIssuerPubKey,
 }
 
 impl ExpirableCredential {
@@ -1012,17 +1012,17 @@ impl ExpirableCredential {
     ///
     /// * `user_addr` - User address that this credential is issuing to
     /// * `attrs` - identity attributes of the user
-    /// * `expiry` - expiry date of the credential (specified by the issuer)
-    /// * `issuer_keypair` - credential issuer's key
+    /// * `expiry` - expiry date of the credential (specified by the creator)
+    /// * `minter_keypair` - credential creator's key
     ///
     /// If the attribute list is not the same length as `ATTRS_LEN`, or each
     /// attribute bytes go beyond 32 bytes, then will return error.
     /// Otherwise an `ExpirableCredential` will be returned
-    pub fn issue(
+    pub fn create(
         user_addr: UserAddress,
         attrs: Vec<IdentityAttribute>,
         expiry: u64,
-        issuer_keypair: &CredIssuerKeyPair,
+        minter_keypair: &CredIssuerKeyPair,
     ) -> Result<Self, TxnApiError> {
         if attrs.len() != ATTRS_LEN {
             return Err(TxnApiError::FailedCredentialCreation(format!(
@@ -1038,14 +1038,14 @@ impl ExpirableCredential {
 
             [vec![BaseField::from(expiry), upk_x, upk_y], attrs].concat()
         };
-        let cred = issuer_keypair.sign(&msg);
+        let cred = minter_keypair.sign(&msg);
 
         Ok(ExpirableCredential {
             user_addr,
             attrs,
             expiry,
             cred,
-            issuer_pk: issuer_keypair.pub_key(),
+            creator_pk: minter_keypair.pub_key(),
         })
     }
 
@@ -1070,18 +1070,18 @@ impl ExpirableCredential {
             let (upk_x, upk_y) = (&self.user_addr).into();
             [vec![BaseField::from(self.expiry), upk_x, upk_y], attrs].concat()
         };
-        self.issuer_pk.verify(&msg, &self.cred)?;
+        self.creator_pk.verify(&msg, &self.cred)?;
         Ok(())
     }
 
     /// Create a dummy unexpired ExpirableCredential as placeholder.
     pub(crate) fn dummy_unexpired() -> Result<Self, TxnApiError> {
         let dummy_user = UserAddress::default();
-        let dummy_issuer_keypair = CredIssuerKeyPair::default();
+        let dummy_minter_keypair = CredIssuerKeyPair::default();
         let dummy_attrs = IdentityAttribute::default_vector();
         let dummy_expiry = 2u64.pow(MAX_TIMESTAMP_LEN as u32) - 1;
 
-        ExpirableCredential::issue(dummy_user, dummy_attrs, dummy_expiry, &dummy_issuer_keypair)
+        ExpirableCredential::create(dummy_user, dummy_attrs, dummy_expiry, &dummy_minter_keypair)
             .map_err(|_| {
                 TxnApiError::InternalError(
                     "Failed to create dummy unexpired credential".to_string(),
@@ -1095,17 +1095,17 @@ impl ExpirableCredential {
     }
 }
 
-/// Memos for auditors such as auditors required by the asset policy.
+/// Memos for viewers such as viewers required by the asset policy.
 /// Concretely, it is a ciphertext over details of a
-/// transaction, enabling asset tracing and identity tracing.
+/// transaction, enabling asset viewing and identity viewing.
 #[tagged_blob("AUDMEMO")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub struct AuditMemo(pub(crate) elgamal::Ciphertext<CurveParam>);
+pub struct ViewableMemo(pub(crate) elgamal::Ciphertext<CurveParam>);
 
-impl AuditMemo {
-    /// Construct an audit memo directly from internal ciphertext.
+impl ViewableMemo {
+    /// Construct a viewing memo directly from internal ciphertext.
     /// **USE WITH CAUTION**: this method is only used during reconstruction
-    /// from internal ciphertext of an existing `AuditMemo`, you should never
+    /// from internal ciphertext of an existing `ViewableMemo`, you should never
     /// pass in an arbitrary ciphertext and deem this memo as valid.
     pub fn new(ciphertext: elgamal::Ciphertext<CurveParam>) -> Self {
         Self(ciphertext)
@@ -1116,25 +1116,25 @@ impl AuditMemo {
         &self.0
     }
 
-    /// Create an `AuditMemo` used in minting transactions
+    /// Create an `ViewableMemo` used in minting transactions
     pub(crate) fn new_for_mint_note(ro_mint: &RecordOpening, randomizer: ScalarField) -> Self {
-        let auditor_pk = &ro_mint.asset_def.policy.auditor_pk;
-        let message = if *auditor_pk == AuditorPubKey::default() {
+        let viewer_pk = &ro_mint.asset_def.policy.viewer_pk;
+        let message = if *viewer_pk == ViewerPubKey::default() {
             vec![BaseField::zero(); 3]
         } else {
             let (addr_x, addr_y) = (&ro_mint.pub_key.address).into();
             vec![addr_x, addr_y, ro_mint.blind.0]
         };
-        Self(auditor_pk.encrypt(randomizer, &message))
+        Self(viewer_pk.encrypt(randomizer, &message))
     }
 
-    /// Create an `AuditMemo` used in anonymous transfer transactions
+    /// Create an `ViewableMemo` used in anonymous transfer transactions
     pub(crate) fn new_for_transfer_note(
         input_ros: &[RecordOpening],
         output_ros: &[RecordOpening],
         input_creds: &[ExpirableCredential],
         randomizer: ScalarField,
-    ) -> Result<AuditMemo, TxnApiError> {
+    ) -> Result<ViewableMemo, TxnApiError> {
         let asset_def = get_asset_def_in_transfer_txn(input_ros)?;
         if asset_def.is_dummy() {
             return Err(TxnApiError::InternalError(
@@ -1151,8 +1151,8 @@ impl AuditMemo {
                 .as_slice(),
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for inputs.".to_string()))?;
-        let auditor_pk = &asset_def.policy.auditor_pk;
-        let auditor_memo = if (*auditor_pk != AuditorPubKey::default())
+        let viewer_pk = &asset_def.policy.viewer_pk;
+        let viewer_memo = if (*viewer_pk != ViewerPubKey::default())
             && (transfer_amount > asset_def.policy.reveal_threshold)
         {
             // 1. prepare message by concatenating all fields to be revealed (details in
@@ -1161,17 +1161,17 @@ impl AuditMemo {
             // 1.1 extend message to include input records info
             for (input_ro, input_cred) in input_ros.iter().zip(input_creds.iter()).skip(1) {
                 let (pk_x, pk_y) = (&input_ro.pub_key.address).into();
-                let mut vals = [BaseField::zero(); AUDIT_DATA_LEN];
+                let mut vals = [BaseField::zero(); VIEWABLE_DATA_LEN];
                 {
                     let (asset_fields, id_fields) = vals.split_at_mut(ASSET_TRACING_MAP_LEN);
-                    // asset tracing fields
+                    // asset viewing fields
                     asset_fields.copy_from_slice(&[
                         pk_x,
                         pk_y,
                         BaseField::from(input_ro.amount),
                         input_ro.blind.0,
                     ]);
-                    // id tracing fields
+                    // id viewing fields
                     id_fields.copy_from_slice(
                         &input_cred
                             .attrs
@@ -1182,7 +1182,7 @@ impl AuditMemo {
                 }
                 let mut reveal_vals = asset_def.policy.reveal_map.hadamard_product(&vals);
                 // when the record is dummy, we replace the random secret key with a dummy one
-                // on the audit memo so that auditor can recognize the record as
+                // on the viewing memo so that viewer can recognize the record as
                 // dummy. Recall that random address on the record is needed for
                 // security reasons (it hides the nullifier key)
                 let (dummy_x, dummy_y) = (&UserAddress::default()).into();
@@ -1213,52 +1213,52 @@ impl AuditMemo {
                 message.extend_from_slice(&reveal_vals);
             }
 
-            // 2. encrypt the message to produce the auditor memo
-            AuditMemo(auditor_pk.encrypt(randomizer, &message))
+            // 2. encrypt the message to produce the viewer memo
+            ViewableMemo(viewer_pk.encrypt(randomizer, &message))
         } else {
             Self::dummy_for_transfer_note(input_ros.len(), output_ros.len(), randomizer)
         };
-        Ok(auditor_memo)
+        Ok(viewer_memo)
     }
 
-    // Create a dummy audit memo for transaction transferring non-tracing asset code
-    // Use a random auditor public key to encrypt a zeroed vector.
+    // Create a dummy viewing memo for transaction transferring non-viewing asset
+    // code Use a random viewer public key to encrypt a zeroed vector.
     // Encryption scheme must be key-private (we use ElGamal which is key-private)
-    // noted that the length would be the same as that of a tracing asset code to
+    // noted that the length would be the same as that of a viewing asset code to
     // avoid leaking asset code being transferred
     pub(crate) fn dummy_for_transfer_note(
         input_ros_len: usize,
         output_ros_len: usize,
         randomizer: ScalarField,
-    ) -> AuditMemo {
+    ) -> ViewableMemo {
         // message size starts with the second input and output, (first is always
-        // non-tracing native asset code); and for inputs, both asset
-        // tracing and id tracing would require AUDITING_VECTOR_LEN = REVEAL_MAP_LEN + 1
+        // non-viewing native asset code); and for inputs, both asset
+        // viewing and id viewing would require VIEWING_VECTOR_LEN = REVEAL_MAP_LEN + 1
         // msg length, as upk takes two scalars; for outputs, only asset
-        // tracing is on, thus only 4 scalars traced; finally, the asset
+        // viewing is on, thus only 4 scalars viewed; finally, the asset
         // code is always revealed, thus + 1 in the end.
         let bytes = randomizer.hash::<Sha512>();
         let mut seed = [0u8; 32];
         seed.copy_from_slice(&bytes[0..32]);
         let mut rng = rand_chacha::ChaChaRng::from_seed(seed);
-        let random_auditor_pk = AuditorPubKey::random(&mut rng);
-        let msg_size = (input_ros_len - 1) * (AUDIT_DATA_LEN) + (output_ros_len - 1) * 4 + 1;
-        AuditMemo(random_auditor_pk.encrypt(randomizer, &vec![BaseField::zero(); msg_size]))
+        let random_viewer_pk = ViewerPubKey::random(&mut rng);
+        let msg_size = (input_ros_len - 1) * (VIEWABLE_DATA_LEN) + (output_ros_len - 1) * 4 + 1;
+        ViewableMemo(random_viewer_pk.encrypt(randomizer, &vec![BaseField::zero(); msg_size]))
     }
 }
 
-/// Transfer AuditMemo decrypted
+/// Transfer ViewableMemo decrypted
 #[derive(Clone, Debug, PartialEq)]
-pub struct AuditData {
+pub struct ViewableData {
     /// asset code of the associated policy
     pub asset_code: AssetCode,
-    /// tracked user address
+    /// visible user address
     pub user_address: Option<UserAddress>,
-    /// tracked amount
+    /// visible amount
     pub amount: Option<u64>,
-    /// tracked blinding factor
+    /// visible blinding factor
     pub blinding_factor: Option<BlindFactor>,
-    /// tracked attributes
+    /// visible attributes
     pub attributes: Vec<Option<IdentityAttribute>>,
 }
 
@@ -1267,7 +1267,7 @@ pub(crate) enum InOrOut {
     Out,
 }
 
-impl AuditData {
+impl ViewableData {
     fn fetch_address(
         x: &BaseField,
         y: &BaseField,
@@ -1275,8 +1275,12 @@ impl AuditData {
     ) -> Result<Option<VerKey>, TxnApiError> {
         let point_affine = GroupAffine::<CurveParam>::new(*x, *y);
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
-            if asset_definition.policy.is_user_address_revealed() {
-                return Err(TxnApiError::FailedAuditMemoDecryption(
+            if asset_definition
+                .policy
+                .reveal_map
+                .is_user_address_revealed()
+            {
+                return Err(TxnApiError::FailedViewableMemoDecryption(
                     "Invalid user address".to_ascii_lowercase(),
                 ));
             } else {
@@ -1308,23 +1312,24 @@ impl AuditData {
     }
 
     pub(crate) fn from_mint_note(
-        audit_data: &[BaseField],
+        visible_data: &[BaseField],
         mint_note: &MintNote,
-    ) -> Result<AuditData, TxnApiError> {
-        if audit_data.len() != 3 {
-            return Err(TxnApiError::FailedAuditMemoDecryption(
-                "Invalid audit data len for mint note".to_ascii_lowercase(),
+    ) -> Result<ViewableData, TxnApiError> {
+        if visible_data.len() != 3 {
+            return Err(TxnApiError::FailedViewableMemoDecryption(
+                "Invalidviewing data len for mint note".to_ascii_lowercase(),
             ));
         }
         let asset_def = &mint_note.mint_asset_def;
-        let user_address = AuditData::fetch_address(&audit_data[0], &audit_data[1], asset_def)?;
-        let amount = if asset_def.policy_ref().is_amount_revealed() {
+        let user_address =
+            ViewableData::fetch_address(&visible_data[0], &visible_data[1], asset_def)?;
+        let amount = if asset_def.policy_ref().reveal_map.is_amount_revealed() {
             Some(mint_note.mint_amount)
         } else {
             None
         };
-        let blinding_factor = AuditData::fetch_blind_factor(&audit_data[2], asset_def);
-        Ok(AuditData {
+        let blinding_factor = ViewableData::fetch_blind_factor(&visible_data[2], asset_def);
+        Ok(ViewableData {
             asset_code: asset_def.code,
             user_address,
             amount,
@@ -1336,20 +1341,20 @@ impl AuditData {
         asset_definition: &AssetDefinition,
         data: &[BaseField],
         in_or_out: InOrOut,
-    ) -> Result<AuditData, TxnApiError> {
+    ) -> Result<ViewableData, TxnApiError> {
         match in_or_out {
             InOrOut::In => {
-                if data.len() != AUDIT_DATA_LEN {
-                    return Err(TxnApiError::FailedAuditMemoDecryption(format!(
+                if data.len() != VIEWABLE_DATA_LEN {
+                    return Err(TxnApiError::FailedViewableMemoDecryption(format!(
                         "Internal Error: plaintext data unexpected length {}, expected {}",
                         data.len(),
-                        AUDIT_DATA_LEN
+                        VIEWABLE_DATA_LEN
                     )));
                 }
             },
             InOrOut::Out => {
                 if data.len() != 4 {
-                    return Err(TxnApiError::FailedAuditMemoDecryption(format!(
+                    return Err(TxnApiError::FailedViewableMemoDecryption(format!(
                         "Internal Error: plaintext data unexpected length {}, expected {}",
                         data.len(),
                         4
@@ -1357,12 +1362,12 @@ impl AuditData {
                 }
             },
         }
-        let user_address = AuditData::fetch_address(&data[0], &data[1], asset_definition)?;
+        let user_address = ViewableData::fetch_address(&data[0], &data[1], asset_definition)?;
 
         let amount = if asset_definition.policy.is_amount_revealed() {
             let big_int = data[2].into_repr();
             if big_int > BigInteger256::from(u64::MAX) {
-                return Err(TxnApiError::FailedAuditMemoDecryption(
+                return Err(TxnApiError::FailedViewableMemoDecryption(
                     "Invalid amount".to_ascii_lowercase(),
                 ));
             }
@@ -1373,7 +1378,7 @@ impl AuditData {
             None
         };
 
-        let blinding_factor = AuditData::fetch_blind_factor(&data[3], asset_definition);
+        let blinding_factor = ViewableData::fetch_blind_factor(&data[3], asset_definition);
 
         let mut attributes = vec![];
         match in_or_out {
@@ -1393,7 +1398,7 @@ impl AuditData {
             _ => (0..ATTRS_LEN).for_each(|_| attributes.push(None)),
         };
 
-        Ok(AuditData {
+        Ok(ViewableData {
             asset_code: asset_definition.code,
             user_address,
             amount,
@@ -1579,15 +1584,15 @@ mod test {
             let mut reveal_map = RevealMap::default();
             reveal_map.reveal_all();
             let mut rng = test_rng();
-            let mut attrs = [zero; AUDIT_DATA_LEN];
-            for i in 0..AUDIT_DATA_LEN {
+            let mut attrs = [zero; VIEWABLE_DATA_LEN];
+            for i in 0..VIEWABLE_DATA_LEN {
                 let rand_u64 = rng.next_u64();
                 attrs[i] = BaseField::from(rand_u64);
             }
             assert_eq!(reveal_map.hadamard_product(&attrs), attrs);
             assert_eq!(
                 RevealMap::default().hadamard_product(&attrs),
-                [zero; AUDIT_DATA_LEN]
+                [zero; VIEWABLE_DATA_LEN]
             );
             let mut expected_mapped_vals = attrs.clone();
             expected_mapped_vals[4] = zero;
@@ -1604,7 +1609,7 @@ mod test {
         }
     }
 
-    mod audit_data {
+    mod visible_data {
         use super::*;
         use crate::{
             proof,
@@ -1623,9 +1628,9 @@ mod test {
             let input_amount = 10;
             let fee = 4;
             let mint_amount = 35;
-            let issuer_keypair = UserKeyPair::generate(rng);
+            let minter_keypair = UserKeyPair::generate(rng);
             let receiver_keypair = UserKeyPair::generate(rng);
-            let auditor_keypair = AuditorKeyPair::generate(rng);
+            let viewer_keypair = ViewerKeyPair::generate(rng);
 
             let builder = MintParamsBuilder::new(
                 rng,
@@ -1633,9 +1638,9 @@ mod test {
                 input_amount,
                 fee,
                 mint_amount,
-                &issuer_keypair,
+                &minter_keypair,
                 &receiver_keypair,
-                &auditor_keypair,
+                &viewer_keypair,
             )
             .policy_reveal(PolicyRevealAttr::UserAddr);
 
@@ -1643,21 +1648,22 @@ mod test {
             let receiver_address = receiver_keypair.address();
             let (x, y) = (&receiver_address).into();
             let blinding_factor = BaseField::rand(rng);
-            let raw_audit_data = vec![x, y, blinding_factor];
-            let audit_data = AuditData::from_mint_note(&raw_audit_data, &note);
-            assert!(audit_data.is_ok());
-            let audit_data = audit_data.unwrap();
-            assert_eq!(audit_data.user_address.unwrap(), receiver_address);
-            assert_eq!(audit_data.blinding_factor, None);
-            assert_eq!(audit_data.amount, None);
+            let raw_visible_data = vec![x, y, blinding_factor];
+            let visible_data = ViewableData::from_mint_note(&raw_visible_data, &note);
+            assert!(visible_data.is_ok());
+            let visible_data = visible_data.unwrap();
+            assert_eq!(visible_data.user_address.unwrap(), receiver_address);
+            assert_eq!(visible_data.blinding_factor, None);
+            assert_eq!(visible_data.amount, None);
 
             // Wrong number of elements
-            let wrong_raw_audit_data = vec![x, y, blinding_factor, BaseField::zero()];
-            assert!(AuditData::from_mint_note(&wrong_raw_audit_data, &note).is_err());
+            let wrong_raw_visible_data = vec![x, y, blinding_factor, BaseField::zero()];
+            assert!(ViewableData::from_mint_note(&wrong_raw_visible_data, &note).is_err());
 
             // Wrong address
-            let wrong_raw_audit_data = vec![BaseField::zero(), BaseField::zero(), blinding_factor];
-            assert!(AuditData::from_mint_note(&wrong_raw_audit_data, &note).is_err());
+            let wrong_raw_visible_data =
+                vec![BaseField::zero(), BaseField::zero(), blinding_factor];
+            assert!(ViewableData::from_mint_note(&wrong_raw_visible_data, &note).is_err());
 
             Ok(())
         }
@@ -1665,13 +1671,13 @@ mod test {
         #[test]
         fn transfer() {
             let mut rng = ark_std::test_rng();
-            let auditor_keypair = AuditorKeyPair::generate(&mut rng);
-            let issuer_keypair = CredIssuerKeyPair::generate(&mut rng);
+            let viewer_keypair = ViewerKeyPair::generate(&mut rng);
+            let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
             let freezer_keypair = FreezerKeyPair::generate(&mut rng);
             let (..) = AssetCode::random(&mut rng);
             let mut policy = AssetPolicy::default()
-                .set_auditor_pub_key(auditor_keypair.pub_key())
-                .set_cred_issuer_pub_key(issuer_keypair.pub_key())
+                .set_viewer_pub_key(viewer_keypair.pub_key())
+                .set_cred_creator_pub_key(minter_keypair.pub_key())
                 .set_freezer_pub_key(freezer_keypair.pub_key());
 
             policy.reveal_map.reveal_user_address();
@@ -1680,20 +1686,22 @@ mod test {
             let asset_def = AssetDefinition::new(asset_code, policy).unwrap();
 
             // Wrong length for In
-            const WRONG_LEN_IN: usize = AUDIT_DATA_LEN + 1;
+            const WRONG_LEN_IN: usize = VIEWABLE_DATA_LEN + 1;
             let data = &[BaseField::from(0_u64); WRONG_LEN_IN];
-            let transfer_data = AuditData::from_xfr_data_and_asset(&asset_def, data, InOrOut::In);
+            let transfer_data =
+                ViewableData::from_xfr_data_and_asset(&asset_def, data, InOrOut::In);
             assert!(transfer_data.is_err());
 
             // Wrong length for Out
-            const WRONG_LEN_OUT: usize = AUDIT_DATA_LEN + 1;
+            const WRONG_LEN_OUT: usize = VIEWABLE_DATA_LEN + 1;
             let data = &[BaseField::from(0_u64); WRONG_LEN_OUT];
-            let transfer_data = AuditData::from_xfr_data_and_asset(&asset_def, data, InOrOut::Out);
+            let transfer_data =
+                ViewableData::from_xfr_data_and_asset(&asset_def, data, InOrOut::Out);
             assert!(transfer_data.is_err());
 
             // Wrong user address
-            let wrong_data_user_address = &[BaseField::from(0_u64); AUDIT_DATA_LEN];
-            let transfer_data = AuditData::from_xfr_data_and_asset(
+            let wrong_data_user_address = &[BaseField::from(0_u64); VIEWABLE_DATA_LEN];
+            let transfer_data = ViewableData::from_xfr_data_and_asset(
                 &asset_def,
                 wrong_data_user_address,
                 InOrOut::In,
@@ -1706,14 +1714,16 @@ mod test {
             // Wrong amount
             let wrong_amount = BaseField::from(u64::MAX) + BaseField::from(1_u64);
             let mut data = vec![x, y, wrong_amount];
-            data.extend_from_slice(&[BaseField::from(1_u64); AUDIT_DATA_LEN - 3]);
-            let transfer_data = AuditData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
+            data.extend_from_slice(&[BaseField::from(1_u64); VIEWABLE_DATA_LEN - 3]);
+            let transfer_data =
+                ViewableData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
             assert!(transfer_data.is_ok());
 
             // Good parameters
             let mut data = vec![x, y];
-            data.extend_from_slice(&[BaseField::from(1_u64); AUDIT_DATA_LEN - 2]);
-            let transfer_data = AuditData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
+            data.extend_from_slice(&[BaseField::from(1_u64); VIEWABLE_DATA_LEN - 2]);
+            let transfer_data =
+                ViewableData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
             assert!(transfer_data.is_ok());
         }
     }
@@ -1733,17 +1743,17 @@ mod test {
     fn test_expirable_credential() -> Result<(), TxnApiError> {
         let mut rng = ark_std::test_rng();
         let user_keypair = UserKeyPair::generate(&mut rng);
-        let issuer_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let mut attrs = IdentityAttribute::random_vector(&mut rng);
         let cred_expiry = 1234u64;
         let now = 1000u64;
 
         // good credential should be verified
-        let cred = ExpirableCredential::issue(
+        let cred = ExpirableCredential::create(
             user_keypair.address(),
             attrs.clone(),
             cred_expiry,
-            &issuer_keypair,
+            &minter_keypair,
         )?;
         assert!(cred.verify(now).is_ok());
 
@@ -1765,14 +1775,14 @@ mod test {
         let cred4 = cred.clone();
         assert!(cred4.verify(cred.expiry + 1).is_err());
 
-        // credential with a wrong credential issuer should fail
+        // credential with a wrong credential creator should fail
         let mut cred5 = cred.clone();
-        cred5.issuer_pk = CredIssuerKeyPair::generate(&mut rng).pub_key();
+        cred5.creator_pk = CredIssuerKeyPair::generate(&mut rng).pub_key();
         assert!(cred5.verify(now).is_err());
 
         // overflowed attribute bytes should fail
         attrs.push(IdentityAttribute::random(&mut rng));
-        assert!(ExpirableCredential::issue(
+        assert!(ExpirableCredential::create(
             user_keypair.address(),
             attrs,
             1234,
@@ -1807,21 +1817,21 @@ mod test {
     #[test]
     fn test_asset_policy() {
         let mut rng = ark_std::test_rng();
-        let auditor_keypair = AuditorKeyPair::generate(&mut rng);
-        let issuer_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let viewer_keypair = ViewerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
         let (..) = AssetCode::random(&mut rng);
         let policy = AssetPolicy::default()
-            .set_auditor_pub_key(auditor_keypair.pub_key())
-            .set_cred_issuer_pub_key(issuer_keypair.pub_key())
+            .set_viewer_pub_key(viewer_keypair.pub_key())
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
             .set_freezer_pub_key(freezer_keypair.pub_key());
 
-        assert_eq!(*policy.auditor_pub_key(), auditor_keypair.pub_key());
-        assert_eq!(*policy.cred_issuer_pub_key(), issuer_keypair.pub_key());
+        assert_eq!(*policy.viewer_pub_key(), viewer_keypair.pub_key());
+        assert_eq!(*policy.cred_creator_pub_key(), minter_keypair.pub_key());
         assert_eq!(*policy.freezer_pub_key(), freezer_keypair.pub_key());
 
-        assert!(policy.is_auditor_pub_key_set());
-        assert!(policy.is_cred_issuer_pub_key_set());
+        assert!(policy.is_viewer_pub_key_set());
+        assert!(policy.is_cred_creator_pub_key_set());
         assert!(policy.is_freezer_pub_key_set());
 
         // All the public keys are correctly set
@@ -1851,7 +1861,7 @@ mod test {
         // The public keys are unset, errors are thrown
         let policy = policy
             .unwrap()
-            .set_cred_issuer_pub_key(CredIssuerPubKey::default());
+            .set_cred_creator_pub_key(CredIssuerPubKey::default());
         let policy_aux = policy.clone();
         for i in 0..ATTRS_LEN {
             let policy = policy_aux.clone().reveal_ith_attribute(i);
@@ -1862,8 +1872,8 @@ mod test {
 
         let policy = policy_aux;
         let policy = policy
-            .set_cred_issuer_pub_key(issuer_keypair.pub_key())
-            .set_auditor_pub_key(AuditorPubKey::default());
+            .set_cred_creator_pub_key(minter_keypair.pub_key())
+            .set_viewer_pub_key(ViewerPubKey::default());
         let policy_aux = policy.clone();
         for i in 0..ATTRS_LEN {
             let policy = policy_aux.clone().reveal_ith_attribute(i);
@@ -1907,21 +1917,21 @@ mod test {
         let rc = RecordCommitment::from(&ro);
 
         // credential related
-        let issuer_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let attrs = IdentityAttribute::random_vector(&mut rng);
         let cred_expiry = 1234u64;
-        let cred = ExpirableCredential::issue(
+        let cred = ExpirableCredential::create(
             user_keypair.address(),
             attrs.clone(),
             cred_expiry,
-            &issuer_keypair,
+            &minter_keypair,
         )
         .unwrap();
 
         // memo related
-        let audit_memo = {
+        let viewing_memo = {
             let mut asset_def = AssetDefinition::native();
-            asset_def.policy.auditor_pk = AuditorPubKey::default();
+            asset_def.policy.viewer_pk = ViewerPubKey::default();
             let ro = RecordOpening::new(
                 &mut rng,
                 23,
@@ -1930,7 +1940,7 @@ mod test {
                 FreezeFlag::Unfrozen,
             );
             let randomizer = ScalarField::rand(&mut rng);
-            AuditMemo::new_for_transfer_note(&[ro.clone()], &[ro], &[cred.clone()], randomizer)
+            ViewableMemo::new_for_transfer_note(&[ro.clone()], &[ro], &[cred.clone()], randomizer)
                 .unwrap()
         };
         let receiver_memo = ReceiverMemo::from_ro(&mut rng, &ro, &[]).unwrap();
@@ -1944,9 +1954,9 @@ mod test {
         let ser_bytes = bincode::serialize(&cred).unwrap();
         let de: ExpirableCredential = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, cred);
-        let ser_bytes = bincode::serialize(&audit_memo).unwrap();
-        let de: AuditMemo = bincode::deserialize(&ser_bytes[..]).unwrap();
-        assert_eq!(de, audit_memo);
+        let ser_bytes = bincode::serialize(&viewing_memo).unwrap();
+        let de: ViewableMemo = bincode::deserialize(&ser_bytes[..]).unwrap();
+        assert_eq!(de, viewing_memo);
         let ser_bytes = bincode::serialize(&receiver_memo).unwrap();
         let de: ReceiverMemo = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, receiver_memo);

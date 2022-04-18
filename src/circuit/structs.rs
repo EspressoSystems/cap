@@ -11,7 +11,7 @@
 
 use crate::{
     constants::{ATTRS_LEN, DUMMY_ASSET_CODE, MAX_TIMESTAMP_LEN},
-    structs::{AssetPolicy, AuditMemo, ExpirableCredential, IdentityAttribute, RecordOpening},
+    structs::{AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo},
     BaseField, CurveParam,
 };
 use ark_ec::ProjectiveCurve;
@@ -31,19 +31,19 @@ use jf_primitives::circuit::{
 };
 
 #[derive(Debug)]
-pub(crate) struct AuditMemoVar(pub(crate) ElGamalHybridCtxtVars);
+pub(crate) struct ViewableMemoVar(pub(crate) ElGamalHybridCtxtVars);
 
-impl AuditMemoVar {
-    /// Create a variable for audit memo
+impl ViewableMemoVar {
+    /// Create a variable for viewing memo
     pub(crate) fn new(
         circuit: &mut PlonkCircuit<BaseField>,
-        audit_memo: &AuditMemo,
+        viewing_memo: &ViewableMemo,
     ) -> Result<Self, PlonkError> {
-        let ctxts = circuit.create_ciphertext_variable(&audit_memo.0)?;
+        let ctxts = circuit.create_ciphertext_variable(&viewing_memo.0)?;
         Ok(Self(ctxts))
     }
 
-    /// Set AuditMemoVar public
+    /// Set ViewableMemoVar public
     pub(crate) fn set_public(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
@@ -56,36 +56,41 @@ impl AuditMemoVar {
         Ok(())
     }
 
-    /// Obtain a bool variable indicating whether it's equal to another audit
-    /// memo `audit_memo`.
+    /// Obtain a bool variable indicating whether it's equal to another viewing
+    /// memo `viewing_memo`.
     pub(crate) fn is_equal(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
-        audit_memo: &AuditMemoVar,
+        viewing_memo: &ViewableMemoVar,
     ) -> Result<Variable, PlonkError> {
-        if audit_memo.0.symm_ctxts.len() != self.0.symm_ctxts.len() {
+        if viewing_memo.0.symm_ctxts.len() != self.0.symm_ctxts.len() {
             return Err(PlonkError::CircuitError(InternalError(
-                "the compared audit memo has different ciphertext length".to_string(),
+                "the compared viewing memo has different ciphertext length".to_string(),
             )));
         }
-        let mut is_equal = circuit.is_equal_point(&self.0.ephemeral, &audit_memo.0.ephemeral)?;
-        for (&left, &right) in self.0.symm_ctxts.iter().zip(audit_memo.0.symm_ctxts.iter()) {
+        let mut is_equal = circuit.is_equal_point(&self.0.ephemeral, &viewing_memo.0.ephemeral)?;
+        for (&left, &right) in self
+            .0
+            .symm_ctxts
+            .iter()
+            .zip(viewing_memo.0.symm_ctxts.iter())
+        {
             let flag = circuit.is_equal(left, right)?;
             is_equal = circuit.mul(is_equal, flag)?;
         }
         Ok(is_equal)
     }
 
-    /// Derive audit memo by encrypting the content with auditor public key
+    /// Derive viewing memoby encrypting the content with viewer public key
     pub(crate) fn derive(
         circuit: &mut PlonkCircuit<BaseField>,
-        auditor_pk: &EncKeyVars,
+        viewer_pk: &EncKeyVars,
         data: &[Variable],
         enc_rand: Variable,
     ) -> Result<Self, PlonkError> {
         Ok(Self(
             ElGamalEncryptionGadget::<_, CurveParam>::elgamal_encrypt(
-                circuit, auditor_pk, data, enc_rand,
+                circuit, viewer_pk, data, enc_rand,
             )?,
         ))
     }
@@ -160,8 +165,8 @@ impl RecordOpeningVar {
             self.asset_code,
             self.owner_addr.0.get_x(),
             self.owner_addr.0.get_y(),
-            self.policy.auditor_pk.0.get_x(),
-            self.policy.auditor_pk.0.get_y(),
+            self.policy.viewer_pk.0.get_x(),
+            self.policy.viewer_pk.0.get_y(),
             self.policy.cred_pk.0.get_x(),
             self.policy.cred_pk.0.get_y(),
             self.policy.freezer_pk.get_x(),
@@ -184,7 +189,7 @@ impl RecordOpeningVar {
 #[derive(Debug)]
 // Circuit variable for an asset policy
 pub(crate) struct AssetPolicyVar {
-    pub(crate) auditor_pk: EncKeyVars,
+    pub(crate) viewer_pk: EncKeyVars,
     pub(crate) cred_pk: VerKeyVar,
     pub(crate) freezer_pk: PointVariable,
     pub(crate) reveal_map: Variable,
@@ -198,13 +203,13 @@ impl AssetPolicyVar {
         policy: &AssetPolicy,
     ) -> Result<Self, PlonkError> {
         let reveal_map = circuit.create_variable(BaseField::from(policy.reveal_map))?;
-        let auditor_pk = circuit.create_enc_key_variable(&policy.auditor_pk.0)?;
+        let viewer_pk = circuit.create_enc_key_variable(&policy.viewer_pk.0)?;
         let cred_pk = circuit.create_signature_vk_variable(&policy.cred_pk.0)?;
         let freezer_pk =
             circuit.create_point_variable(Point::from(policy.freezer_pk.0.into_affine()))?;
         let reveal_threshold = circuit.create_variable(BaseField::from(policy.reveal_threshold))?;
         Ok(Self {
-            auditor_pk,
+            viewer_pk,
             cred_pk,
             freezer_pk,
             reveal_map,
@@ -213,15 +218,15 @@ impl AssetPolicyVar {
     }
 
     /// Set AssetPolicyVar public
-    /// The order: (reveal_map, auditor_pk, cred_pk, freezer_pk,
+    /// The order: (reveal_map, viewer_pk, cred_pk, freezer_pk,
     /// reveal_threshold)
     pub(crate) fn set_public(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
     ) -> Result<(), PlonkError> {
         circuit.set_variable_public(self.reveal_map)?;
-        circuit.set_variable_public(self.auditor_pk.0.get_x())?;
-        circuit.set_variable_public(self.auditor_pk.0.get_y())?;
+        circuit.set_variable_public(self.viewer_pk.0.get_x())?;
+        circuit.set_variable_public(self.viewer_pk.0.get_y())?;
         circuit.set_variable_public(self.cred_pk.0.get_x())?;
         circuit.set_variable_public(self.cred_pk.0.get_y())?;
         circuit.set_variable_public(self.freezer_pk.get_x())?;
@@ -236,7 +241,7 @@ impl AssetPolicyVar {
         circuit: &mut PlonkCircuit<BaseField>,
     ) -> Result<(), PlonkError> {
         let neutral_point = circuit.neutral_point_variable();
-        circuit.point_equal_gate(&self.auditor_pk.0, &neutral_point)?;
+        circuit.point_equal_gate(&self.viewer_pk.0, &neutral_point)?;
         circuit.point_equal_gate(&self.cred_pk.0, &neutral_point)?;
         circuit.point_equal_gate(&self.freezer_pk, &neutral_point)?;
         circuit.constant_gate(self.reveal_map, BaseField::zero())?;
@@ -249,7 +254,7 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
     ) -> Result<Variable, PlonkError> {
-        let dummy_auditor = self.is_dummy_audit_pk(circuit)?;
+        let dummy_viewer = self.is_dummy_viewing_pk(circuit)?;
         let dummy_cred_pk = self.is_dummy_cred_pk(circuit)?;
         let dummy_freezer_pk = self.is_dummy_freezer_pk(circuit)?;
 
@@ -260,7 +265,7 @@ impl AssetPolicyVar {
         // TODO: implement LogicAnd gate for more than 2 variables after adding the new
         // selector for TurboPlonk CS
         circuit.logic_and_all(&[
-            dummy_auditor,
+            dummy_viewer,
             dummy_cred_pk,
             dummy_freezer_pk,
             no_reveal_map_or_reveal_threshold,
@@ -275,7 +280,7 @@ impl AssetPolicyVar {
     ) -> Result<(), PlonkError> {
         circuit.equal_gate(self.reveal_map, policy.reveal_map)?;
         circuit.equal_gate(self.reveal_threshold, policy.reveal_threshold)?;
-        circuit.point_equal_gate(&self.auditor_pk.0, &policy.auditor_pk.0)?;
+        circuit.point_equal_gate(&self.viewer_pk.0, &policy.viewer_pk.0)?;
         circuit.point_equal_gate(&self.cred_pk.0, &policy.cred_pk.0)?;
         circuit.point_equal_gate(&self.freezer_pk, &policy.freezer_pk)?;
         Ok(())
@@ -289,7 +294,7 @@ impl AssetPolicyVar {
         policy: &AssetPolicyVar,
     ) -> Result<Variable, PlonkError> {
         let a_eq = circuit.is_equal(self.reveal_map, policy.reveal_map)?;
-        let b_eq = circuit.is_equal_point(&self.auditor_pk.0, &policy.auditor_pk.0)?;
+        let b_eq = circuit.is_equal_point(&self.viewer_pk.0, &policy.viewer_pk.0)?;
         let c_eq = circuit.is_equal_point(&self.cred_pk.0, &policy.cred_pk.0)?;
         let d_eq = circuit.is_equal_point(&self.freezer_pk, &policy.freezer_pk)?;
         let e_eq = circuit.is_equal(self.reveal_threshold, policy.reveal_threshold)?;
@@ -297,8 +302,8 @@ impl AssetPolicyVar {
         circuit.logic_and_all(&[a_eq, b_eq, c_eq, d_eq, e_eq])
     }
 
-    /// Obtain a bool variable indicating whether the policy's credential issuer
-    /// public key is dummy.
+    /// Obtain a bool variable indicating whether the policy's credential
+    /// creator public key is dummy.
     pub(crate) fn is_dummy_cred_pk(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
@@ -306,16 +311,16 @@ impl AssetPolicyVar {
         circuit.is_neutral_point::<CurveParam>(&self.cred_pk.0)
     }
 
-    /// Obtain a bool variable indicating whether the policy's auditor public
+    /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
-    pub(crate) fn is_dummy_audit_pk(
+    pub(crate) fn is_dummy_viewing_pk(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<CurveParam>(&self.auditor_pk.0)
+        circuit.is_neutral_point::<CurveParam>(&self.viewer_pk.0)
     }
 
-    /// Obtain a bool variable indicating whether the policy's auditor public
+    /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
     pub(crate) fn is_dummy_freezer_pk(
         &self,
@@ -346,7 +351,7 @@ pub(crate) struct ExpirableCredVar {
     pub expiry: Variable,
     pub cred: SignatureVar,
     pub user_addr: UserAddressVar,
-    pub issuer_pk: VerKeyVar,
+    pub creator_pk: VerKeyVar,
 }
 
 impl ExpirableCredVar {
@@ -360,7 +365,7 @@ impl ExpirableCredVar {
         let user_addr = UserAddressVar(circuit.create_point_variable(Point::from(
             expirable_cred.user_addr.internal().into_affine(),
         ))?);
-        let issuer_pk = circuit.create_signature_vk_variable(&expirable_cred.issuer_pk.0)?;
+        let creator_pk = circuit.create_signature_vk_variable(&expirable_cred.creator_pk.0)?;
         let attrs = expirable_cred
             .attrs
             .iter()
@@ -371,7 +376,7 @@ impl ExpirableCredVar {
             expiry,
             cred,
             user_addr,
-            issuer_pk,
+            creator_pk,
         })
     }
 
@@ -414,7 +419,7 @@ impl ExpirableCredVar {
         .concat();
         SignatureGadget::<_, CurveParam>::is_valid_signature(
             circuit,
-            &self.issuer_pk,
+            &self.creator_pk,
             &msg,
             &self.cred,
         )
@@ -424,9 +429,11 @@ impl ExpirableCredVar {
 #[cfg(test)]
 mod tests {
     use crate::{
-        circuit::structs::{AssetPolicyVar, AuditMemoVar, ExpirableCredVar, RecordOpeningVar},
-        keys::{AuditorKeyPair, CredIssuerKeyPair, UserKeyPair},
-        structs::{AssetPolicy, AuditMemo, ExpirableCredential, IdentityAttribute, RecordOpening},
+        circuit::structs::{AssetPolicyVar, ExpirableCredVar, RecordOpeningVar, ViewableMemoVar},
+        keys::{CredIssuerKeyPair, UserKeyPair, ViewerKeyPair},
+        structs::{
+            AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo,
+        },
         BaseField, ScalarField,
     };
     use ark_ff::{One, Zero};
@@ -454,12 +461,12 @@ mod tests {
     #[test]
     fn test_verify_expirable_credential() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
-        let issuer_keypair = CredIssuerKeyPair::generate(rng);
+        let minter_keypair = CredIssuerKeyPair::generate(rng);
         let user = UserKeyPair::generate(rng);
         let expiry = 9999u64;
         let attrs = IdentityAttribute::random_vector(rng);
         let expirable_cred =
-            ExpirableCredential::issue(user.address(), attrs, expiry, &issuer_keypair).unwrap();
+            ExpirableCredential::create(user.address(), attrs, expiry, &minter_keypair).unwrap();
 
         // Happy path
         let valid_until = BaseField::from(expiry - 100u64);
@@ -551,51 +558,52 @@ mod tests {
     }
 
     ////////////////////////////////////////////////////////////
-    // Audit memo related tests ////////////////////////////////
+    // Viewer memo related tests ////////////////////////////////
     ////////////////////////////////////////////////////////////
 
     #[test]
-    fn test_is_equal_audit_memo() -> Result<(), PlonkError> {
+    fn test_is_equal_viewing_memo() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
         let data: Vec<BaseField> = (0..10).map(|i| BaseField::from(i as u32)).collect();
         let mut data2 = data.clone();
         data2[0] = BaseField::from(1u32);
-        let pk = AuditorKeyPair::generate(rng).pub_key();
-        let pk2 = AuditorKeyPair::generate(rng).pub_key();
+        let pk = ViewerKeyPair::generate(rng).pub_key();
+        let pk2 = ViewerKeyPair::generate(rng).pub_key();
         let enc_rand = ScalarField::from(324u32);
         let enc_rand_2 = ScalarField::from(23432u32);
 
-        let audit_memo_1 = AuditMemo(pk.encrypt(enc_rand, &data));
+        let viewing_memo_1 = ViewableMemo(pk.encrypt(enc_rand, &data));
         // different pub_key
-        let audit_memo_2 = AuditMemo(pk2.encrypt(enc_rand, &data));
+        let viewing_memo_2 = ViewableMemo(pk2.encrypt(enc_rand, &data));
         // different data
-        let audit_memo_3 = AuditMemo(pk.encrypt(enc_rand, &data2));
+        let viewing_memo_3 = ViewableMemo(pk.encrypt(enc_rand, &data2));
         // different enc_rand
-        let audit_memo_4 = AuditMemo(pk.encrypt(enc_rand_2, &data));
+        let viewing_memo_4 = ViewableMemo(pk.encrypt(enc_rand_2, &data));
 
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_1, BaseField::one())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_2, BaseField::zero())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_3, BaseField::zero())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_4, BaseField::zero())?;
+        check_is_equal_viewing_memo(&viewing_memo_1, &viewing_memo_1, BaseField::one())?;
+        check_is_equal_viewing_memo(&viewing_memo_1, &viewing_memo_2, BaseField::zero())?;
+        check_is_equal_viewing_memo(&viewing_memo_1, &viewing_memo_3, BaseField::zero())?;
+        check_is_equal_viewing_memo(&viewing_memo_1, &viewing_memo_4, BaseField::zero())?;
 
-        // should return error when compared to an audit memo with different format
-        let audit_memo_5 = AuditMemo(pk.encrypt(enc_rand, &[]));
+        // should return error when compared to an viewing memowith different format
+        let viewing_memo_5 = ViewableMemo(pk.encrypt(enc_rand, &[]));
         assert!(
-            check_is_equal_audit_memo(&audit_memo_1, &audit_memo_5, BaseField::zero()).is_err()
+            check_is_equal_viewing_memo(&viewing_memo_1, &viewing_memo_5, BaseField::zero())
+                .is_err()
         );
 
         Ok(())
     }
 
-    fn check_is_equal_audit_memo(
-        audit_memo_1: &AuditMemo,
-        audit_memo_2: &AuditMemo,
+    fn check_is_equal_viewing_memo(
+        viewing_memo_1: &ViewableMemo,
+        viewing_memo_2: &ViewableMemo,
         expect_equal: BaseField,
     ) -> Result<(), PlonkError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let audit_memo_1 = AuditMemoVar::new(&mut circuit, audit_memo_1)?;
-        let audit_memo_2 = AuditMemoVar::new(&mut circuit, audit_memo_2)?;
-        let flag = audit_memo_1.is_equal(&mut circuit, &audit_memo_2)?;
+        let viewing_memo_1 = ViewableMemoVar::new(&mut circuit, viewing_memo_1)?;
+        let viewing_memo_2 = ViewableMemoVar::new(&mut circuit, viewing_memo_2)?;
+        let flag = viewing_memo_1.is_equal(&mut circuit, &viewing_memo_2)?;
 
         assert_eq!(circuit.witness(flag)?, expect_equal);
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());

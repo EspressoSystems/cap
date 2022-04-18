@@ -20,7 +20,7 @@ use jf_cap::{
         get_key_pairs, save_result_to_file_batch, BATCH_VERIF, NUM_INPUTS_RANGE, NUM_OUTPUTS_RANGE,
         TREE_DEPTH,
     },
-    keys::{AuditorKeyPair, FreezerKeyPair, UserKeyPair},
+    keys::{FreezerKeyPair, UserKeyPair, ViewerKeyPair},
     proof::{freeze, mint, transfer, universal_setup},
     structs::NoteType,
     txn_batch_verify,
@@ -115,14 +115,14 @@ fn run_benchmark_batch_verification(c: &mut Criterion, filename_list: &mut Vec<S
                 }
 
                 // Mint notes
-                let issuer_keypair = UserKeyPair::generate(&mut prng);
+                let minter_keypair = UserKeyPair::generate(&mut prng);
                 let receiver_keypair = UserKeyPair::generate(&mut prng);
-                let auditor_keypair = AuditorKeyPair::generate(&mut prng);
+                let viewer_keypair = ViewerKeyPair::generate(&mut prng);
                 let builder_mint = get_builder_mint(
                     &mut prng,
-                    &issuer_keypair,
+                    &minter_keypair,
                     &receiver_keypair,
-                    &auditor_keypair,
+                    &viewer_keypair,
                     TREE_DEPTH,
                 );
 

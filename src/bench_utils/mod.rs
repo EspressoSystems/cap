@@ -11,7 +11,7 @@
 
 #![allow(missing_docs)]
 use crate::{
-    keys::{AuditorKeyPair, FreezerKeyPair, UserKeyPair},
+    keys::{FreezerKeyPair, UserKeyPair, ViewerKeyPair},
     utils::params_builder::{FreezeParamsBuilder, MintParamsBuilder, TransferParamsBuilder},
 };
 use ark_serialize::CanonicalSerialize;
@@ -290,9 +290,9 @@ pub fn get_builder_freeze<'a>(
 
 pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
     rng: &mut R,
-    issuer_keypair: &'a UserKeyPair,
+    minter_keypair: &'a UserKeyPair,
     receiver_keypair: &'a UserKeyPair,
-    auditor_keypair: &'a AuditorKeyPair,
+    viewer_keypair: &'a ViewerKeyPair,
     tree_depth: u8,
 ) -> MintParamsBuilder<'a> {
     let input_amount = 10;
@@ -305,9 +305,9 @@ pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
         input_amount,
         fee,
         mint_amount,
-        issuer_keypair,
+        minter_keypair,
         receiver_keypair,
-        auditor_keypair,
+        viewer_keypair,
     )
 }
 
