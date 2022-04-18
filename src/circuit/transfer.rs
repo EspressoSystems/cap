@@ -9,14 +9,14 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Circuit for auditable anonymous transfer.
-use super::structs::{AssetPolicyVar, AuditMemoVar, ExpirableCredVar, RecordOpeningVar};
+//! Circuit for user configurable asset privacy transfer.
+use super::structs::{AssetPolicyVar, ExpirableCredVar, RecordOpeningVar, ViewableMemoVar};
 use crate::{
     circuit::{
         gadgets::{Spender, TransactionGadgets},
         structs::UserAddressVar,
     },
-    constants::{AMOUNT_LEN, ASSET_TRACING_MAP_LEN, AUDIT_DATA_LEN},
+    constants::{AMOUNT_LEN, ASSET_TRACING_MAP_LEN, VIEWABLE_DATA_LEN},
     errors::TxnApiError,
     keys::UserKeyPair,
     proof::transfer::{InputSecret, TransferPublicInput, TransferWitness},
@@ -118,7 +118,7 @@ impl TransferCircuit {
             // if dummy, root is allowed to be incorrect
             circuit.logic_or_gate(is_dummy_record, is_correct_root)?;
 
-            // Check credential if credential issuer's cred_pk is present.
+            // Check credential if credential creator's cred_pk is present.
             let b_dummy_cred_pk = input.ro.policy.is_dummy_cred_pk(&mut circuit)?;
             let b_cred_vfy = input.cred.verify(&mut circuit, pub_input.valid_until)?;
             circuit.logic_or_gate(b_dummy_cred_pk, b_cred_vfy)?;
@@ -175,30 +175,32 @@ impl TransferCircuit {
             &amounts_out,
         )?;
 
-        // Audit memo is correctly constructed when `auditor_pk` is not null and
+        // Viewer memo is correctly constructed when `viewer_pk` is not null and
         // `transfer_amount > asset_policy.reveal_threshold`
         let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
         let b_under_limit = circuit.check_in_range(amount_diff, AMOUNT_LEN)?;
-        let b_dummy_audit_pk = witness.policy.is_dummy_audit_pk(&mut circuit)?;
-        let under_limit_or_dummy_audit_pk = circuit.logic_or(b_under_limit, b_dummy_audit_pk)?;
-        let b_correct_audit_memo = Self::is_correct_audit_memo(&mut circuit, &witness, &pub_input)?;
-        circuit.logic_or_gate(under_limit_or_dummy_audit_pk, b_correct_audit_memo)?;
+        let b_dummy_viewing_pk = witness.policy.is_dummy_viewing_pk(&mut circuit)?;
+        let under_limit_or_dummy_viewing_pk =
+            circuit.logic_or(b_under_limit, b_dummy_viewing_pk)?;
+        let b_correct_viewing_memo =
+            Self::is_correct_viewing_memo(&mut circuit, &witness, &pub_input)?;
+        circuit.logic_or_gate(under_limit_or_dummy_viewing_pk, b_correct_viewing_memo)?;
 
         let n_constraints = circuit.num_gates();
         circuit.finalize_for_arithmetization()?;
         Ok((Self(circuit), n_constraints))
     }
 
-    /// Check whether a transfer audit memo has encrypted the correct data,
+    /// Check whether a transfer viewing memo has encrypted the correct data,
     /// returns "one" variable if valid, "zero" otherwise
-    fn is_correct_audit_memo(
+    fn is_correct_viewing_memo(
         circuit: &mut PlonkCircuit<BaseField>,
         witness: &TransferWitnessVar,
         pub_input: &TransferPubInputVar,
     ) -> Result<Variable, PlonkError> {
         // 1. Prepare message to be encrypted
         let mut message: Vec<Variable> = vec![witness.asset_code];
-        let reveal_map_vars: Vec<Variable> = circuit.unpack(witness.policy.reveal_map, AUDIT_DATA_LEN)?
+        let reveal_map_vars: Vec<Variable> = circuit.unpack(witness.policy.reveal_map, VIEWABLE_DATA_LEN)?
                                             .into_iter()
                                             .rev() // unpack is in little endian
                                             .collect();
@@ -220,7 +222,7 @@ impl TransferCircuit {
 
             let mut vals = vec![addr_x, addr_y, input.ro.amount, input.ro.blind];
             let mut bit_map_vars = reveal_map_vars[..ASSET_TRACING_MAP_LEN].to_vec();
-            // id tracing fields
+            // id viewing fields
             for (attr, reveal_bit) in input
                 .cred
                 .attrs
@@ -241,7 +243,7 @@ impl TransferCircuit {
             message.extend_from_slice(&revealed_vals[..]);
         }
         for output_ro in witness.output_record_openings.iter().skip(1) {
-            // asset tracing fields
+            // asset viewing fields
             let vals = vec![
                 output_ro.owner_addr.0.get_x(),
                 output_ro.owner_addr.0.get_y(),
@@ -254,18 +256,18 @@ impl TransferCircuit {
             message.extend_from_slice(&revealed_vals[..]);
         }
 
-        // 2. Derive audit memo.
-        let derived_audit_memo = AuditMemoVar::derive(
+        // 2. Derive viewing memo.
+        let derived_viewing_memo = ViewableMemoVar::derive(
             circuit,
-            &witness.policy.auditor_pk,
+            &witness.policy.viewer_pk,
             &message,
-            witness.audit_memo_enc_rand,
+            witness.viewing_memo_enc_rand,
         )?;
 
-        // 3. Compare derived audit_memo with that in the public input.
+        // 3. Compare derived viewing_memo with that in the public input.
         pub_input
-            .audit_memo
-            .check_equal(circuit, &derived_audit_memo)
+            .viewing_memo
+            .check_equal(circuit, &derived_viewing_memo)
     }
 }
 
@@ -275,7 +277,7 @@ pub(crate) struct TransferWitnessVar {
     pub(crate) policy: AssetPolicyVar, // transfer policy
     pub(crate) input_secrets: Vec<InputSecretVar>,
     pub(crate) output_record_openings: Vec<RecordOpeningVar>,
-    pub(crate) audit_memo_enc_rand: Variable,
+    pub(crate) viewing_memo_enc_rand: Variable,
 }
 
 impl TransferWitnessVar {
@@ -296,14 +298,14 @@ impl TransferWitnessVar {
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let audit_memo_enc_rand =
-            circuit.create_variable(fr_to_fq::<_, CurveParam>(&witness.audit_memo_enc_rand))?;
+        let viewing_memo_enc_rand =
+            circuit.create_variable(fr_to_fq::<_, CurveParam>(&witness.viewing_memo_enc_rand))?;
         Ok(Self {
             asset_code,
             policy,
             input_secrets,
             output_record_openings,
-            audit_memo_enc_rand,
+            viewing_memo_enc_rand,
         })
     }
 }
@@ -316,7 +318,7 @@ pub(crate) struct TransferPubInputVar {
     pub(crate) fee: Variable,
     pub(crate) input_nullifiers: Vec<Variable>,
     pub(crate) output_commitments: Vec<Variable>,
-    pub(crate) audit_memo: AuditMemoVar,
+    pub(crate) viewing_memo: ViewableMemoVar,
 }
 
 impl TransferPubInputVar {
@@ -339,8 +341,8 @@ impl TransferPubInputVar {
             .iter()
             .map(|rc| circuit.create_public_variable(rc.0))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let audit_memo = AuditMemoVar::new(circuit, &pub_input.audit_memo)?;
-        audit_memo.set_public(circuit)?;
+        let viewing_memo = ViewableMemoVar::new(circuit, &pub_input.viewing_memo)?;
+        viewing_memo.set_public(circuit)?;
         Ok(Self {
             root,
             native_asset_code,
@@ -348,7 +350,7 @@ impl TransferPubInputVar {
             fee,
             input_nullifiers,
             output_commitments,
-            audit_memo,
+            viewing_memo,
         })
     }
 }
@@ -389,8 +391,8 @@ mod tests {
     use crate::{
         keys::UserKeyPair,
         structs::{
-            Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditMemo,
-            ExpirableCredential, FreezeFlag, Nullifier, RecordCommitment, RecordOpening,
+            Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, ExpirableCredential,
+            FreezeFlag, Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
         },
         utils::params_builder::TransferParamsBuilder,
         BaseField, ScalarField,
@@ -418,7 +420,7 @@ mod tests {
             fee: Amount::from(8u64),
             input_nullifiers: vec![Nullifier(BaseField::from(2u8)); 5],
             output_commitments: vec![RecordCommitment::from(&output_ros[0]); 4],
-            audit_memo: AuditMemo::new_for_transfer_note(
+            viewing_memo: ViewableMemo::new_for_transfer_note(
                 &input_ros,
                 &output_ros,
                 &input_creds,
@@ -460,11 +462,11 @@ mod tests {
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
         assert_eq!(
-            pub_input.audit_memo,
-            AuditMemo::dummy_for_transfer_note(
+            pub_input.viewing_memo,
+            ViewableMemo::dummy_for_transfer_note(
                 witness.input_secrets.len(),
                 witness.output_record_openings.len(),
-                witness.audit_memo_enc_rand
+                witness.viewing_memo_enc_rand
             )
         );
 
@@ -494,17 +496,17 @@ mod tests {
             .map(|secret| secret.cred.clone())
             .collect();
         assert_eq!(
-            pub_input.audit_memo,
-            AuditMemo::new_for_transfer_note(
+            pub_input.viewing_memo,
+            ViewableMemo::new_for_transfer_note(
                 &input_ros,
                 &output_ros,
                 &input_creds,
-                witness.audit_memo_enc_rand
+                witness.viewing_memo_enc_rand
             )
             .unwrap()
         );
 
-        // no threshold policy, tracing policy is always applied
+        // no threshold policy, viewing policy is always applied
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
             .set_reveal_threshold(Amount::from(0u64))
             .set_input_amounts(
@@ -530,12 +532,12 @@ mod tests {
             .map(|secret| secret.cred.clone())
             .collect();
         assert_eq!(
-            pub_input.audit_memo,
-            AuditMemo::new_for_transfer_note(
+            pub_input.viewing_memo,
+            ViewableMemo::new_for_transfer_note(
                 &input_ros,
                 &output_ros,
                 &input_creds,
-                witness.audit_memo_enc_rand
+                witness.viewing_memo_enc_rand
             )
             .unwrap()
         );
@@ -638,7 +640,7 @@ mod tests {
         pub_input.valid_until = 10000u64;
         check_transfer_circuit(&witness, &pub_input, false)?;
 
-        // bad path: wrong audit memo
+        // bad path: wrong viewing memo
         let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
         let input_ros: Vec<_> = witness
             .input_secrets
@@ -651,8 +653,8 @@ mod tests {
             .iter()
             .map(|secret| secret.cred.clone())
             .collect();
-        // replace with an audit memo encrypted with a wrong randomizer
-        pub_input.audit_memo = AuditMemo::new_for_transfer_note(
+        // replace with an viewing memo encrypted with a wrong randomizer
+        pub_input.viewing_memo = ViewableMemo::new_for_transfer_note(
             &input_ros,
             &output_ros,
             &input_creds,

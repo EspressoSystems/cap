@@ -28,17 +28,17 @@ pub const BLS_SCALAR_REPR_BYTE_LEN: u32 = if BLS_SCALAR_BIT_LEN % 8 == 0 {
 };
 
 /// Maximum length of a reveal map := (b_0,b_1,b_2, attr_map) where first three
-/// bits enables asset tracing, namely revealing (upk, at, \gamma) and the
+/// bits enables asset viewing, namely revealing (upk, at, \gamma) and the
 /// attr_map is a bitmap for all attributes issued in a identity credential.
 pub const REVEAL_MAP_LEN: usize = 3 + ATTRS_LEN;
 
 /// length in scalars of (address.x, address.y, amount, blinding factor)
 pub(crate) const ASSET_TRACING_MAP_LEN: usize = 4;
 
-/// length in scalars of decrypted transfer audit
+/// length in scalars of decrypted transfer viewing
 /// (address.x, address.y, amount, blinding factor,
 /// id_attr_1,...,id_attr_{ATTRS_LEN}
-pub const AUDIT_DATA_LEN: usize = REVEAL_MAP_LEN + 1;
+pub const VIEWABLE_DATA_LEN: usize = REVEAL_MAP_LEN + 1;
 
 /// the number of identity attributes
 pub const ATTRS_LEN: usize = 8;
@@ -79,7 +79,7 @@ pub const DOM_SEP_FOREIGN_ASSET: &[u8] = b"FOREIGN_ASSET";
 // pub const NATIVE_ASSET_DEFINITION: AssetDefinition = AssetDefinition {
 //     code: AssetCode(BLS_SCALAR_ONE),
 //     policy: AssetPolicy {
-//         auditor_pk: AuditorPubKey(elgamal::EncKey {
+//         viewer_pk: ViewerPubKey(elgamal::EncKey {
 //             key: JUBJUB_POINT_ZERO,
 //         }),
 //         cred_pk: CredIssuerPubKey(schnorr_dsa::VerKey(JUBJUB_POINT_ZERO)),

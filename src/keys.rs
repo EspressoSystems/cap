@@ -15,15 +15,15 @@
 //! | ---- | --------------- |
 //! | User (incl Asset Issuer, Validators) | [UserKeyPair], [UserPubKey] |
 //! | Credential Issuer | [CredIssuerKeyPair], [CredIssuerPubKey] |
-//! | Tracer/Auditor | [AuditorKeyPair], [AuditorPubKey] |
+//! | Viewer | [ViewerKeyPair], [ViewerPubKey] |
 //! | Freezer | [FreezerKeyPair], [FreezerPubKey] |
 use crate::{
-    constants::AUDIT_DATA_LEN,
+    constants::VIEWABLE_DATA_LEN,
     errors::TxnApiError,
     mint::MintNote,
     structs::{
-        AssetCode, AssetDefinition, AuditData, AuditMemo, Credential, InOrOut, Nullifier,
-        RecordCommitment,
+        AssetCode, AssetDefinition, Credential, InOrOut, Nullifier, RecordCommitment, ViewableData,
+        ViewableMemo,
     },
     transfer::TransferNote,
     BaseField, CurveParam, ScalarField,
@@ -190,7 +190,7 @@ impl UserKeyPair {
     }
 }
 
-/// Public key for the credential issuer
+/// Public key for the credential creator
 #[tagged_blob("CREDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
 pub struct CredIssuerPubKey(pub(crate) schnorr::VerKey<CurveParam>);
@@ -214,7 +214,7 @@ impl CredIssuerPubKey {
     }
 }
 
-/// Key pair for the credential issuer
+/// Key pair for the credential creator
 #[tagged_blob("CREDKEY")]
 #[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct CredIssuerKeyPair(pub(crate) schnorr::KeyPair<CurveParam>);
@@ -242,19 +242,19 @@ impl CredIssuerKeyPair {
     }
 }
 
-/// Public key for the auditor
+/// Public key for the viewer
 #[tagged_blob("AUDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct AuditorPubKey(pub(crate) elgamal::EncKey<CurveParam>);
+pub struct ViewerPubKey(pub(crate) elgamal::EncKey<CurveParam>);
 
-impl AuditorPubKey {
-    /// Generate a random auditor public key with unknown associated secret key
+impl ViewerPubKey {
+    /// Generate a random viewer public key with unknown associated secret key
     pub(crate) fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
-        AuditorPubKey(EncKey::<CurveParam>::rand(rng))
+        ViewerPubKey(EncKey::<CurveParam>::rand(rng))
     }
 
     /// Encrypt messages including information about a transaction that an
-    /// auditor should know.
+    /// viewer should know.
     pub(crate) fn encrypt(
         &self,
         randomizer: ScalarField,
@@ -269,12 +269,12 @@ impl AuditorPubKey {
         vec![x, y]
     }
 }
-/// Key pair for the auditor
+/// Key pair for the viewer
 #[tagged_blob("AUDKEY")]
 #[derive(Debug, Clone, CanonicalDeserialize, CanonicalSerialize)]
-pub struct AuditorKeyPair(pub(crate) elgamal::KeyPair<CurveParam>);
+pub struct ViewerKeyPair(pub(crate) elgamal::KeyPair<CurveParam>);
 
-impl AuditorKeyPair {
+impl ViewerKeyPair {
     /// Generate a new key pair
     pub fn generate<R>(rng: &mut R) -> Self
     where
@@ -284,33 +284,33 @@ impl AuditorKeyPair {
     }
 
     /// Getter for the public key
-    pub fn pub_key(&self) -> AuditorPubKey {
-        AuditorPubKey(self.0.enc_key())
+    pub fn pub_key(&self) -> ViewerPubKey {
+        ViewerPubKey(self.0.enc_key())
     }
 
-    /// Decrypts AuditorMemo
-    pub(crate) fn decrypt(&self, memo: &AuditMemo) -> Vec<BaseField> {
+    /// Decrypts ViewerMemo
+    pub(crate) fn decrypt(&self, memo: &ViewableMemo) -> Vec<BaseField> {
         self.0.decrypt(&memo.0)
     }
 
-    /// Open AuditMemo into input and output vectors of AuditData struct
-    pub fn open_transfer_audit_memo(
+    /// Open ViewableMemo into input and output vectors ofViewableData struct
+    pub fn open_transfer_viewing_memo(
         &self,
         asset_definition: &AssetDefinition,
         transfer_note: &TransferNote,
-    ) -> Result<(Vec<AuditData>, Vec<AuditData>), TxnApiError> {
-        if self.pub_key() != asset_definition.policy.auditor_pk {
+    ) -> Result<(Vec<ViewableData>, Vec<ViewableData>), TxnApiError> {
+        if self.pub_key() != asset_definition.policy.viewer_pk {
             return Err(TxnApiError::InvalidParameter(
-                "Auditor decrypt key do not match policy auditor public key".to_string(),
+                "Viewer decrypt key do not match policy viewer public key".to_string(),
             ));
         }
-        let n_inputs = transfer_note.inputs_nullifiers.len() - 1; // fee record has no audit memo
-        let n_outputs = transfer_note.output_commitments.len() - 1; // fee chg record has no audit memo
+        let n_inputs = transfer_note.inputs_nullifiers.len() - 1; // fee record has no viewing memo
+        let n_outputs = transfer_note.output_commitments.len() - 1; // fee chg record has no viewing memo
 
-        let plaintext = self.decrypt(&transfer_note.audit_memo);
-        let expected_len = 1 + n_inputs * AUDIT_DATA_LEN + n_outputs * 4;
+        let plaintext = self.decrypt(&transfer_note.viewing_memo);
+        let expected_len = 1 + n_inputs * VIEWABLE_DATA_LEN + n_outputs * 4;
         if plaintext.len() != expected_len {
-            return Err(TxnApiError::FailedAuditMemoDecryption(format!(
+            return Err(TxnApiError::FailedViewableMemoDecryption(format!(
                 "decrypted memo length:{}, expected:{}",
                 plaintext.len(),
                 expected_len
@@ -319,50 +319,53 @@ impl AuditorKeyPair {
         let asset_code = AssetCode(plaintext[0]);
 
         if asset_definition.code != asset_code {
-            return Err(TxnApiError::FailedAuditMemoDecryption(
+            return Err(TxnApiError::FailedViewableMemoDecryption(
                 "Decrypted asset code does not match expected policy".to_string(),
             ));
         }
         let mut off_set = 1;
-        let input_len = AUDIT_DATA_LEN;
-        let mut audit_data_input = vec![];
+        let input_len = VIEWABLE_DATA_LEN;
+        let mut visible_data_input = vec![];
         for _ in 0..n_inputs {
             let chunk = &plaintext[off_set..off_set + input_len];
-            let audit_data =
-                AuditData::from_xfr_data_and_asset(asset_definition, chunk, InOrOut::In)?;
-            if audit_data.user_address.is_none()
-                || audit_data.user_address.as_ref().unwrap() != &VerKey::default()
+            let visible_data =
+                ViewableData::from_xfr_data_and_asset(asset_definition, chunk, InOrOut::In)?;
+            if visible_data.user_address.is_none()
+                || visible_data.user_address.as_ref().unwrap() != &VerKey::default()
             {
-                audit_data_input.push(audit_data);
+                visible_data_input.push(visible_data);
             }
             off_set += input_len;
         }
         let output_len = 4;
-        let mut audit_data_output = vec![];
+        let mut visible_data_output = vec![];
         for _ in 0..n_outputs {
             let chunk = &plaintext[off_set..off_set + output_len];
-            audit_data_output.push(AuditData::from_xfr_data_and_asset(
+            visible_data_output.push(ViewableData::from_xfr_data_and_asset(
                 asset_definition,
                 chunk,
                 InOrOut::Out,
             )?);
             off_set += output_len;
         }
-        Ok((audit_data_input, audit_data_output))
+        Ok((visible_data_input, visible_data_output))
     }
 
-    /// Open MintNote AuditMemo into AuditData for new minted record
-    pub fn open_mint_audit_memo(&self, mint_note: &MintNote) -> Result<AuditData, TxnApiError> {
-        let plaintext = self.decrypt(&mint_note.audit_memo);
+    /// Open MintNote ViewableMemo intoViewableData for new minted record
+    pub fn open_mint_viewing_memo(
+        &self,
+        mint_note: &MintNote,
+    ) -> Result<ViewableData, TxnApiError> {
+        let plaintext = self.decrypt(&mint_note.viewing_memo);
         let expected_len = 3; // (x,y) owner address and blinding factor
         if plaintext.len() != expected_len {
-            return Err(TxnApiError::FailedAuditMemoDecryption(format!(
+            return Err(TxnApiError::FailedViewableMemoDecryption(format!(
                 "decrypted memo length:{}, expected:{}",
                 plaintext.len(),
                 expected_len
             )));
         }
-        AuditData::from_mint_note(&plaintext, mint_note)
+        ViewableData::from_mint_note(&plaintext, mint_note)
     }
 }
 
@@ -551,8 +554,8 @@ mod test {
     fn test_serde() {
         let mut rng = ark_std::test_rng();
         let user_keypair = UserKeyPair::generate(&mut rng);
-        let issuer_keypair = CredIssuerKeyPair::generate(&mut rng);
-        let auditor_keypair = AuditorKeyPair::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let viewer_keypair = ViewerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
         let nullifier_key = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
 
@@ -564,12 +567,12 @@ mod test {
             user_keypair.addr_keypair.ver_key()
         );
 
-        let ser_bytes = bincode::serialize(&issuer_keypair).unwrap();
+        let ser_bytes = bincode::serialize(&minter_keypair).unwrap();
         let de: CredIssuerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
-        assert_eq!(de.0.ver_key(), issuer_keypair.0.ver_key());
-        let ser_bytes = bincode::serialize(&auditor_keypair).unwrap();
-        let de: AuditorKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
-        assert_eq!(de.0.enc_key(), auditor_keypair.0.enc_key());
+        assert_eq!(de.0.ver_key(), minter_keypair.0.ver_key());
+        let ser_bytes = bincode::serialize(&viewer_keypair).unwrap();
+        let de: ViewerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
+        assert_eq!(de.0.enc_key(), viewer_keypair.0.enc_key());
         let ser_bytes = bincode::serialize(&freezer_keypair).unwrap();
         let de: FreezerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, freezer_keypair);

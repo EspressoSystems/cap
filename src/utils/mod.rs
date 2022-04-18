@@ -276,7 +276,7 @@ pub(crate) mod txn_helpers {
 
     use crate::{
         errors::TxnApiError,
-        keys::{AuditorPubKey, CredIssuerPubKey, FreezerPubKey},
+        keys::{CredIssuerPubKey, FreezerPubKey},
         structs::{Amount, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
         transfer::TransferNoteInput,
     };
@@ -334,9 +334,9 @@ pub(crate) mod txn_helpers {
 
         pub(crate) fn check_input_pub_key(
             ro_fee: &RecordOpening,
-            issuer_keypair: &UserKeyPair,
+            minter_keypair: &UserKeyPair,
         ) -> Result<(), TxnApiError> {
-            if ro_fee.pub_key != issuer_keypair.pub_key() {
+            if ro_fee.pub_key != minter_keypair.pub_key() {
                 return Err(TxnApiError::InvalidParameter(
                     "The key pair does not match the public key in the input record".to_string(),
                 ));
@@ -360,7 +360,9 @@ pub(crate) mod txn_helpers {
 
     pub(crate) mod transfer {
         use super::*;
-        use crate::{proof::transfer::TransferProvingKey, structs::AssetDefinition};
+        use crate::{
+            keys::ViewerPubKey, proof::transfer::TransferProvingKey, structs::AssetDefinition,
+        };
 
         pub(crate) fn check_proving_key_consistency(
             proving_key: &TransferProvingKey,
@@ -410,8 +412,8 @@ pub(crate) mod txn_helpers {
         /// 1. the first record in inputs and outputs is of native asset def
         /// 2. the rest of records in inputs and outputs are of the same asset
         /// code (namely the transferred asset code)
-        /// 3. when freezer_pk is non-dummy, the auditor_pk must be non-dummy,
-        /// since freezing depends on auditor to retrieve record
+        /// 3. when freezer_pk is non-dummy, the viewer_pk must be non-dummy,
+        /// since freezing depends on viewer to retrieve record
         /// plaintext data
         pub(crate) fn check_asset_def(
             inputs: &[&RecordOpening],
@@ -455,14 +457,13 @@ pub(crate) mod txn_helpers {
                 return Err(TxnApiError::InvalidParameter("The output records are not consistent with the asset definition of the records being transferred.".to_string()));
             }
 
-            let non_null_freezer_null_auditor_flag =
-                inputs.iter().chain(outputs.iter()).any(|ro| {
-                    ro.asset_def.policy.freezer_pk != FreezerPubKey::default()
-                        && ro.asset_def.policy.auditor_pk == AuditorPubKey::default()
-                });
-            if non_null_freezer_null_auditor_flag {
+            let non_null_freezer_null_viewer_flag = inputs.iter().chain(outputs.iter()).any(|ro| {
+                ro.asset_def.policy.freezer_pk != FreezerPubKey::default()
+                    && ro.asset_def.policy.viewer_pk == ViewerPubKey::default()
+            });
+            if non_null_freezer_null_viewer_flag {
                 return Err(TxnApiError::InvalidParameter(
-                    "Freezing requires tracing enabled.".to_string(),
+                    "Freezing requires visibility enabled.".to_string(),
                 ));
             }
             Ok(())
@@ -495,7 +496,7 @@ pub(crate) mod txn_helpers {
             Ok(assumed_root)
         }
 
-        /// Check that input credentials are present and valid when tracing
+        /// Check that input credentials are present and valid when viewing
         /// policy's cred_pk is non-empty
         pub(crate) fn check_creds(
             inputs: &[TransferNoteInput],
@@ -788,7 +789,7 @@ pub(crate) mod txn_helpers {
     #[cfg(test)]
     mod tests {
         use crate::{
-            keys::{AuditorPubKey, UserKeyPair},
+            keys::{UserKeyPair, ViewerPubKey},
             structs::{AssetDefinition, FreezeFlag, Nullifier, RecordOpening},
             utils::txn_helpers::{
                 check_distinct_input_nullifiers, derive_fee, transfer::check_asset_def,
@@ -901,10 +902,10 @@ pub(crate) mod txn_helpers {
             let asset_def_native = AssetDefinition::native();
             let asset_def_non_native_1 = AssetDefinition::rand_for_test(&mut rng);
             let asset_def_non_native_2 = AssetDefinition::rand_for_test(&mut rng);
-            let mut asset_def_freezer_key_non_null_tracer_key_null = asset_def_non_native_2.clone();
-            asset_def_freezer_key_non_null_tracer_key_null
+            let mut asset_def_freezer_key_non_null_viewer_key_null = asset_def_non_native_2.clone();
+            asset_def_freezer_key_non_null_viewer_key_null
                 .policy
-                .auditor_pk = AuditorPubKey::default();
+                .viewer_pk = ViewerPubKey::default();
             let user_keypair = UserKeyPair::generate(&mut rng);
 
             let ro_in_non_native = RecordOpening::new(
@@ -935,7 +936,7 @@ pub(crate) mod txn_helpers {
             let ro_in_non_native_bad_policy = RecordOpening::new(
                 &mut rng,
                 5u64.into(),
-                asset_def_freezer_key_non_null_tracer_key_null.clone(),
+                asset_def_freezer_key_non_null_viewer_key_null.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
             );
@@ -959,7 +960,7 @@ pub(crate) mod txn_helpers {
             let ro_out_non_native_bad_policy = RecordOpening::new(
                 &mut rng,
                 5u64.into(),
-                asset_def_freezer_key_non_null_tracer_key_null.clone(),
+                asset_def_freezer_key_non_null_viewer_key_null.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
             );
