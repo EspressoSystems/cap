@@ -30,6 +30,7 @@ use ark_std::{
     vec,
     vec::Vec,
 };
+use commit::{Commitment, Committable, RawCommitmentBuilder};
 use jf_primitives::{
     aead,
     commitment::Commitment as RescueCommitment,
@@ -113,6 +114,14 @@ impl From<&AssetCode> for BaseField {
     Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
 )]
 pub struct AssetCode(pub(crate) BaseField);
+
+impl Committable for AssetCode {
+    fn commit(&self) -> Commitment<Self> {
+        RawCommitmentBuilder::new("AssetCode")
+            .var_size_bytes(&bincode::serialize(self).unwrap())
+            .finalize()
+    }
+}
 
 impl AssetCode {
     /// Return the AssetCode assigned for the native asset
@@ -593,6 +602,14 @@ impl AssetPolicy {
     }
 }
 
+impl Committable for AssetPolicy {
+    fn commit(&self) -> Commitment<Self> {
+        RawCommitmentBuilder::new("AssetPolicy")
+            .var_size_bytes(&bincode::serialize(self).unwrap())
+            .finalize()
+    }
+}
+
 /// Asset Definition
 /// * `code` -- asset code as unique id code
 /// * `policy` -- asset policy attached
@@ -648,6 +665,15 @@ impl AssetDefinition {
     /// Get reference to policy
     pub fn policy_ref(&self) -> &AssetPolicy {
         &self.policy
+    }
+}
+
+impl Committable for AssetDefinition {
+    fn commit(&self) -> Commitment<Self> {
+        RawCommitmentBuilder::new("AssetDefinition")
+            .field("code", self.code.commit())
+            .field("policy", self.policy.commit())
+            .finalize()
     }
 }
 
