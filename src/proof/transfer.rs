@@ -20,11 +20,11 @@ use crate::{
     errors::TxnApiError,
     keys::{CredIssuerPubKey, UserKeyPair},
     structs::{
-        AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, Nullifier, RecordCommitment,
-        RecordOpening,
+        AmountValue, AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, Nullifier,
+        RecordCommitment, RecordOpening,
     },
     transfer::TransferNoteInput,
-    utils::safe_sum_u64,
+    utils::safe_sum_amount_value,
     BaseField, CurveParam, PairingEngine, ScalarField,
 };
 use ark_serialize::*;
@@ -231,7 +231,7 @@ impl<'a> TransferWitness<'a> {
         let asset_def = AssetDefinition::native();
         let input_secret = {
             let ro = RecordOpening {
-                amount: 0,
+                amount: 0.into(),
                 asset_def: asset_def.clone(),
                 pub_key: Default::default(),
                 freeze_flag: Default::default(),
@@ -321,7 +321,7 @@ pub(crate) struct TransferPublicInput {
     pub(crate) merkle_root: NodeValue<BaseField>,
     pub(crate) native_asset_code: AssetCode,
     pub(crate) valid_until: u64,
-    pub(crate) fee: u64,
+    pub(crate) fee: AmountValue,
     pub(crate) input_nullifiers: Vec<Nullifier>,
     pub(crate) output_commitments: Vec<RecordCommitment>,
     pub(crate) audit_memo: AuditMemo,
@@ -355,29 +355,29 @@ impl TransferPublicInput {
         // input - sum of output) is the fee; when the transfer type is
         // non-native asset type, the amount for the transferred type should be
         // net neutral, thus the same calculation can correctly derive the fee.
-        let input_sum: u64 = safe_sum_u64(
+        let input_sum: AmountValue = safe_sum_amount_value(
             witness
                 .input_secrets
                 .iter()
                 .filter(|x| !x.ro.asset_def.is_dummy())
                 .map(|x| x.ro.amount)
-                .collect::<Vec<u64>>()
+                .collect::<Vec<AmountValue>>()
                 .as_slice(),
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for inputs.".to_string()))?;
-        let output_sum: u64 = safe_sum_u64(
+        let output_sum: AmountValue = safe_sum_amount_value(
             witness
                 .output_record_openings
                 .iter()
                 .map(|x| x.amount)
-                .collect::<Vec<u64>>()
+                .collect::<Vec<AmountValue>>()
                 .as_slice(),
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for outputs.".to_string()))?;
 
-        let fee = u64::checked_sub(input_sum, output_sum).ok_or_else(|| {
+        let fee = AmountValue(u128::checked_sub(input_sum.0, output_sum.0).ok_or_else(|| {
             TxnApiError::InvalidParameter("The fee cannot be negative".to_string())
-        })?;
+        })?);
 
         let input_nullifiers = witness
             .input_secrets
@@ -439,7 +439,7 @@ impl TransferPublicInput {
             self.merkle_root.to_scalar(),
             self.native_asset_code.0,
             BaseField::from(self.valid_until),
-            BaseField::from(self.fee),
+            BaseField::from(self.fee.0),
         ];
         for nullifier in &self.input_nullifiers {
             result.push(nullifier.0);
@@ -460,7 +460,7 @@ mod test {
         errors::TxnApiError,
         keys::{CredIssuerPubKey, UserAddress, UserKeyPair},
         proof::universal_setup_for_staging,
-        structs::{AssetDefinition, ExpirableCredential},
+        structs::{AmountValue, AssetDefinition, ExpirableCredential},
         utils::params_builder::TransferParamsBuilder,
     };
     use ark_std::vec;
@@ -484,8 +484,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
         let builder = TransferParamsBuilder::new_non_native(2, 6, None, user_keypairs)
-            .set_input_amounts(30, &[25])
-            .set_output_amounts(19, &[3, 4, 5, 6, 7])
+            .set_input_amounts(30.into(), &[25.into()])
+            .set_output_amounts(19.into(), &AmountValue::from_vec(&[3, 4, 5, 6, 7])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
 
@@ -525,8 +525,8 @@ mod test {
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
         let builder = TransferParamsBuilder::new_native(2, 3, None, user_keypairs)
-            .set_input_amounts(20, &[10])
-            .set_output_amounts(14, &[4, 6])
+            .set_input_amounts(20.into(), &AmountValue::from_vec(&[10])[..])
+            .set_output_amounts(14.into(), &AmountValue::from_vec(&[4, 6])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
         // check asset_def
@@ -543,8 +543,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
         let builder = TransferParamsBuilder::new_non_native(2, 3, None, user_keypairs)
-            .set_input_amounts(30, &[10])
-            .set_output_amounts(19, &[4, 6])
+            .set_input_amounts(30.into(), &AmountValue::from_vec(&[10])[..])
+            .set_output_amounts(19.into(), &AmountValue::from_vec(&[4, 6])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
         assert!(
@@ -562,7 +562,7 @@ mod test {
 
         // negative fee should fail
         let mut bad_witness = witness.clone();
-        bad_witness.output_record_openings[0].amount = 31;
+        bad_witness.output_record_openings[0].amount = 31.into();
         assert!(
             TransferPublicInput::from_witness(&bad_witness, valid_until).is_err(),
             "create public input from wrong witness with negative fee should fail"
@@ -570,7 +570,7 @@ mod test {
 
         // overflow total input amounts should fail
         let mut bad_witness = witness.clone();
-        bad_witness.input_secrets[1].ro.amount = u64::MAX - 1;
+        bad_witness.input_secrets[1].ro.amount = AmountValue(u128::MAX - 1);
         assert!(
             TransferPublicInput::from_witness(&bad_witness, valid_until).is_err(),
             "create public input from wrong witness with overflown total input amounts should fail"
@@ -578,7 +578,7 @@ mod test {
 
         // overflow total output amounts should fail
         let mut bad_witness = witness.clone();
-        bad_witness.output_record_openings[1].amount = u64::MAX - 13;
+        bad_witness.output_record_openings[1].amount = AmountValue(u128::MAX - 13);
         assert!(TransferPublicInput::from_witness(
             &bad_witness,
             valid_until,
@@ -616,8 +616,8 @@ mod test {
             Some(depth),
             user_keypairs,
         )
-        .set_input_amounts(30, &[25])
-        .set_output_amounts(19, &[3, 4, 5, 6, 7])
+        .set_input_amounts(30.into(), &AmountValue::from_vec(&[25])[..])
+        .set_output_amounts(19.into(), &AmountValue::from_vec(&[3, 4, 5, 6, 7])[..])
         .set_input_creds(cred_expiry);
         let witness_1 = builder.build_witness(rng);
         let pub_input_1 = TransferPublicInput::from_witness(&witness_1, valid_until)?;
@@ -655,8 +655,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 1];
         let builder =
             TransferParamsBuilder::new_native(num_input, num_output, Some(depth), user_keypairs)
-                .set_input_amounts(30, &[])
-                .set_output_amounts(13, &[15])
+                .set_input_amounts(30.into(), &AmountValue::from_vec(&[])[..])
+                .set_output_amounts(13.into(), &AmountValue::from_vec(&[15])[..])
                 .set_input_creds(cred_expiry);
         let witness_2 = builder.build_witness(rng);
         let pub_input_2 = TransferPublicInput::from_witness(&witness_2, valid_until)?;

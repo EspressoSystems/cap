@@ -12,6 +12,7 @@
 #![allow(missing_docs)]
 use crate::{
     keys::{AuditorKeyPair, FreezerKeyPair, UserKeyPair},
+    structs::AmountValue,
     utils::params_builder::{FreezeParamsBuilder, MintParamsBuilder, TransferParamsBuilder},
 };
 use ark_serialize::CanonicalSerialize;
@@ -274,9 +275,9 @@ pub fn get_builder_freeze<'a>(
     num_inputs: usize,
     tree_depth: u8,
 ) -> FreezeParamsBuilder<'a> {
-    let input_amounts = vec![15_u64; num_inputs - 1];
-    let fee_input_amount = 10;
-    let fee = 5;
+    let input_amounts = vec![AmountValue(15_u128); num_inputs - 1];
+    let fee_input_amount = AmountValue(10);
+    let fee = AmountValue(5);
 
     FreezeParamsBuilder::new(
         tree_depth,
@@ -295,9 +296,9 @@ pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
     auditor_keypair: &'a AuditorKeyPair,
     tree_depth: u8,
 ) -> MintParamsBuilder<'a> {
-    let input_amount = 10;
-    let fee = 4;
-    let mint_amount = 35;
+    let input_amount = AmountValue(10);
+    let fee = AmountValue(4);
+    let mint_amount = AmountValue(35);
 
     MintParamsBuilder::new(
         rng,
@@ -319,12 +320,12 @@ pub fn get_builder_transfer(
 ) -> TransferParamsBuilder {
     let cred_expiry = 9999;
 
-    let amount_input = 1;
+    let amount_input = AmountValue(1);
     let amount_inputs = vec![amount_input; num_inputs - 1];
 
     // Ensure that "sum of input amounts == sum of output amounts"
-    let mut amount_outputs = vec![amount_input * ((num_inputs - 1) as u64)];
-    amount_outputs.extend(vec![0; num_outputs - 2].iter());
+    let mut amount_outputs: Vec<AmountValue> = vec![AmountValue((num_inputs - 1) as u128)];
+    amount_outputs.extend(vec![AmountValue(0); num_outputs - 2].iter());
 
     TransferParamsBuilder::new_non_native(
         num_inputs,
@@ -332,7 +333,7 @@ pub fn get_builder_transfer(
         Some(tree_depth),
         user_keypairs.iter().collect(),
     )
-    .set_input_amounts(30, &amount_inputs)
-    .set_output_amounts(29, &amount_outputs)
+    .set_input_amounts(AmountValue(30), &amount_inputs)
+    .set_output_amounts(AmountValue(29), &amount_outputs)
     .set_input_creds(cred_expiry)
 }
