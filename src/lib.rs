@@ -94,7 +94,7 @@
 //! Each transaction could decide to include a non-negative fee in _native asset
 //! type_.
 //! This is achieved by providing a [`structs::FeeInput`] and specify the
-//! actual amount of `fee: AmountValue` to pay whenever you generate a note.
+//! actual amount of `fee: Amount` to pay whenever you generate a note.
 //! Be careful: the value of `FeeInput` has to be no smaller than `fee`, and the
 //! difference is _fee change_ which would be included in the output with the
 //! same owner as the fee payer.
@@ -173,7 +173,7 @@ use crate::{
     keys::UserPubKey,
     proof::transfer::TransferVerifyingKey,
     structs::{
-        AmountValue, AssetDefinition, BlindFactor, FreezeFlag, Nullifier, ReceiverMemo,
+        Amount, AssetDefinition, BlindFactor, FreezeFlag, Nullifier, ReceiverMemo,
         RecordCommitment, RecordOpening,
     },
     utils::txn_helpers::get_receiver_memos_digest,
@@ -527,7 +527,7 @@ pub fn txn_batch_verify(
 /// * `blind` - blinding factor of the record commitment
 pub fn derive_txns_fee_records(
     fee_collectors: &[UserPubKey],
-    fees: &[AmountValue],
+    fees: &[Amount],
     blinds: &[BlindFactor],
 ) -> Result<Vec<RecordCommitment>, TxnApiError> {
     if fees.is_empty() {
@@ -560,8 +560,8 @@ pub fn derive_txns_fee_records(
 }
 
 /// Compute amount of claimable transaction fee
-pub fn calculate_fee(txns: &[TransactionNote]) -> Result<AmountValue, TxnApiError> {
-    let fee_amounts: Vec<AmountValue> = txns
+pub fn calculate_fee(txns: &[TransactionNote]) -> Result<Amount, TxnApiError> {
+    let fee_amounts: Vec<Amount> = txns
         .iter()
         .map(|txn| match txn {
             TransactionNote::Transfer(note) => note.aux_info.fee,
@@ -569,7 +569,7 @@ pub fn calculate_fee(txns: &[TransactionNote]) -> Result<AmountValue, TxnApiErro
             TransactionNote::Freeze(note) => note.aux_info.fee,
         })
         .collect();
-    utils::safe_sum_amount_value(&fee_amounts)
+    utils::safe_sum_amount(&fee_amounts)
         .ok_or_else(|| TxnApiError::IncorrectFee("Overflow in total fee".to_string()))
 }
 
@@ -588,7 +588,7 @@ mod test {
         calculate_fee, derive_txns_fee_records,
         errors::TxnApiError,
         keys::UserPubKey,
-        structs::{AmountValue, BlindFactor},
+        structs::{Amount, BlindFactor},
         txn_batch_verify,
         utils::params_builder::TxnsParams,
         KeyPair, TransactionNote,
@@ -646,7 +646,7 @@ mod test {
         // The original fee amount 5 changes after changing the `rand()` functions in
         // `ParamBuilder`. Is there an API that returns the correct fee amount
         // automatically? TODO: replace this hardwired value
-        assert_eq!(fee, AmountValue(69_u128));
+        assert_eq!(fee, Amount(69_u128));
 
         // Overflow
         let txn = params.txns[0].clone();
@@ -656,7 +656,7 @@ mod test {
         };
 
         let mut v = v.unwrap();
-        v.aux_info.fee = AmountValue(u128::MAX);
+        v.aux_info.fee = Amount(u128::MAX);
         let mut txns = params.txns.clone();
         txns.push(TransactionNote::Transfer(v));
 
@@ -670,7 +670,7 @@ mod test {
         let blinds = (0..7)
             .map(|_| BlindFactor::rand(rng))
             .collect::<Vec<BlindFactor>>();
-        let fee_amounts: Vec<AmountValue> = txns
+        let fee_amounts: Vec<Amount> = txns
             .iter()
             .map(|txn| match txn {
                 TransactionNote::Transfer(note) => note.aux_info.fee,

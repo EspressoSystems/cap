@@ -38,9 +38,9 @@ use jf_cap::{
     },
     sign_receiver_memos,
     structs::{
-        AmountValue, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditData,
-        BlindFactor, ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, Nullifier,
-        ReceiverMemo, RecordCommitment, RecordOpening, TxnFeeInfo,
+        Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditData, BlindFactor,
+        ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, Nullifier, ReceiverMemo,
+        RecordCommitment, RecordOpening, TxnFeeInfo,
     },
     transfer::{TransferNote, TransferNoteInput},
     txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey,
@@ -89,7 +89,7 @@ impl LedgerStateMock {
         &mut self,
         rng: &mut R,
         owner_pub_key: UserPubKey,
-        amount: AmountValue,
+        amount: Amount,
     ) -> (RecordOpening, u64) {
         let ro = RecordOpening::new(
             rng,
@@ -110,7 +110,7 @@ impl LedgerStateMock {
         &mut self,
         rng: &mut R,
         owner_pub_key: UserPubKey,
-        amount: AmountValue,
+        amount: Amount,
         asset_definition: AssetDefinition,
     ) -> (RecordOpening, u64) {
         let ro = RecordOpening::new(
@@ -799,7 +799,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: AmountValue,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, false)
@@ -810,7 +810,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: AmountValue,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, true)
@@ -821,7 +821,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: AmountValue,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
         freeze: bool, // true: freeze, false: unfreeze
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
@@ -1002,7 +1002,7 @@ impl<'a> SimpleUserWalletMock<'a> {
     }
 
     /// computes spendable funds for given asset code
-    pub fn available_funds(&self, asset_code: &AssetCode) -> AmountValue {
+    pub fn available_funds(&self, asset_code: &AssetCode) -> Amount {
         match self.unspent_records.get(asset_code) {
             Some(records) => records.iter().map(|(record, _uid)| record.amount).sum(),
             None => 0u128.into(),
@@ -1142,7 +1142,7 @@ impl<'a> SimpleUserWalletMock<'a> {
 
     /// find a record and corresponding uid on the native asset type with enough
     /// funds to pay transaction fee
-    fn find_record_for_fee(&self, fee: AmountValue) -> Result<(RecordOpening, u64)> {
+    fn find_record_for_fee(&self, fee: Amount) -> Result<(RecordOpening, u64)> {
         let unspent_native_assets = self
             .unspent_records
             .get(&AssetDefinition::native().code)
@@ -1164,10 +1164,10 @@ impl<'a> SimpleUserWalletMock<'a> {
     fn find_records(
         &self,
         asset_code: &AssetCode,
-        amount: AmountValue,
-    ) -> Result<(Vec<(RecordOpening, u64)>, AmountValue)> {
+        amount: Amount,
+    ) -> Result<(Vec<(RecordOpening, u64)>, Amount)> {
         let mut result = vec![];
-        let mut current_amount: AmountValue = 0u128.into();
+        let mut current_amount: Amount = 0u128.into();
         let unspent_records = self
             .unspent_records
             .get(asset_code)
@@ -1193,13 +1193,13 @@ impl<'a> SimpleUserWalletMock<'a> {
     pub fn spend_native<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        output_addresses_and_amounts: &[(UserPubKey, AmountValue)],
-        fee: AmountValue,
+        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
-        let total_output_amount: AmountValue = output_addresses_and_amounts
+        let total_output_amount: Amount = output_addresses_and_amounts
             .iter()
-            .fold(0.into(), |acc: AmountValue, (_, amount)| acc + *amount)
+            .fold(0.into(), |acc: Amount, (_, amount)| acc + *amount)
             + fee;
 
         // find input records of the asset type to spent
@@ -1301,8 +1301,8 @@ impl<'a> SimpleUserWalletMock<'a> {
         &mut self,
         rng: &mut R,
         asset_def: &AssetDefinition,
-        output_addresses_and_amounts: &[(UserPubKey, AmountValue)],
-        fee: AmountValue,
+        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         assert_ne!(
@@ -1310,7 +1310,7 @@ impl<'a> SimpleUserWalletMock<'a> {
             AssetDefinition::native(),
             "call `spend_native()` instead"
         );
-        let total_output_amount: AmountValue = output_addresses_and_amounts
+        let total_output_amount: Amount = output_addresses_and_amounts
             .iter()
             .fold(0.into(), |acc, (_, amount)| acc + *amount);
 
@@ -1538,9 +1538,9 @@ impl<'a> AssetIssuerMock<'a> {
     pub fn mint<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        fee: AmountValue,
+        fee: Amount,
         asset_code: &AssetCode,
-        amount: AmountValue,
+        amount: Amount,
         owner: UserPubKey,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(
@@ -2052,7 +2052,7 @@ fn check_transfer_audit_data(
     data: &AuditData,
     expected_code: AssetCode,
     expected_user_address: Option<UserAddress>,
-    expected_amount: Option<AmountValue>,
+    expected_amount: Option<Amount>,
     expected_blind_factor: Option<BlindFactor>,
     expected_attributes: Vec<Option<IdentityAttribute>>,
 ) {
@@ -2072,7 +2072,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // setting up wallets
     let mut senders_wallets = vec![];
-    let amounts = AmountValue::from_vec(&[10, 20, 30, 40]);
+    let amounts = Amount::from_vec(&[10, 20, 30, 40]);
     for _ in amounts.iter() {
         let user_wallet = SimpleUserWalletMock::generate(rng, &srs);
         senders_wallets.push(user_wallet);
@@ -2088,7 +2088,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // generate set of xfr_notes
     let mut xfr_notes = vec![];
-    let fee = AmountValue::from(1u128);
+    let fee = Amount::from(1u128);
     for (wallet, amount) in senders_wallets.iter_mut().zip(amounts.iter()) {
         let (xfr_note, _recv_memos, _recv_memos_sig) = wallet
             .spend_native(
@@ -2427,7 +2427,7 @@ fn example_freeze() {
 
 fn check_freezer_status(
     freezer: &FreezerMock,
-    available_native_funds: AmountValue,
+    available_native_funds: Amount,
     user: &SimpleUserWalletMock,
     user_freezable_records: usize,
     user_releasable_records: usize,

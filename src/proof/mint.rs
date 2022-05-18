@@ -20,8 +20,8 @@ use crate::{
     errors::TxnApiError,
     keys::UserKeyPair,
     structs::{
-        AmountValue, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
-        AuditMemo, InternalAssetCode, Nullifier, RecordCommitment, RecordOpening,
+        Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditMemo,
+        InternalAssetCode, Nullifier, RecordCommitment, RecordOpening,
     },
     BaseField, CurveParam, PairingEngine, ScalarField,
 };
@@ -188,10 +188,10 @@ pub(crate) struct MintPublicInput {
     pub(crate) merkle_root: NodeValue<BaseField>,
     pub(crate) native_asset_code: AssetCode,
     pub(crate) input_nullifier: Nullifier,
-    pub(crate) fee: AmountValue,
+    pub(crate) fee: Amount,
     pub(crate) mint_rc: RecordCommitment,
     pub(crate) chg_rc: RecordCommitment,
-    pub(crate) mint_amount: AmountValue,
+    pub(crate) mint_amount: Amount,
     pub(crate) mint_ac: AssetCode,
     pub(crate) mint_internal_ac: InternalAssetCode,
     pub(crate) mint_policy: AssetPolicy,
@@ -277,7 +277,7 @@ mod test {
         errors::TxnApiError,
         keys::{AuditorKeyPair, UserKeyPair},
         proof::{mint, universal_setup_for_staging},
-        structs::AmountValue,
+        structs::Amount,
         utils::params_builder::MintParamsBuilder,
     };
     use jf_primitives::schnorr_dsa;
@@ -287,9 +287,9 @@ mod test {
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 2;
-        let input_amount = AmountValue(30);
-        let fee = AmountValue(10);
-        let mint_amount = AmountValue(15);
+        let input_amount = Amount(30);
+        let fee = Amount(10);
+        let mint_amount = Amount(15);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -312,7 +312,7 @@ mod test {
         );
 
         // negative fee should fail
-        let bad_fee = input_amount + AmountValue(1);
+        let bad_fee = input_amount + Amount(1);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -341,9 +341,9 @@ mod test {
         let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) = mint::preprocess(&universal_param, tree_depth)?;
 
-        let input_amount = AmountValue(10);
-        let fee = AmountValue(4);
-        let mint_amount = AmountValue(35);
+        let input_amount = Amount(10);
+        let fee = Amount(4);
+        let mint_amount = Amount(35);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -391,9 +391,9 @@ mod test {
         .is_err());
 
         // another instance
-        let input_amount = AmountValue(rng.next_u64() as u128);
+        let input_amount = Amount(rng.next_u64() as u128);
         let fee = rng.gen_range(1..input_amount.0).into();
-        let mint_amount = AmountValue(rng.next_u64() as u128);
+        let mint_amount = Amount(rng.next_u64() as u128);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);

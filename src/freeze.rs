@@ -17,7 +17,7 @@ use crate::{
         self, FreezeProvingKey, FreezePublicInput, FreezeValidityProof, FreezeVerifyingKey,
         FreezeWitness,
     },
-    structs::{AmountValue, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
+    structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
     utils::txn_helpers::{freeze::*, *},
     AccMemberWitness, KeyPair, NodeValue, VerKey,
 };
@@ -68,7 +68,7 @@ pub struct FreezeAuxInfo {
     /// Accumulator state
     pub merkle_root: NodeValue,
     /// proposed fee in native asset type for the transfer
-    pub fee: AmountValue,
+    pub fee: Amount,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
     pub txn_memo_ver_key: VerKey,
@@ -206,7 +206,7 @@ mod test {
             universal_setup_for_staging,
         },
         sign_receiver_memos,
-        structs::{AmountValue, AssetDefinition, AssetPolicy, FreezeFlag, ReceiverMemo},
+        structs::{Amount, AssetDefinition, AssetPolicy, FreezeFlag, ReceiverMemo},
         utils::params_builder::FreezeParamsBuilder,
         TransactionNote,
     };
@@ -223,15 +223,15 @@ mod test {
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 
-        let input_amounts = vec![AmountValue(20), AmountValue(30)];
-        let fee_input_amount = AmountValue(10);
+        let input_amounts = vec![Amount(20), Amount(30)];
+        let fee_input_amount = Amount(10);
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
 
         // ====================================
         // zero fee
         // ====================================
-        let fee = AmountValue(0);
+        let fee = Amount(0);
 
         let builder = FreezeParamsBuilder::new(
             tree_depth,
@@ -247,7 +247,7 @@ mod test {
         // ====================================
         // non-zero fee
         // ====================================
-        let fee = AmountValue(5);
+        let fee = Amount(5);
 
         let builder = FreezeParamsBuilder::new(
             tree_depth,
@@ -302,7 +302,7 @@ mod test {
         {
             let bad_builder = builder
                 .clone()
-                .update_fee_input_amount(builder.fee - AmountValue(1));
+                .update_fee_input_amount(builder.fee - Amount(1));
             assert!(bad_builder.build_freeze_note(rng, &proving_key).is_err());
         }
 

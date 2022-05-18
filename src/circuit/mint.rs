@@ -249,7 +249,7 @@ mod tests {
         errors::TxnApiError,
         keys::{AuditorKeyPair, UserKeyPair},
         structs::{
-            AmountValue, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetPolicy, AuditMemo,
+            Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetPolicy, AuditMemo,
             CommitmentValue, FreezeFlag, InternalAssetCode, Nullifier, RecordCommitment,
             RecordOpening,
         },
@@ -271,10 +271,10 @@ mod tests {
             merkle_root: NodeValue::from_scalar(BaseField::from(10u8)),
             native_asset_code: AssetCode::native(),
             input_nullifier: Nullifier(BaseField::from(5u8)),
-            fee: AmountValue(8u128),
+            fee: Amount(8u128),
             mint_rc: RecordCommitment::from(&mint_ro),
             chg_rc: RecordCommitment::from(&RecordOpening::rand_for_test(rng)),
-            mint_amount: AmountValue(30u128),
+            mint_amount: Amount(30u128),
             mint_ac,
             mint_internal_ac,
             mint_policy: AssetPolicy::rand_for_test(rng),
@@ -299,9 +299,9 @@ mod tests {
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
         let tree_depth = 2;
-        let input_amount = AmountValue(30);
-        let fee = AmountValue(20);
-        let mint_amount = AmountValue(10);
+        let input_amount = Amount(30);
+        let fee = Amount(20);
+        let mint_amount = Amount(10);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -366,7 +366,7 @@ mod tests {
         // bad path: mint amount out of range
         {
             let mut bad_witness = witness.clone();
-            bad_witness.fee_ro.amount = AmountValue(u128::max_value());
+            bad_witness.fee_ro.amount = Amount(u128::max_value());
             let pub_input = MintPublicInput::from_witness(&witness)?;
             check_mint_circuit(&bad_witness, &pub_input, false)?;
         }
@@ -383,7 +383,7 @@ mod tests {
         // bad path: fee + change != input amount
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.fee += AmountValue(1);
+            bad_pub_input.fee += Amount(1);
             check_mint_circuit(&witness, &bad_pub_input, false)?;
         }
 
@@ -408,7 +408,7 @@ mod tests {
         // bad path: inconsistent public mint amount/asset_code/policy
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.mint_amount = mint_amount + AmountValue(1);
+            bad_pub_input.mint_amount = mint_amount + Amount(1);
             check_mint_circuit(&witness, &bad_pub_input, false)?;
 
             let mut bad_pub_input = pub_input.clone();

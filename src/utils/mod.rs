@@ -17,7 +17,7 @@ use crate::{
     circuit::{freeze::FreezeCircuit, mint::MintCircuit, transfer::TransferCircuit},
     errors::TxnApiError,
     keys::FreezerPubKey,
-    structs::{AmountValue, AssetDefinition, NoteType, RecordOpening},
+    structs::{Amount, AssetDefinition, NoteType, RecordOpening},
     BaseField,
 };
 use ark_ec::ProjectiveCurve;
@@ -68,9 +68,9 @@ pub(crate) fn next_power_of_three(current: usize) -> usize {
     result
 }
 
-/// Computes the sum of AmountValue elements. If the final results overflows
+/// Computes the sum of Amount elements. If the final results overflows
 /// returns an error
-pub(crate) fn safe_sum_amount_value(elems: &[AmountValue]) -> Option<AmountValue> {
+pub(crate) fn safe_sum_amount(elems: &[Amount]) -> Option<Amount> {
     let res = elems
         .iter()
         .fold(Some(0u128), |acc, elem| acc?.checked_add((*elem).0));
@@ -116,22 +116,20 @@ pub fn compute_universal_param_size(
 mod tests {
     use crate::{
         keys::UserKeyPair,
-        structs::{AmountValue, AssetDefinition, FreezeFlag, NoteType, RecordOpening},
-        utils::{
-            compute_universal_param_size, get_asset_def_in_transfer_txn, safe_sum_amount_value,
-        },
+        structs::{Amount, AssetDefinition, FreezeFlag, NoteType, RecordOpening},
+        utils::{compute_universal_param_size, get_asset_def_in_transfer_txn, safe_sum_amount},
     };
 
     #[test]
-    fn test_safe_sum_amount_value() {
-        let safe_input_values = AmountValue::from_vec(&[3_u128, 10_u128, 20_u128]);
+    fn test_safe_sum_amount() {
+        let safe_input_values = Amount::from_vec(&[3_u128, 10_u128, 20_u128]);
         assert_eq!(
-            safe_sum_amount_value(&safe_input_values[..]).unwrap(),
+            safe_sum_amount(&safe_input_values[..]).unwrap(),
             33_u128.into()
         );
 
-        let unsafe_input_values = AmountValue::from_vec(&[u128::MAX, 1_u128]);
-        assert!(safe_sum_amount_value(&unsafe_input_values).is_none());
+        let unsafe_input_values = Amount::from_vec(&[u128::MAX, 1_u128]);
+        assert!(safe_sum_amount(&unsafe_input_values).is_none());
     }
 
     #[test]
@@ -279,7 +277,7 @@ pub(crate) mod txn_helpers {
     use crate::{
         errors::TxnApiError,
         keys::{AuditorPubKey, CredIssuerPubKey, FreezerPubKey},
-        structs::{AmountValue, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
+        structs::{Amount, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
         transfer::TransferNoteInput,
     };
 
@@ -649,7 +647,7 @@ pub(crate) mod txn_helpers {
     pub(crate) fn check_balance(
         inputs: &[&RecordOpening],
         outputs: &[&RecordOpening],
-    ) -> Result<AmountValue, TxnApiError> {
+    ) -> Result<Amount, TxnApiError> {
         let fee = derive_fee(inputs, outputs)?;
         check_asset_amount(inputs, outputs, fee)?;
         Ok(fee)
@@ -661,7 +659,7 @@ pub(crate) mod txn_helpers {
     fn derive_fee(
         inputs: &[&RecordOpening],
         outputs: &[&RecordOpening],
-    ) -> Result<AmountValue, TxnApiError> {
+    ) -> Result<Amount, TxnApiError> {
         // if transfer asset code != native_asset_code, fee = inputs[0].amount -
         // outputs[0].amount, else fee = (\sum_{i=0...} inputs[i].amount) -
         // (\sum_{i=0...} outputs[i].amount)
@@ -711,7 +709,7 @@ pub(crate) mod txn_helpers {
     fn check_asset_amount(
         inputs: &[&RecordOpening],
         outputs: &[&RecordOpening],
-        fee: AmountValue,
+        fee: Amount,
     ) -> Result<(), TxnApiError> {
         let mut balances = HashMap::new();
 
@@ -759,7 +757,7 @@ pub(crate) mod txn_helpers {
         if inputs
             .iter()
             .skip(1)
-            .any(|input| input.asset_def.is_dummy() && input.amount != AmountValue(0))
+            .any(|input| input.asset_def.is_dummy() && input.amount != Amount(0))
         {
             Err(TxnApiError::InvalidParameter(
                 "Dummy inputs must have 0 amount".to_string(),

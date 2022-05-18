@@ -18,11 +18,11 @@ use crate::{
         TransferWitness,
     },
     structs::{
-        AmountValue, AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, FeeInput,
-        FreezeFlag, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
+        Amount, AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, FeeInput, FreezeFlag,
+        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
     },
     utils::{
-        safe_sum_amount_value,
+        safe_sum_amount,
         txn_helpers::{transfer::*, *},
     },
     AccMemberWitness, KeyPair, NodeValue, VerKey,
@@ -81,7 +81,7 @@ pub struct AuxInfo {
     /// Accumulator state
     pub merkle_root: NodeValue,
     /// proposed fee in native asset type for the transfer
-    pub fee: AmountValue,
+    pub fee: Amount,
     /// A projected future timestamp that the snark proof should be valid until,
     /// especially for credential to still hold valid/unexpired
     pub valid_until: u64,
@@ -137,7 +137,7 @@ impl TransferNote {
         rng: &mut R,
         inputs: Vec<TransferNoteInput<'a>>,
         outputs: &[RecordOpening],
-        fee: AmountValue,
+        fee: Amount,
         valid_until: u64,
         proving_key: &TransferProvingKey<'a>,
     ) -> Result<(Self, KeyPair, RecordOpening), TxnApiError>
@@ -163,13 +163,13 @@ impl TransferNote {
             .filter(|input| !input.ro.is_dummy())
             .map(|input| input.ro.amount)
             .collect();
-        let total_in = safe_sum_amount_value(&in_amounts).ok_or_else(|| {
+        let total_in = safe_sum_amount(&in_amounts).ok_or_else(|| {
             TxnApiError::InvalidParameter(
                 "Total input amount exceeds max value (2^64-1)".to_string(),
             )
         })?;
         let out_amounts: Vec<_> = outputs.iter().map(|output| output.amount).collect();
-        let total_out = safe_sum_amount_value(&out_amounts).ok_or_else(|| {
+        let total_out = safe_sum_amount(&out_amounts).ok_or_else(|| {
             TxnApiError::InvalidParameter(
                 "Total output amount exceeds max value (2^64-1)".to_string(),
             )
@@ -392,7 +392,7 @@ mod tests {
             transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
             universal_setup_for_staging,
         },
-        structs::{AmountValue, AssetDefinition, ExpirableCredential, NoteType},
+        structs::{Amount, AssetDefinition, ExpirableCredential, NoteType},
         transfer::TransferNote,
         utils::{
             compute_universal_param_size,
@@ -424,8 +424,8 @@ mod tests {
         // ====================================
         // a transfer with 0 fee
         // ====================================
-        let input_amounts = AmountValue::from_vec(&[30, 25]);
-        let output_amounts = AmountValue::from_vec(&[30, 3, 4, 5, 6, 7]);
+        let input_amounts = Amount::from_vec(&[30, 25]);
+        let output_amounts = Amount::from_vec(&[30, 3, 4, 5, 6, 7]);
 
         let mut builder = test_anon_xfr_helper(
             &input_amounts,
@@ -444,8 +444,8 @@ mod tests {
         // ====================================
         // a normal transfer
         // ====================================
-        let input_amounts = AmountValue::from_vec(&[30, 25]);
-        let output_amounts = AmountValue::from_vec(&[19, 3, 4, 5, 6, 7]);
+        let input_amounts = Amount::from_vec(&[30, 25]);
+        let output_amounts = Amount::from_vec(&[19, 3, 4, 5, 6, 7]);
 
         let _builder = test_anon_xfr_helper(
             &input_amounts,
@@ -518,11 +518,11 @@ mod tests {
             .is_err());
         builder.output_ros = vec![]; // prune all output and reset
         let builder =
-            builder.set_output_amounts(19.into(), &AmountValue::from_vec(&[3, 4, 5, 6, 7])[..]);
+            builder.set_output_amounts(19.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..]);
 
         // 3.invalid inputs/outputs
         let mut builder = builder;
-        builder.input_ros[0].amount += AmountValue(1);
+        builder.input_ros[0].amount += Amount(1);
         assert!(builder
             .build_transfer_note(
                 &mut prng,
@@ -531,7 +531,7 @@ mod tests {
                 extra_proof_bound_data.clone()
             )
             .is_err());
-        builder.input_ros[0].amount -= AmountValue(1);
+        builder.input_ros[0].amount -= Amount(1);
 
         // 4. inconsistent MT roots
         let mut mt_info = builder.input_acc_member_witnesses[0].clone();
@@ -595,8 +595,8 @@ mod tests {
                 Some(depth),
                 vec![&keypair; num_input],
             )
-            .set_input_amounts(AmountValue(30), &[AmountValue(20), AmountValue(10)])
-            .set_output_amounts(AmountValue(19), &[AmountValue(20), AmountValue(10)])
+            .set_input_amounts(Amount(30), &[Amount(20), Amount(10)])
+            .set_output_amounts(Amount(19), &[Amount(20), Amount(10)])
             .set_input_creds(cred_expiry)
             .update_input_asset_def(1, second_asset_def.clone())
             .update_output_asset_def(1, second_asset_def);
@@ -615,8 +615,8 @@ mod tests {
     }
 
     fn test_anon_xfr_helper<'a>(
-        input_amounts: &[AmountValue],
-        output_amounts: &[AmountValue],
+        input_amounts: &[Amount],
+        output_amounts: &[Amount],
         keypair1: &'a UserKeyPair,
         keypair2: &'a UserKeyPair,
         depth: u8,
@@ -724,10 +724,10 @@ mod tests {
         let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
-        let fee_input = AmountValue(30);
-        let fee_chg = AmountValue(19);
-        let input_amounts = AmountValue::from_vec(&[10, 0, 20]);
-        let output_amounts = AmountValue::from_vec(&[2, 3, 4, 5, 16]);
+        let fee_input = Amount(30);
+        let fee_chg = Amount(19);
+        let input_amounts = Amount::from_vec(&[10, 0, 20]);
+        let output_amounts = Amount::from_vec(&[2, 3, 4, 5, 16]);
 
         let keypair1 = UserKeyPair::generate(&mut prng);
         let keypair2 = UserKeyPair::generate(&mut prng);

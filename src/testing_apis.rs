@@ -19,7 +19,7 @@
 use crate::{
     errors::TxnApiError,
     proof::{self, freeze::FreezeVerifyingKey, transfer::TransferVerifyingKey},
-    structs::{AmountValue, AssetCode, AuditMemo, Nullifier, RecordCommitment},
+    structs::{Amount, AssetCode, AuditMemo, Nullifier, RecordCommitment},
     transfer::TransferNote,
     BaseField, MintVerifyingKey, PairingEngine,
 };
@@ -55,7 +55,7 @@ pub struct TransferPublicInput {
     pub merkle_root: NodeValue<BaseField>,
     pub native_asset_code: AssetCode,
     pub valid_until: u64,
-    pub fee: AmountValue,
+    pub fee: Amount,
     pub input_nullifiers: Vec<Nullifier>,
     pub output_commitments: Vec<RecordCommitment>,
     pub audit_memo: AuditMemo,

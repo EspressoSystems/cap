@@ -133,16 +133,16 @@ impl From<&AssetCode> for BaseField {
     Ord,
     Sum,
 )]
-pub struct AmountValue(pub(crate) u128);
+pub struct Amount(pub(crate) u128);
 
-impl AmountValue {
-    /// Generate a vector of AmountValue from a u128 vector
+impl Amount {
+    /// Generate a vector of Amount from a u128 vector
     pub fn from_vec(vals: &[u128]) -> Vec<Self> {
-        vals.iter().map(|x| AmountValue(*x)).collect()
+        vals.iter().map(|x| Amount(*x)).collect()
     }
 }
 
-impl CanonicalSerialize for AmountValue {
+impl CanonicalSerialize for Amount {
     #[inline]
     fn serialize<W: Write>(&self, mut writer: W) -> Result<(), SerializationError> {
         Ok(writer.write_all(&((*self).0 as u128).to_le_bytes())?)
@@ -154,7 +154,7 @@ impl CanonicalSerialize for AmountValue {
     }
 }
 
-impl CanonicalDeserialize for AmountValue {
+impl CanonicalDeserialize for Amount {
     #[inline]
     fn deserialize<R: Read>(mut reader: R) -> Result<Self, SerializationError> {
         let mut bytes = [0u8; core::mem::size_of::<u128>()];
@@ -437,7 +437,7 @@ pub struct AssetPolicy {
     pub(crate) freezer_pk: FreezerPubKey,
     pub(crate) reveal_map: RevealMap,
     // the asset auditing is applied only when the transfer amount exceeds `reveal_threshold`.
-    pub(crate) reveal_threshold: AmountValue,
+    pub(crate) reveal_threshold: Amount,
 }
 
 impl AssetPolicy {
@@ -464,7 +464,7 @@ impl AssetPolicy {
     }
 
     /// Referecne to revealing threshold
-    pub fn reveal_threshold(&self) -> AmountValue {
+    pub fn reveal_threshold(&self) -> Amount {
         self.reveal_threshold
     }
 
@@ -478,14 +478,14 @@ impl AssetPolicy {
     }
 
     /// Set revealing threshold policy
-    pub fn set_reveal_threshold(mut self, reveal_threshold: AmountValue) -> Self {
+    pub fn set_reveal_threshold(mut self, reveal_threshold: Amount) -> Self {
         self.reveal_threshold = reveal_threshold;
         self
     }
 
     /// True if `reveal_threshold` is not the default value, false otherwise
     pub fn is_reveal_threshold_set(&self) -> bool {
-        self.reveal_threshold != AmountValue(0)
+        self.reveal_threshold != Amount(0)
     }
 
     /// Set the auditor public key
@@ -870,7 +870,7 @@ impl CanonicalDeserialize for FreezeFlag {
 )]
 pub struct RecordOpening {
     /// value
-    pub amount: AmountValue,
+    pub amount: Amount,
     /// asset definition
     pub asset_def: AssetDefinition,
     /// owner public key
@@ -885,7 +885,7 @@ impl RecordOpening {
     /// Create a new RecordOpening with a random blind factor
     pub fn new<R>(
         rng: &mut R,
-        amount: AmountValue,
+        amount: Amount,
         asset_def: AssetDefinition,
         pub_key: UserPubKey,
         freeze_flag: FreezeFlag,
@@ -917,7 +917,7 @@ impl RecordOpening {
         (
             Self::new(
                 rng,
-                AmountValue(0),
+                Amount(0),
                 AssetDefinition::dummy(),
                 pub_key,
                 freeze_flag,
@@ -1204,13 +1204,13 @@ impl AuditMemo {
                 "Transaction asset definition cannot be dummy".to_string(),
             ));
         }
-        let transfer_amount: AmountValue = safe_sum_amount_value(
+        let transfer_amount: Amount = safe_sum_amount(
             input_ros
                 .iter()
                 .skip(1)
                 .filter(|ro| !ro.asset_def.is_dummy())
                 .map(|ro| ro.amount)
-                .collect::<Vec<AmountValue>>()
+                .collect::<Vec<Amount>>()
                 .as_slice(),
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for inputs.".to_string()))?;
@@ -1318,7 +1318,7 @@ pub struct AuditData {
     /// tracked user address
     pub user_address: Option<UserAddress>,
     /// tracked amount
-    pub amount: Option<AmountValue>,
+    pub amount: Option<Amount>,
     /// tracked blinding factor
     pub blinding_factor: Option<BlindFactor>,
     /// tracked attributes
@@ -1433,7 +1433,7 @@ impl AuditData {
             }
             let mut amount_bytes = [0u8; 16];
             amount_bytes.copy_from_slice(&big_int.to_bytes_le()[0..16]);
-            Some(AmountValue(u128::from_le_bytes(amount_bytes)))
+            Some(Amount(u128::from_le_bytes(amount_bytes)))
         } else {
             None
         };
@@ -1550,7 +1550,7 @@ pub struct TxnFeeInfo<'kp> {
     /// Fee input spending info
     pub fee_input: FeeInput<'kp>,
     /// Fee to pay
-    pub fee_amount: AmountValue,
+    pub fee_amount: Amount,
     /// Fee change record opening
     pub fee_chg_ro: RecordOpening,
 }
@@ -1560,7 +1560,7 @@ impl<'kp> TxnFeeInfo<'kp> {
     pub fn new<R: CryptoRng + RngCore>(
         rng: &mut R,
         fee_input: FeeInput<'kp>,
-        fee: AmountValue,
+        fee: Amount,
     ) -> Result<(Self, RecordOpening), TxnApiError> {
         if fee_input.ro.amount < fee {
             return Err(TxnApiError::InvalidParameter(
@@ -1685,9 +1685,9 @@ mod test {
             let universal_param = universal_setup_for_staging(max_degree, rng)?;
             let (proving_key, ..) = proof::mint::preprocess(&universal_param, tree_depth)?;
 
-            let input_amount = AmountValue(10);
-            let fee = AmountValue(4);
-            let mint_amount = AmountValue(35);
+            let input_amount = Amount(10);
+            let fee = Amount(4);
+            let mint_amount = Amount(35);
             let issuer_keypair = UserKeyPair::generate(rng);
             let receiver_keypair = UserKeyPair::generate(rng);
             let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -1949,12 +1949,12 @@ mod test {
     }
 
     #[test]
-    fn test_amount_value_arithmetics() {
+    fn test_amount_arithmetics() {
         let rng = &mut ark_std::test_rng();
         let a = u64::rand(rng) as u128 / 2;
-        let a_amount = AmountValue::from(a);
+        let a_amount = Amount::from(a);
         let b = a + u32::rand(rng) as u128;
-        let b_amount = AmountValue::from(b);
+        let b_amount = Amount::from(b);
         let c = a + b;
         let c_amount = a_amount + b_amount;
         assert_eq!(c_amount, c.into());
@@ -1974,9 +1974,9 @@ mod test {
         let mut rng = ark_std::test_rng();
 
         // amount value related
-        let amount_value = AmountValue::from(u128::rand(&mut rng));
+        let amount_value = Amount::from(u128::rand(&mut rng));
         let ser_bytes = bincode::serialize(&amount_value).unwrap();
-        let amount_value_rec: AmountValue = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let amount_value_rec: Amount = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(amount_value, amount_value_rec);
 
         // asset code related
@@ -1991,7 +1991,7 @@ mod test {
 
         let ro = RecordOpening::new(
             &mut rng,
-            AmountValue(23),
+            Amount(23),
             asset_def,
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -2016,7 +2016,7 @@ mod test {
             asset_def.policy.auditor_pk = AuditorPubKey::default();
             let ro = RecordOpening::new(
                 &mut rng,
-                AmountValue(23),
+                Amount(23),
                 asset_def.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
