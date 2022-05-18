@@ -1949,8 +1949,35 @@ mod test {
     }
 
     #[test]
+    fn test_amount_value_arithmetics() {
+        let rng = &mut ark_std::test_rng();
+        let a = u64::rand(rng) as u128 / 2;
+        let a_amount = AmountValue::from(a);
+        let b = a + u32::rand(rng) as u128;
+        let b_amount = AmountValue::from(b);
+        let c = a + b;
+        let c_amount = a_amount + b_amount;
+        assert_eq!(c_amount, c.into());
+        let c = b - a;
+        let c_amount = b_amount - a_amount;
+        assert_eq!(c_amount, c.into());
+        let c = b * a;
+        let c_amount = b_amount * a;
+        assert_eq!(c_amount, c.into());
+        let c = b / a;
+        let c_amount = b_amount / a;
+        assert_eq!(c_amount, c.into());
+    }
+
+    #[test]
     fn test_serde() {
         let mut rng = ark_std::test_rng();
+
+        // amount value related
+        let amount_value = AmountValue::from(u128::rand(&mut rng));
+        let ser_bytes = bincode::serialize(&amount_value).unwrap();
+        let amount_value_rec: AmountValue = bincode::deserialize(&ser_bytes[..]).unwrap();
+        assert_eq!(amount_value, amount_value_rec);
 
         // asset code related
         let asset_code_seed = AssetCodeSeed::generate(&mut rng);
