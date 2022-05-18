@@ -105,7 +105,7 @@
 <span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
 <span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree</span>, <span class="ident">schnorr_dsa</span>};
+<span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree</span>, <span class="ident">signatures::schnorr</span>};
 
 <span class="doccomment">/// type alias for scalar field of the jubjub curve</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
@@ -177,11 +177,11 @@
 
 <span class="comment">// signature</span>
 <span class="doccomment">/// The signature of Schnorr signature scheme</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Signature</span> <span class="op">=</span> <span class="ident">schnorr_dsa::Signature</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Signature</span> <span class="op">=</span> <span class="ident">schnorr::Signature</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
 <span class="doccomment">/// The verification key of Schnorr signature scheme</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">VerKey</span> <span class="op">=</span> <span class="ident">schnorr_dsa::VerKey</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">VerKey</span> <span class="op">=</span> <span class="ident">schnorr::VerKey</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
 <span class="doccomment">/// The key pair of Schnorr signature scheme</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">KeyPair</span> <span class="op">=</span> <span class="ident">schnorr_dsa::KeyPair</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">KeyPair</span> <span class="op">=</span> <span class="ident">schnorr::KeyPair</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// plonk</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">VerifyingKey</span> <span class="op">=</span> <span class="ident">jf_plonk::proof_system::structs::VerifyingKey</span><span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span>;

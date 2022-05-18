@@ -574,7 +574,7 @@
         <span class="ident">TransactionNote</span>,
     };
     <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">vec</span>, <span class="ident">vec::Vec</span>};
-    <span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree::NodeValue</span>, <span class="ident">schnorr_dsa</span>};
+    <span class="kw">use</span> <span class="ident">jf_primitives</span>::{<span class="ident">merkle_tree::NodeValue</span>, <span class="ident">signatures::schnorr</span>};
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_freeze_note</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
@@ -700,7 +700,7 @@
 
         <span class="comment">// note with wrong recv_memos_ver_key should fail</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wrong_note</span> <span class="op">=</span> <span class="ident">note</span>.<span class="ident">clone</span>();
-        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">schnorr_dsa::KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
+        <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">txn_memo_ver_key</span> <span class="op">=</span> <span class="ident">schnorr::KeyPair::generate</span>(<span class="ident">rng</span>).<span class="ident">ver_key</span>();
         <span class="macro">assert!</span>(<span class="ident">wrong_note</span>
             .<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">verifying_key</span>, <span class="ident">wrong_note</span>.<span class="ident">aux_info</span>.<span class="ident">merkle_root</span>)
             .<span class="ident">is_err</span>());

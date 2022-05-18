@@ -607,6 +607,7 @@
 <span id="602">602</span>
 <span id="603">603</span>
 <span id="604">604</span>
+<span id="605">605</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -636,7 +637,7 @@
 <span class="kw">use</span> <span class="ident">jf_primitives::circuit</span>::{
     <span class="ident">commitment::CommitmentGadget</span>,
     <span class="ident">elgamal</span>::{<span class="ident">ElGamalEncryptionGadget</span>, <span class="ident">ElGamalHybridCtxtVars</span>, <span class="ident">EncKeyVars</span>},
-    <span class="ident">schnorr_dsa</span>::{<span class="ident">SignatureGadget</span>, <span class="ident">SignatureVar</span>, <span class="ident">VerKeyVar</span>},
+    <span class="ident">signature::schnorr</span>::{<span class="ident">SignatureGadget</span>, <span class="ident">SignatureVar</span>, <span class="ident">VerKeyVar</span>},
 };
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
@@ -667,7 +668,7 @@
 
     <span class="doccomment">/// Obtain a bool variable indicating whether it&#39;s equal to another audit</span>
     <span class="doccomment">/// memo `audit_memo`.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_equal</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_equal</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
         <span class="ident">audit_memo</span>: <span class="kw-2">&amp;</span><span class="ident">AuditMemoVar</span>,
@@ -677,12 +678,13 @@
                 <span class="string">&quot;the compared audit memo has different ciphertext length&quot;</span>.<span class="ident">to_string</span>(),
             )));
         }
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_equal</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">ephemeral</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo</span>.<span class="number">0</span>.<span class="ident">ephemeral</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">check_equal</span> <span class="op">=</span>
+            <span class="ident">circuit</span>.<span class="ident">check_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>.<span class="ident">ephemeral</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo</span>.<span class="number">0</span>.<span class="ident">ephemeral</span>)<span class="question-mark">?</span>;
         <span class="kw">for</span> (<span class="kw-2">&amp;</span><span class="ident">left</span>, <span class="kw-2">&amp;</span><span class="ident">right</span>) <span class="kw">in</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">symm_ctxts</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">audit_memo</span>.<span class="number">0</span>.<span class="ident">symm_ctxts</span>.<span class="ident">iter</span>()) {
-            <span class="kw">let</span> <span class="ident">flag</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal</span>(<span class="ident">left</span>, <span class="ident">right</span>)<span class="question-mark">?</span>;
-            <span class="ident">is_equal</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">mul</span>(<span class="ident">is_equal</span>, <span class="ident">flag</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">flag</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal</span>(<span class="ident">left</span>, <span class="ident">right</span>)<span class="question-mark">?</span>;
+            <span class="ident">check_equal</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">mul</span>(<span class="ident">check_equal</span>, <span class="ident">flag</span>)<span class="question-mark">?</span>;
         }
-        <span class="prelude-val">Ok</span>(<span class="ident">is_equal</span>)
+        <span class="prelude-val">Ok</span>(<span class="ident">check_equal</span>)
     }
 
     <span class="doccomment">/// Derive audit memo by encrypting the content with auditor public key</span>
@@ -782,12 +784,12 @@
     }
 
     <span class="doccomment">/// Return boolean indicating whether the record&#39;s asset code is dummy</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_asset_code_dummy</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_asset_code_dummy</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">zero_if_dummy</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">add_constant</span>(<span class="self">self</span>.<span class="ident">asset_code</span>, <span class="kw-2">&amp;</span><span class="ident">DUMMY_ASSET_CODE</span>.<span class="number">0</span>.<span class="ident">neg</span>())<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">is_zero</span>(<span class="ident">zero_if_dummy</span>)
+        <span class="ident">circuit</span>.<span class="ident">check_is_zero</span>(<span class="ident">zero_if_dummy</span>)
     }
 }
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
@@ -865,7 +867,7 @@
         <span class="kw">let</span> <span class="ident">reveal_map_plus_reveal_threshold</span> <span class="op">=</span>
             <span class="ident">circuit</span>.<span class="ident">add</span>(<span class="self">self</span>.<span class="ident">reveal_map</span>, <span class="self">self</span>.<span class="ident">reveal_threshold</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">no_reveal_map_or_reveal_threshold</span> <span class="op">=</span>
-            <span class="ident">circuit</span>.<span class="ident">is_zero</span>(<span class="ident">reveal_map_plus_reveal_threshold</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">check_is_zero</span>(<span class="ident">reveal_map_plus_reveal_threshold</span>)<span class="question-mark">?</span>;
         <span class="comment">// TODO: implement LogicAnd gate for more than 2 variables after adding the new</span>
         <span class="comment">// selector for TurboPlonk CS</span>
         <span class="ident">circuit</span>.<span class="ident">logic_and_all</span>(<span class="kw-2">&amp;</span>[
@@ -892,16 +894,16 @@
 
     <span class="doccomment">/// Obtain a bool variable indicating whether `self` to equal to another</span>
     <span class="doccomment">/// policy (in terms of values).</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_equal_policy</span>(
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_equal_policy</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
         <span class="ident">policy</span>: <span class="kw-2">&amp;</span><span class="ident">AssetPolicyVar</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">a_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal</span>(<span class="self">self</span>.<span class="ident">reveal_map</span>, <span class="ident">policy</span>.<span class="ident">reveal_map</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">b_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">auditor_pk</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">auditor_pk</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">c_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cred_pk</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">cred_pk</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">d_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">freezer_pk</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">freezer_pk</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">e_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal</span>(<span class="self">self</span>.<span class="ident">reveal_threshold</span>, <span class="ident">policy</span>.<span class="ident">reveal_threshold</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">a_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal</span>(<span class="self">self</span>.<span class="ident">reveal_map</span>, <span class="ident">policy</span>.<span class="ident">reveal_map</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">b_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">auditor_pk</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">auditor_pk</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">c_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cred_pk</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">cred_pk</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">d_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal_point</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">freezer_pk</span>, <span class="kw-2">&amp;</span><span class="ident">policy</span>.<span class="ident">freezer_pk</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">e_eq</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal</span>(<span class="self">self</span>.<span class="ident">reveal_threshold</span>, <span class="ident">policy</span>.<span class="ident">reveal_threshold</span>)<span class="question-mark">?</span>;
         <span class="comment">// check are all true</span>
         <span class="ident">circuit</span>.<span class="ident">logic_and_all</span>(<span class="kw-2">&amp;</span>[<span class="ident">a_eq</span>, <span class="ident">b_eq</span>, <span class="ident">c_eq</span>, <span class="ident">d_eq</span>, <span class="ident">e_eq</span>])
     }
@@ -1021,7 +1023,7 @@
             <span class="ident">attrs</span>,
         ]
         .<span class="ident">concat</span>();
-        <span class="ident">SignatureGadget</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span><span class="ident">::is_valid_signature</span>(
+        <span class="ident">SignatureGadget</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span><span class="ident">::check_signature_validity</span>(
             <span class="ident">circuit</span>,
             <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">issuer_pk</span>,
             <span class="kw-2">&amp;</span><span class="ident">msg</span>,
@@ -1164,7 +1166,7 @@
     <span class="comment">////////////////////////////////////////////////////////////</span>
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_is_equal_audit_memo</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_check_equal_audit_memo</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">test_rng</span>();
         <span class="kw">let</span> <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="number">10</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">BaseField::from</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u32</span>)).<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data2</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">clone</span>();
@@ -1182,21 +1184,21 @@
         <span class="comment">// different enc_rand</span>
         <span class="kw">let</span> <span class="ident">audit_memo_4</span> <span class="op">=</span> <span class="ident">AuditMemo</span>(<span class="ident">pk</span>.<span class="ident">encrypt</span>(<span class="ident">enc_rand_2</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>));
 
-        <span class="ident">check_is_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="ident">BaseField::one</span>())<span class="question-mark">?</span>;
-        <span class="ident">check_is_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_2</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
-        <span class="ident">check_is_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_3</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
-        <span class="ident">check_is_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_4</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
+        <span class="ident">check_check_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="ident">BaseField::one</span>())<span class="question-mark">?</span>;
+        <span class="ident">check_check_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_2</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
+        <span class="ident">check_check_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_3</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
+        <span class="ident">check_check_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_4</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
 
         <span class="comment">// should return error when compared to an audit memo with different format</span>
         <span class="kw">let</span> <span class="ident">audit_memo_5</span> <span class="op">=</span> <span class="ident">AuditMemo</span>(<span class="ident">pk</span>.<span class="ident">encrypt</span>(<span class="ident">enc_rand</span>, <span class="kw-2">&amp;</span>[]));
         <span class="macro">assert!</span>(
-            <span class="ident">check_is_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_5</span>, <span class="ident">BaseField::zero</span>()).<span class="ident">is_err</span>()
+            <span class="ident">check_check_equal_audit_memo</span>(<span class="kw-2">&amp;</span><span class="ident">audit_memo_1</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_5</span>, <span class="ident">BaseField::zero</span>()).<span class="ident">is_err</span>()
         );
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">fn</span> <span class="ident">check_is_equal_audit_memo</span>(
+    <span class="kw">fn</span> <span class="ident">check_check_equal_audit_memo</span>(
         <span class="ident">audit_memo_1</span>: <span class="kw-2">&amp;</span><span class="ident">AuditMemo</span>,
         <span class="ident">audit_memo_2</span>: <span class="kw-2">&amp;</span><span class="ident">AuditMemo</span>,
         <span class="ident">expect_equal</span>: <span class="ident">BaseField</span>,
@@ -1204,7 +1206,7 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">audit_memo_1</span> <span class="op">=</span> <span class="ident">AuditMemoVar::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">audit_memo_1</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">audit_memo_2</span> <span class="op">=</span> <span class="ident">AuditMemoVar::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">audit_memo_2</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">flag</span> <span class="op">=</span> <span class="ident">audit_memo_1</span>.<span class="ident">is_equal</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_2</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">flag</span> <span class="op">=</span> <span class="ident">audit_memo_1</span>.<span class="ident">check_equal</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">audit_memo_2</span>)<span class="question-mark">?</span>;
 
         <span class="macro">assert_eq!</span>(<span class="ident">circuit</span>.<span class="ident">witness</span>(<span class="ident">flag</span>)<span class="question-mark">?</span>, <span class="ident">expect_equal</span>);
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());

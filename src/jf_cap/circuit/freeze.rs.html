@@ -595,14 +595,14 @@
             <span class="comment">// Freezing public key cannot be dummy, unless record is dummy</span>
             <span class="kw">let</span> <span class="ident">b_dummy_freeze_pk</span> <span class="op">=</span> <span class="ident">ro_in</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_freezer_pk</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">b_not_dummy_freeze_pk</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">logic_neg</span>(<span class="ident">b_dummy_freeze_pk</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">b_is_dummy_ro</span> <span class="op">=</span> <span class="ident">ro_in</span>.<span class="ident">is_asset_code_dummy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">b_is_dummy_ro</span> <span class="op">=</span> <span class="ident">ro_in</span>.<span class="ident">check_asset_code_dummy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">b_not_dummy_freeze_pk</span>, <span class="ident">b_is_dummy_ro</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// Proof of spending</span>
             <span class="kw">let</span> (<span class="ident">nullifier</span>, <span class="ident">root</span>) <span class="op">=</span>
                 <span class="ident">circuit</span>.<span class="ident">prove_spend</span>(<span class="ident">ro_in</span>, <span class="ident">acc_wit_in</span>, <span class="ident">freeze_sk</span>, <span class="ident">Spender::Freezer</span>)<span class="question-mark">?</span>;
             <span class="comment">// enforce correct root if record is not dummy</span>
-            <span class="kw">let</span> <span class="ident">is_correct_mt_root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">is_correct_mt_root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
             <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">is_correct_mt_root</span>, <span class="ident">b_is_dummy_ro</span>)<span class="question-mark">?</span>;
             <span class="comment">// check nullifier is correctly computed</span>
             <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">nullifier</span>, <span class="ident">expected_nl</span>)<span class="question-mark">?</span>;
