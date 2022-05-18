@@ -20,8 +20,8 @@ use crate::{
     errors::TxnApiError,
     keys::{CredIssuerPubKey, UserKeyPair},
     structs::{
-        AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, Nullifier, RecordCommitment,
-        RecordOpening,
+        AssetCode, AssetDefinition, ExpirableCredential, Nullifier, RecordCommitment,
+        RecordOpening, ViewableMemo,
     },
     transfer::TransferNoteInput,
     utils::safe_sum_u64,
@@ -218,7 +218,7 @@ pub(crate) struct TransferWitness<'a> {
     pub(crate) asset_def: AssetDefinition,
     pub(crate) input_secrets: Vec<InputSecret<'a>>,
     pub(crate) output_record_openings: Vec<RecordOpening>,
-    pub(crate) audit_memo_enc_rand: ScalarField,
+    pub(crate) viewing_memo_enc_rand: ScalarField,
 }
 
 impl<'a> TransferWitness<'a> {
@@ -253,12 +253,12 @@ impl<'a> TransferWitness<'a> {
         };
         let output_ro = RecordOpening::default();
 
-        let audit_memo_enc_rand = ScalarField::default();
+        let viewing_memo_enc_rand = ScalarField::default();
         Self {
             asset_def,
             input_secrets: vec![input_secret; num_input],
             output_record_openings: vec![output_ro; num_output],
-            audit_memo_enc_rand,
+            viewing_memo_enc_rand,
         }
     }
     /// Create a new witness from I/O record openings, input keypairs and input
@@ -283,7 +283,7 @@ impl<'a> TransferWitness<'a> {
             let cred = if input.ro.asset_def.policy.cred_pk == CredIssuerPubKey::default() {
                 ExpirableCredential::dummy_unexpired()?
             } else {
-                input.cred.clone().ok_or_else(|| TxnApiError::InvalidParameter("Record with non-empty credential issuer should have an ExpirableCredential".to_string()))?
+                input.cred.clone().ok_or_else(|| TxnApiError::InvalidParameter("Record with non-empty credential creator should have an ExpirableCredential".to_string()))?
             };
             Ok(
                 InputSecret {
@@ -295,13 +295,13 @@ impl<'a> TransferWitness<'a> {
             )
         }).collect::<Result<Vec<_>, TxnApiError>>()?;
         let output_record_openings = output_ros.to_owned();
-        let audit_memo_enc_rand = ScalarField::rand(rng);
+        let viewing_memo_enc_rand = ScalarField::rand(rng);
 
         Ok(Self {
             asset_def,
             input_secrets,
             output_record_openings,
-            audit_memo_enc_rand,
+            viewing_memo_enc_rand,
         })
     }
 }
@@ -324,7 +324,7 @@ pub(crate) struct TransferPublicInput {
     pub(crate) fee: u64,
     pub(crate) input_nullifiers: Vec<Nullifier>,
     pub(crate) output_commitments: Vec<RecordCommitment>,
-    pub(crate) audit_memo: AuditMemo,
+    pub(crate) viewing_memo: ViewableMemo,
 }
 
 impl TransferPublicInput {
@@ -399,8 +399,8 @@ impl TransferPublicInput {
             .map(RecordCommitment::from)
             .collect();
 
-        let audit_memo = {
-            // TODO: (alex) change compute_audit_memo to accept &[Cow<RecordOpening>] to
+        let viewing_memo = {
+            // TODO: (alex) change compute_viewing_memo to accept &[Cow<RecordOpening>] to
             // avoid these unnecessary cloning
             let input_ros: Vec<_> = witness
                 .input_secrets
@@ -413,11 +413,11 @@ impl TransferPublicInput {
                 .iter()
                 .map(|secret| secret.cred.clone())
                 .collect();
-            AuditMemo::new_for_transfer_note(
+            ViewableMemo::new_for_transfer_note(
                 &input_ros,
                 output_ros,
                 &input_creds,
-                witness.audit_memo_enc_rand,
+                witness.viewing_memo_enc_rand,
             )?
         };
 
@@ -428,7 +428,7 @@ impl TransferPublicInput {
             fee,
             input_nullifiers,
             output_commitments,
-            audit_memo,
+            viewing_memo,
         })
     }
 
@@ -447,7 +447,7 @@ impl TransferPublicInput {
         for comm in &self.output_commitments {
             result.push(comm.0);
         }
-        result.extend_from_slice(&self.audit_memo.0.to_scalars());
+        result.extend_from_slice(&self.viewing_memo.0.to_scalars());
         result
     }
 }
@@ -471,7 +471,7 @@ mod test {
         /// one. This function only used in test.
         pub(crate) fn is_dummy_unexpired(&self) -> bool {
             self.user_addr == UserAddress::default()
-                && self.issuer_pk == CredIssuerPubKey::default()
+                && self.creator_pk == CredIssuerPubKey::default()
                 && !self.is_expired(2u64.pow(MAX_TIMESTAMP_LEN as u32) - 2)
         }
     }

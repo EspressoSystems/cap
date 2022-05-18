@@ -9,7 +9,7 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-//! Generation and verification of auditable anonymous transfer notes
+//! Generation and verification of user configurable transfer notes
 use crate::{
     errors::TxnApiError,
     keys::UserKeyPair,
@@ -18,8 +18,8 @@ use crate::{
         TransferWitness,
     },
     structs::{
-        AssetCode, AssetDefinition, AuditMemo, ExpirableCredential, FeeInput, FreezeFlag,
-        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
+        AssetCode, AssetDefinition, ExpirableCredential, FeeInput, FreezeFlag, Nullifier,
+        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
     },
     utils::{
         safe_sum_u64,
@@ -58,7 +58,7 @@ pub struct TransferNote {
     /// proof of spending and policy compliance
     pub proof: TransferValidityProof,
     /// Memo generated for policy compliance
-    pub audit_memo: AuditMemo,
+    pub viewing_memo: ViewableMemo,
     /// Auxiliary information (merkle root, native asset, fee, valid max time,
     /// receiver memos verification key)
     pub aux_info: AuxInfo,
@@ -104,7 +104,7 @@ pub struct TransferNoteInput<'kp> {
     /// Reference of the record owner's key pair.
     pub owner_keypair: &'kp UserKeyPair,
     /// The identity credential of the user. Optional, only needed if asset
-    /// policy has a non-empty `AuditPubKey`.
+    /// policy has a non-empty `ViewerPubKey`.
     pub cred: Option<ExpirableCredential>,
 }
 
@@ -306,7 +306,7 @@ impl TransferNote {
             inputs_nullifiers: pub_inputs.input_nullifiers,
             output_commitments: pub_inputs.output_commitments,
             proof,
-            audit_memo: pub_inputs.audit_memo,
+            viewing_memo: pub_inputs.viewing_memo,
             aux_info: AuxInfo {
                 merkle_root,
                 fee,
@@ -377,7 +377,7 @@ impl TransferNote {
             fee: self.aux_info.fee,
             input_nullifiers: self.inputs_nullifiers.clone(),
             output_commitments: self.output_commitments.clone(),
-            audit_memo: self.audit_memo.clone(),
+            viewing_memo: self.viewing_memo.clone(),
         })
     }
 }
@@ -650,26 +650,27 @@ mod tests {
         // Check memos
         let asset_def = builder.transfer_asset_def.as_ref().unwrap();
 
-        let auditor_keypair = &asset_def.auditor_keypair;
+        let viewer_keypair = &asset_def.viewer_keypair;
 
-        let (input_audit_data, output_audit_data) = auditor_keypair
-            .open_transfer_audit_memo(&asset_def.asset_def, &note)
+        let (input_visible_data, output_visible_data) = viewer_keypair
+            .open_transfer_viewing_memo(&asset_def.asset_def, &note)
             .unwrap();
-        assert_eq!(input_audit_data.len(), input_amounts.len() - 1);
-        assert_eq!(output_audit_data.len(), output_amounts.len() - 1);
+        assert_eq!(input_visible_data.len(), input_amounts.len() - 1);
+        assert_eq!(output_visible_data.len(), output_amounts.len() - 1);
 
-        assert_eq!(input_audit_data[0].asset_code, asset_def.asset_def.code);
-        assert_eq!(input_audit_data[0].amount, Some(input_amounts[1]));
-        assert_eq!(input_audit_data[0].attributes.len(), ATTRS_LEN);
-        assert!(input_audit_data[0].blinding_factor.is_none());
-        assert!(input_audit_data[0].user_address.is_none());
+        assert_eq!(input_visible_data[0].asset_code, asset_def.asset_def.code);
+        assert_eq!(input_visible_data[0].amount, Some(input_amounts[1]));
+        assert_eq!(input_visible_data[0].attributes.len(), ATTRS_LEN);
+        assert!(input_visible_data[0].blinding_factor.is_none());
+        assert!(input_visible_data[0].user_address.is_none());
 
-        for (audit_data, expected_amount) in output_audit_data.iter().zip(&output_amounts[1..]) {
-            assert_eq!(audit_data.asset_code, asset_def.asset_def.code);
-            assert_eq!(audit_data.amount, Some(*expected_amount));
-            assert_eq!(audit_data.attributes.len(), ATTRS_LEN);
-            assert!(audit_data.blinding_factor.is_none());
-            assert!(audit_data.user_address.is_none());
+        for (visible_data, expected_amount) in output_visible_data.iter().zip(&output_amounts[1..])
+        {
+            assert_eq!(visible_data.asset_code, asset_def.asset_def.code);
+            assert_eq!(visible_data.amount, Some(*expected_amount));
+            assert_eq!(visible_data.attributes.len(), ATTRS_LEN);
+            assert!(visible_data.blinding_factor.is_none());
+            assert!(visible_data.user_address.is_none());
         }
 
         assert!(note

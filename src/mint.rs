@@ -17,8 +17,8 @@ use crate::{
         self, MintProvingKey, MintPublicInput, MintValidityProof, MintVerifyingKey, MintWitness,
     },
     structs::{
-        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AuditMemo, InternalAssetCode,
-        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
+        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode, Nullifier,
+        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
     },
     utils::txn_helpers::{mint::*, *},
     KeyPair, NodeValue, ScalarField, VerKey,
@@ -57,8 +57,8 @@ pub struct MintNote {
     pub mint_internal_asset_code: InternalAssetCode,
     /// the validity proof of this note
     pub proof: MintValidityProof,
-    /// memo for policy compliance specified for the designated auditor
-    pub audit_memo: AuditMemo,
+    /// memo for policy compliance specified for the designated viewer
+    pub viewing_memo: ViewableMemo,
     /// auxiliary information
     pub aux_info: MintAuxInfo,
 }
@@ -107,11 +107,11 @@ impl MintNote {
     {
         let acc_member_witness = &txn_fee_info.fee_input.acc_member_witness;
         let merkle_root = acc_member_witness.root;
-        let issuer_keypair = txn_fee_info.fee_input.owner_keypair;
+        let minter_keypair = txn_fee_info.fee_input.owner_keypair;
         let ac_digest = AssetCodeDigest::from_description(ac_description);
         // check note input
         check_proving_key_consistency(proving_key, acc_member_witness)?;
-        check_input_pub_key(&txn_fee_info.fee_input.ro, issuer_keypair)?;
+        check_input_pub_key(&txn_fee_info.fee_input.ro, minter_keypair)?;
         check_mint_asset_code(&mint_ro, ac_seed, ac_digest)?;
         check_fee(&txn_fee_info)?;
         let outputs = vec![&txn_fee_info.fee_chg_ro, &mint_ro];
@@ -119,16 +119,16 @@ impl MintNote {
 
         // build public input and snark proof
         let signing_keypair = KeyPair::generate(rng);
-        let audit_memo_enc_rand = ScalarField::rand(rng);
+        let viewing_memo_enc_rand = ScalarField::rand(rng);
         let witness = MintWitness {
-            issuer_keypair,
+            minter_keypair,
             acc_member_witness: txn_fee_info.fee_input.acc_member_witness,
             fee_ro: txn_fee_info.fee_input.ro,
             mint_ro: mint_ro.clone(),
             chg_ro: txn_fee_info.fee_chg_ro,
             ac_seed,
             ac_digest,
-            audit_memo_enc_rand,
+            viewing_memo_enc_rand,
         };
         let public_inputs = MintPublicInput::from_witness(&witness)?;
         let proof = mint::prove(
@@ -148,7 +148,7 @@ impl MintNote {
             mint_asset_def: mint_ro.asset_def,
             mint_internal_asset_code: internal_asset_code,
             proof,
-            audit_memo: public_inputs.audit_memo,
+            viewing_memo: public_inputs.viewing_memo,
             aux_info: MintAuxInfo {
                 merkle_root,
                 fee: txn_fee_info.fee_amount,
@@ -200,7 +200,7 @@ impl MintNote {
             mint_ac: self.mint_asset_def.code,
             mint_internal_ac: self.mint_internal_asset_code,
             mint_policy: self.mint_asset_def.policy.clone(),
-            audit_memo: self.audit_memo.clone(),
+            viewing_memo: self.viewing_memo.clone(),
         })
     }
 }
@@ -209,7 +209,7 @@ impl MintNote {
 mod test {
     use crate::{
         errors::TxnApiError,
-        keys::{AuditorKeyPair, UserKeyPair},
+        keys::{UserKeyPair, ViewerKeyPair},
         proof::{
             self,
             mint::{MintProvingKey, MintVerifyingKey},
@@ -234,9 +234,9 @@ mod test {
 
         let input_amount = 10;
         let mint_amount = 35;
-        let issuer_keypair = UserKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
-        let auditor_keypair = AuditorKeyPair::generate(rng);
+        let viewer_keypair = ViewerKeyPair::generate(rng);
 
         // ====================================
         // zero fee
@@ -248,9 +248,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &minter_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         )
         .policy_reveal(PolicyRevealAttr::Amount)
         .policy_reveal(PolicyRevealAttr::UserAddr)
@@ -262,7 +262,7 @@ mod test {
             &proving_key,
             &verifying_key,
             &receiver_keypair,
-            &auditor_keypair
+            &viewer_keypair
         )
         .is_ok());
 
@@ -276,9 +276,9 @@ mod test {
             input_amount,
             fee,
             mint_amount,
-            &issuer_keypair,
+            &minter_keypair,
             &receiver_keypair,
-            &auditor_keypair,
+            &viewer_keypair,
         )
         .policy_reveal(PolicyRevealAttr::Amount)
         .policy_reveal(PolicyRevealAttr::UserAddr)
@@ -290,7 +290,7 @@ mod test {
             &proving_key,
             &verifying_key,
             &receiver_keypair,
-            &auditor_keypair
+            &viewer_keypair
         )
         .is_ok());
 
@@ -305,11 +305,11 @@ mod test {
             assert!(builder.build_mint_note(rng, &bad_proving_key).is_err());
         }
 
-        // inconsistent issuer keypair
+        // inconsistent creator keypair
         {
             let mut bad_builder = builder.clone();
-            let bad_issuer_keypair = UserKeyPair::generate(rng);
-            bad_builder.issuer_keypair = &bad_issuer_keypair;
+            let bad_minter_keypair = UserKeyPair::generate(rng);
+            bad_builder.minter_keypair = &bad_minter_keypair;
             assert!(bad_builder.build_mint_note(rng, &proving_key).is_err());
         }
 
@@ -362,7 +362,7 @@ mod test {
         proving_key: &MintProvingKey,
         verifying_key: &MintVerifyingKey,
         receiver_keypair: &UserKeyPair,
-        auditor_keypair: &AuditorKeyPair,
+        viewer_keypair: &ViewerKeyPair,
     ) -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
 
@@ -391,16 +391,16 @@ mod test {
             "Should have correct receiver memos signature"
         );
 
-        // Check tracer's memo
-        let audit_data = auditor_keypair.open_mint_audit_memo(&note);
-        assert!(audit_data.is_ok());
+        // Check viewer's memo
+        let visible_data = viewer_keypair.open_mint_viewing_memo(&note);
+        assert!(visible_data.is_ok());
 
-        let audit_data = audit_data.unwrap();
-        assert_eq!(audit_data.amount, Some(mint_amount));
-        assert_eq!(audit_data.user_address, Some(receiver_keypair.address()));
-        assert_eq!(audit_data.blinding_factor, Some(builder.mint_ro.blind));
-        assert!(audit_data.attributes.is_empty());
-        assert_eq!(audit_data.asset_code, builder.asset_def.code);
+        let visible_data = visible_data.unwrap();
+        assert_eq!(visible_data.amount, Some(mint_amount));
+        assert_eq!(visible_data.user_address, Some(receiver_keypair.address()));
+        assert_eq!(visible_data.blinding_factor, Some(builder.mint_ro.blind));
+        assert!(visible_data.attributes.is_empty());
+        assert_eq!(visible_data.asset_code, builder.asset_def.code);
 
         // check receiver memos signature
         let txn: TransactionNote = note.into();
