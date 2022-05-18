@@ -81,8 +81,8 @@ impl TransferCircuit {
             // The input is not frozen.
             circuit.constant_gate(input.ro.freeze_flag, BaseField::zero())?;
             // check if record is dummy
-            let is_dummy_record = input.ro.is_asset_code_dummy(&mut circuit)?;
-            let is_zero_amount = circuit.is_zero(input.ro.amount)?;
+            let is_dummy_record = input.ro.check_asset_code_dummy(&mut circuit)?;
+            let is_zero_amount = circuit.check_is_zero(input.ro.amount)?;
             // if records is dummy, then amount must be zero
             // That is, check that either record is not dummy or the amount is zero
             let not_dummy_record = circuit.logic_neg(is_dummy_record)?;
@@ -101,7 +101,7 @@ impl TransferCircuit {
                 let is_equal_policy = input
                     .ro
                     .policy
-                    .is_equal_policy(&mut circuit, &witness.policy)?;
+                    .check_equal_policy(&mut circuit, &witness.policy)?;
                 circuit.logic_or_gate(is_dummy_record, is_equal_policy)?;
             }
 
@@ -114,7 +114,7 @@ impl TransferCircuit {
 
             circuit.equal_gate(nullifier, expected_nl)?;
 
-            let is_correct_root = circuit.is_equal(root, pub_input.root)?;
+            let is_correct_root = circuit.check_equal(root, pub_input.root)?;
             // if dummy, root is allowed to be incorrect
             circuit.logic_or_gate(is_dummy_record, is_correct_root)?;
 
@@ -178,7 +178,7 @@ impl TransferCircuit {
         // Audit memo is correctly constructed when `auditor_pk` is not null and
         // `transfer_amount > asset_policy.reveal_threshold`
         let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
-        let b_under_limit = circuit.is_in_range(amount_diff, AMOUNT_LEN)?;
+        let b_under_limit = circuit.check_in_range(amount_diff, AMOUNT_LEN)?;
         let b_dummy_audit_pk = witness.policy.is_dummy_audit_pk(&mut circuit)?;
         let under_limit_or_dummy_audit_pk = circuit.logic_or(b_under_limit, b_dummy_audit_pk)?;
         let b_correct_audit_memo = Self::is_correct_audit_memo(&mut circuit, &witness, &pub_input)?;
@@ -204,7 +204,7 @@ impl TransferCircuit {
                                             .collect();
         let dummy_key = UserAddressVar::dummy(circuit);
         for input in witness.input_secrets.iter().skip(1) {
-            let is_dummy_record = input.ro.is_asset_code_dummy(circuit)?;
+            let is_dummy_record = input.ro.check_asset_code_dummy(circuit)?;
             // if record is dummy, then add dummy key to audit memo so that auditor can
             // recognize dummy records by looking at the key
             let addr_x = circuit.conditional_select(
@@ -263,7 +263,9 @@ impl TransferCircuit {
         )?;
 
         // 3. Compare derived audit_memo with that in the public input.
-        pub_input.audit_memo.is_equal(circuit, &derived_audit_memo)
+        pub_input
+            .audit_memo
+            .check_equal(circuit, &derived_audit_memo)
     }
 }
 

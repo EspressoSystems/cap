@@ -114,7 +114,7 @@ impl TransactionGadgets for PlonkCircuit<BaseField> {
             &[amounts_in[0], amounts_out[0], fee, zero_var],
             &[one, -one, -one, one],
         )?;
-        let same_asset = self.is_equal(native_asset, asset)?;
+        let same_asset = self.check_equal(native_asset, asset)?;
         // enforce `same_asset` * (`amount_diff + native_amount_diff`) == 0 (i.e.,
         // `amount_diff` + `native_amount_diff` == 0 when `same_asset == 1`)
         self.mul_add_gate(

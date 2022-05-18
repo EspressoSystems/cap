@@ -142,7 +142,7 @@ impl MintCircuit {
         )?;
 
         // 3. Compare derived audit_memo with that in the public input.
-        audit_memo.is_equal(circuit, &derived_audit_memo)
+        audit_memo.check_equal(circuit, &derived_audit_memo)
     }
 }
 

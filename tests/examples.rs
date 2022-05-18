@@ -47,7 +47,7 @@ use jf_cap::{
 };
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
-    schnorr_dsa::Signature,
+    signatures::schnorr::Signature,
 };
 use rand::RngCore;
 
@@ -1543,11 +1543,7 @@ impl<'a> AssetIssuerMock<'a> {
         amount: u64,
         owner: UserPubKey,
         merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(
-        MintNote,
-        jf_primitives::schnorr_dsa::Signature<CurveParam>,
-        ReceiverMemo,
-    )> {
+    ) -> Result<(MintNote, Signature<CurveParam>, ReceiverMemo)> {
         let (fee_ro, uid) = self.wallet.find_record_for_fee(fee)?;
         let fee_record_nullifier =
             self.wallet

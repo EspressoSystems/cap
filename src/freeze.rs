@@ -211,7 +211,7 @@ mod test {
         TransactionNote,
     };
     use ark_std::{vec, vec::Vec};
-    use jf_primitives::{merkle_tree::NodeValue, schnorr_dsa};
+    use jf_primitives::{merkle_tree::NodeValue, signatures::schnorr};
 
     #[test]
     fn test_freeze_note() -> Result<(), TxnApiError> {
@@ -337,7 +337,7 @@ mod test {
 
         // note with wrong recv_memos_ver_key should fail
         let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
+        wrong_note.aux_info.txn_memo_ver_key = schnorr::KeyPair::generate(rng).ver_key();
         assert!(wrong_note
             .verify(&verifying_key, wrong_note.aux_info.merkle_root)
             .is_err());
