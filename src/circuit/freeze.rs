@@ -150,14 +150,14 @@ impl FreezeCircuit {
             // Freezing public key cannot be dummy, unless record is dummy
             let b_dummy_freeze_pk = ro_in.policy.is_dummy_freezer_pk(&mut circuit)?;
             let b_not_dummy_freeze_pk = circuit.logic_neg(b_dummy_freeze_pk)?;
-            let b_is_dummy_ro = ro_in.is_asset_code_dummy(&mut circuit)?;
+            let b_is_dummy_ro = ro_in.check_asset_code_dummy(&mut circuit)?;
             circuit.logic_or_gate(b_not_dummy_freeze_pk, b_is_dummy_ro)?;
 
             // Proof of spending
             let (nullifier, root) =
                 circuit.prove_spend(ro_in, acc_wit_in, freeze_sk, Spender::Freezer)?;
             // enforce correct root if record is not dummy
-            let is_correct_mt_root = circuit.is_equal(root, pub_input.merkle_root)?;
+            let is_correct_mt_root = circuit.check_equal(root, pub_input.merkle_root)?;
             circuit.logic_or_gate(is_correct_mt_root, b_is_dummy_ro)?;
             // check nullifier is correctly computed
             circuit.equal_gate(nullifier, expected_nl)?;

@@ -36,7 +36,7 @@ use jf_plonk::{
 };
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
-    schnorr_dsa,
+    signatures::schnorr,
 };
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use rand::{CryptoRng, RngCore};
@@ -103,7 +103,7 @@ pub(crate) fn prove<R>(
     proving_key: &MintProvingKey,
     witness: &MintWitness,
     public_inputs: &MintPublicInput,
-    txn_memo_ver_key: &schnorr_dsa::VerKey<CurveParam>,
+    txn_memo_ver_key: &schnorr::VerKey<CurveParam>,
 ) -> Result<MintValidityProof, TxnApiError>
 where
     R: RngCore + CryptoRng,
@@ -129,7 +129,7 @@ pub(crate) fn verify(
     verifying_key: &MintVerifyingKey,
     public_inputs: &MintPublicInput,
     proof: &MintValidityProof,
-    recv_memos_ver_key: &schnorr_dsa::VerKey<CurveParam>,
+    recv_memos_ver_key: &schnorr::VerKey<CurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;
@@ -279,7 +279,7 @@ mod test {
         proof::{mint, universal_setup_for_staging},
         utils::params_builder::MintParamsBuilder,
     };
-    use jf_primitives::schnorr_dsa;
+    use jf_primitives::signatures::schnorr;
     use rand::{Rng, RngCore};
 
     #[test]
@@ -346,7 +346,7 @@ mod test {
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
-        let recv_memo_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
+        let recv_memo_ver_key = schnorr::KeyPair::generate(rng).ver_key();
 
         let builder = MintParamsBuilder::new(
             rng,
@@ -453,7 +453,7 @@ mod test {
             &verifying_key,
             &public_inputs_1,
             &validity_proof_1,
-            &schnorr_dsa::KeyPair::generate(rng).ver_key(),
+            &schnorr::KeyPair::generate(rng).ver_key(),
         )
         .is_err());
 

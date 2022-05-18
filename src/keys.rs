@@ -43,14 +43,17 @@ use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
     prf::{PrfKey, PRF},
-    schnorr_dsa,
-    schnorr_dsa::{Signature, VerKey},
+    signatures::{
+        schnorr,
+        schnorr::{SchnorrSignatureScheme, Signature, VerKey},
+        SignatureScheme,
+    },
 };
 use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
 
 /// Public address for a user to send assets to/from.
-pub type UserAddress = schnorr_dsa::VerKey<CurveParam>;
+pub type UserAddress = schnorr::VerKey<CurveParam>;
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
@@ -98,9 +101,17 @@ impl UserPubKey {
     /// Verify a signature
     pub fn verify_sig(&self, msg: &[u8], sig: &Signature<CurveParam>) -> Result<(), TxnApiError> {
         let bls_scalars = hash_to_field::<_, BaseField>(msg);
-        self.address.verify(&[bls_scalars], sig).map_err(|_| {
-            TxnApiError::FailedPrimitives("UserPubKey: Failed signature verification".to_string())
-        })
+        self.address
+            .verify(
+                &[bls_scalars],
+                sig,
+                SchnorrSignatureScheme::<CurveParam>::CS_ID,
+            )
+            .map_err(|_| {
+                TxnApiError::FailedPrimitives(
+                    "UserPubKey: Failed signature verification".to_string(),
+                )
+            })
     }
 }
 
@@ -115,7 +126,7 @@ impl UserPubKey {
 #[tagged_blob("USERKEY")]
 #[derive(Debug, Default, Clone, CanonicalSerialize, CanonicalDeserialize)]
 pub struct UserKeyPair {
-    pub(crate) addr_keypair: schnorr_dsa::KeyPair<CurveParam>,
+    pub(crate) addr_keypair: schnorr::KeyPair<CurveParam>,
     pub(crate) enc_keypair: aead::KeyPair,
 }
 
@@ -126,7 +137,7 @@ impl UserKeyPair {
         R: RngCore + CryptoRng,
     {
         Self {
-            addr_keypair: schnorr_dsa::KeyPair::generate(rng),
+            addr_keypair: schnorr::KeyPair::generate(rng),
             enc_keypair: aead::KeyPair::generate(rng),
         }
     }
@@ -163,7 +174,8 @@ impl UserKeyPair {
     /// Sign an arbitrary message using the address spending key
     pub fn sign(&self, msg: &[u8]) -> Signature<CurveParam> {
         let scalars = hash_to_field::<_, BaseField>(msg);
-        self.addr_keypair.sign(&[scalars])
+        self.addr_keypair
+            .sign(&[scalars], SchnorrSignatureScheme::<CurveParam>::CS_ID)
     }
 
     // Derive nullifying secret key.
@@ -181,14 +193,18 @@ impl UserKeyPair {
 /// Public key for the credential issuer
 #[tagged_blob("CREDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct CredIssuerPubKey(pub(crate) schnorr_dsa::VerKey<CurveParam>);
+pub struct CredIssuerPubKey(pub(crate) schnorr::VerKey<CurveParam>);
 
 impl CredIssuerPubKey {
     /// Verify a credential only for its signature correctness.
     pub(crate) fn verify(&self, msg: &[BaseField], cred: &Credential) -> Result<(), TxnApiError> {
-        self.0.verify(msg, &cred.0).map_err(|_| {
-            TxnApiError::FailedCredentialVerification("wrong signature in credential".to_string())
-        })
+        self.0
+            .verify(msg, &cred.0, SchnorrSignatureScheme::<CurveParam>::CS_ID)
+            .map_err(|_| {
+                TxnApiError::FailedCredentialVerification(
+                    "wrong signature in credential".to_string(),
+                )
+            })
     }
 
     /// Transform to a pair of scalars
@@ -201,7 +217,7 @@ impl CredIssuerPubKey {
 /// Key pair for the credential issuer
 #[tagged_blob("CREDKEY")]
 #[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct CredIssuerKeyPair(pub(crate) schnorr_dsa::KeyPair<CurveParam>);
+pub struct CredIssuerKeyPair(pub(crate) schnorr::KeyPair<CurveParam>);
 
 impl CredIssuerKeyPair {
     /// Generate a new key pair
@@ -209,7 +225,7 @@ impl CredIssuerKeyPair {
     where
         R: RngCore + CryptoRng,
     {
-        Self(schnorr_dsa::KeyPair::generate(rng))
+        Self(schnorr::KeyPair::generate(rng))
     }
 
     /// Getter for the public key
@@ -219,7 +235,10 @@ impl CredIssuerKeyPair {
 
     /// Sign a message and create a credential.
     pub(crate) fn sign(&self, msg: &[BaseField]) -> Credential {
-        Credential(self.0.sign(msg))
+        Credential(
+            self.0
+                .sign(msg, SchnorrSignatureScheme::<CurveParam>::CS_ID),
+        )
     }
 }
 

@@ -47,7 +47,7 @@ use jf_plonk::{
 };
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerklePath, MerklePathNode, MerkleTree, NodeValue},
-    schnorr_dsa,
+    signatures::schnorr,
 };
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use serde::{Deserialize, Serialize};
@@ -162,7 +162,7 @@ pub(crate) fn prove<'a, R: RngCore + CryptoRng>(
     transfer_proving_key: &TransferProvingKey<'a>,
     witness: &TransferWitness,
     public_inputs: &TransferPublicInput,
-    txn_memo_ver_key: &schnorr_dsa::VerKey<CurveParam>,
+    txn_memo_ver_key: &schnorr::VerKey<CurveParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<TransferValidityProof, TxnApiError> {
     let (circuit, _) = TransferCircuit::build(witness, public_inputs)
@@ -194,7 +194,7 @@ pub(crate) fn verify(
     transfer_verifying_key: &TransferVerifyingKey,
     public_inputs: &TransferPublicInput,
     proof: &TransferValidityProof,
-    recv_memos_ver_key: &schnorr_dsa::VerKey<CurveParam>,
+    recv_memos_ver_key: &schnorr::VerKey<CurveParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
@@ -464,7 +464,7 @@ mod test {
         utils::params_builder::TransferParamsBuilder,
     };
     use ark_std::vec;
-    use jf_primitives::schnorr_dsa;
+    use jf_primitives::signatures::schnorr;
 
     impl ExpirableCredential {
         /// Return a bit indicating whether the credential is a dummy, unexpired
@@ -604,7 +604,7 @@ mod test {
 
         let cred_expiry = 9998u64;
         let valid_until = 1234u64;
-        let recv_memos_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
+        let recv_memos_ver_key = schnorr::KeyPair::generate(rng).ver_key();
         let extra_proof_bound_data = "some random data".as_bytes();
 
         let user_keypair1 = UserKeyPair::generate(rng);
@@ -647,7 +647,7 @@ mod test {
 
         let num_input = 1;
         let num_output = 2;
-        let recv_memos_ver_key = schnorr_dsa::KeyPair::generate(rng).ver_key();
+        let recv_memos_ver_key = schnorr::KeyPair::generate(rng).ver_key();
         let (proving_key_2, verifying_key_2, _) =
             super::preprocess(&universal_param, num_input, num_output, depth)?;
 
@@ -735,7 +735,7 @@ mod test {
             &verifying_key_1,
             &pub_input_1,
             &validity_proof_1,
-            &schnorr_dsa::KeyPair::generate(rng).ver_key(),
+            &schnorr::KeyPair::generate(rng).ver_key(),
             &extra_proof_bound_data,
         )
         .is_err());

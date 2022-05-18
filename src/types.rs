@@ -9,7 +9,7 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use jf_primitives::{merkle_tree, schnorr_dsa};
+use jf_primitives::{merkle_tree, signatures::schnorr};
 
 /// type alias for scalar field of the jubjub curve
 #[cfg(feature = "bn254")]
@@ -81,11 +81,11 @@ pub type MerkleFrontier = merkle_tree::MerkleFrontier<BaseField>;
 
 // signature
 /// The signature of Schnorr signature scheme
-pub type Signature = schnorr_dsa::Signature<CurveParam>;
+pub type Signature = schnorr::Signature<CurveParam>;
 /// The verification key of Schnorr signature scheme
-pub type VerKey = schnorr_dsa::VerKey<CurveParam>;
+pub type VerKey = schnorr::VerKey<CurveParam>;
 /// The key pair of Schnorr signature scheme
-pub type KeyPair = schnorr_dsa::KeyPair<CurveParam>;
+pub type KeyPair = schnorr::KeyPair<CurveParam>;
 
 /// plonk
 pub type VerifyingKey = jf_plonk::proof_system::structs::VerifyingKey<PairingEngine>;

@@ -27,7 +27,7 @@ use jf_plonk::{
 use jf_primitives::circuit::{
     commitment::CommitmentGadget,
     elgamal::{ElGamalEncryptionGadget, ElGamalHybridCtxtVars, EncKeyVars},
-    schnorr_dsa::{SignatureGadget, SignatureVar, VerKeyVar},
+    signature::schnorr::{SignatureGadget, SignatureVar, VerKeyVar},
 };
 
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl AuditMemoVar {
 
     /// Obtain a bool variable indicating whether it's equal to another audit
     /// memo `audit_memo`.
-    pub(crate) fn is_equal(
+    pub(crate) fn check_equal(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
         audit_memo: &AuditMemoVar,
@@ -68,12 +68,13 @@ impl AuditMemoVar {
                 "the compared audit memo has different ciphertext length".to_string(),
             )));
         }
-        let mut is_equal = circuit.is_equal_point(&self.0.ephemeral, &audit_memo.0.ephemeral)?;
+        let mut check_equal =
+            circuit.check_equal_point(&self.0.ephemeral, &audit_memo.0.ephemeral)?;
         for (&left, &right) in self.0.symm_ctxts.iter().zip(audit_memo.0.symm_ctxts.iter()) {
-            let flag = circuit.is_equal(left, right)?;
-            is_equal = circuit.mul(is_equal, flag)?;
+            let flag = circuit.check_equal(left, right)?;
+            check_equal = circuit.mul(check_equal, flag)?;
         }
-        Ok(is_equal)
+        Ok(check_equal)
     }
 
     /// Derive audit memo by encrypting the content with auditor public key
@@ -173,12 +174,12 @@ impl RecordOpeningVar {
     }
 
     /// Return boolean indicating whether the record's asset code is dummy
-    pub(crate) fn is_asset_code_dummy(
+    pub(crate) fn check_asset_code_dummy(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
     ) -> Result<Variable, PlonkError> {
         let zero_if_dummy = circuit.add_constant(self.asset_code, &DUMMY_ASSET_CODE.0.neg())?;
-        circuit.is_zero(zero_if_dummy)
+        circuit.check_is_zero(zero_if_dummy)
     }
 }
 #[derive(Debug)]
@@ -256,7 +257,7 @@ impl AssetPolicyVar {
         let reveal_map_plus_reveal_threshold =
             circuit.add(self.reveal_map, self.reveal_threshold)?;
         let no_reveal_map_or_reveal_threshold =
-            circuit.is_zero(reveal_map_plus_reveal_threshold)?;
+            circuit.check_is_zero(reveal_map_plus_reveal_threshold)?;
         // TODO: implement LogicAnd gate for more than 2 variables after adding the new
         // selector for TurboPlonk CS
         circuit.logic_and_all(&[
@@ -283,16 +284,16 @@ impl AssetPolicyVar {
 
     /// Obtain a bool variable indicating whether `self` to equal to another
     /// policy (in terms of values).
-    pub(crate) fn is_equal_policy(
+    pub(crate) fn check_equal_policy(
         &self,
         circuit: &mut PlonkCircuit<BaseField>,
         policy: &AssetPolicyVar,
     ) -> Result<Variable, PlonkError> {
-        let a_eq = circuit.is_equal(self.reveal_map, policy.reveal_map)?;
-        let b_eq = circuit.is_equal_point(&self.auditor_pk.0, &policy.auditor_pk.0)?;
-        let c_eq = circuit.is_equal_point(&self.cred_pk.0, &policy.cred_pk.0)?;
-        let d_eq = circuit.is_equal_point(&self.freezer_pk, &policy.freezer_pk)?;
-        let e_eq = circuit.is_equal(self.reveal_threshold, policy.reveal_threshold)?;
+        let a_eq = circuit.check_equal(self.reveal_map, policy.reveal_map)?;
+        let b_eq = circuit.check_equal_point(&self.auditor_pk.0, &policy.auditor_pk.0)?;
+        let c_eq = circuit.check_equal_point(&self.cred_pk.0, &policy.cred_pk.0)?;
+        let d_eq = circuit.check_equal_point(&self.freezer_pk, &policy.freezer_pk)?;
+        let e_eq = circuit.check_equal(self.reveal_threshold, policy.reveal_threshold)?;
         // check are all true
         circuit.logic_and_all(&[a_eq, b_eq, c_eq, d_eq, e_eq])
     }
@@ -412,7 +413,7 @@ impl ExpirableCredVar {
             attrs,
         ]
         .concat();
-        SignatureGadget::<_, CurveParam>::is_valid_signature(
+        SignatureGadget::<_, CurveParam>::check_signature_validity(
             circuit,
             &self.issuer_pk,
             &msg,
@@ -555,7 +556,7 @@ mod tests {
     ////////////////////////////////////////////////////////////
 
     #[test]
-    fn test_is_equal_audit_memo() -> Result<(), PlonkError> {
+    fn test_check_equal_audit_memo() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
         let data: Vec<BaseField> = (0..10).map(|i| BaseField::from(i as u32)).collect();
         let mut data2 = data.clone();
@@ -573,21 +574,21 @@ mod tests {
         // different enc_rand
         let audit_memo_4 = AuditMemo(pk.encrypt(enc_rand_2, &data));
 
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_1, BaseField::one())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_2, BaseField::zero())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_3, BaseField::zero())?;
-        check_is_equal_audit_memo(&audit_memo_1, &audit_memo_4, BaseField::zero())?;
+        check_check_equal_audit_memo(&audit_memo_1, &audit_memo_1, BaseField::one())?;
+        check_check_equal_audit_memo(&audit_memo_1, &audit_memo_2, BaseField::zero())?;
+        check_check_equal_audit_memo(&audit_memo_1, &audit_memo_3, BaseField::zero())?;
+        check_check_equal_audit_memo(&audit_memo_1, &audit_memo_4, BaseField::zero())?;
 
         // should return error when compared to an audit memo with different format
         let audit_memo_5 = AuditMemo(pk.encrypt(enc_rand, &[]));
         assert!(
-            check_is_equal_audit_memo(&audit_memo_1, &audit_memo_5, BaseField::zero()).is_err()
+            check_check_equal_audit_memo(&audit_memo_1, &audit_memo_5, BaseField::zero()).is_err()
         );
 
         Ok(())
     }
 
-    fn check_is_equal_audit_memo(
+    fn check_check_equal_audit_memo(
         audit_memo_1: &AuditMemo,
         audit_memo_2: &AuditMemo,
         expect_equal: BaseField,
@@ -595,7 +596,7 @@ mod tests {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let audit_memo_1 = AuditMemoVar::new(&mut circuit, audit_memo_1)?;
         let audit_memo_2 = AuditMemoVar::new(&mut circuit, audit_memo_2)?;
-        let flag = audit_memo_1.is_equal(&mut circuit, &audit_memo_2)?;
+        let flag = audit_memo_1.check_equal(&mut circuit, &audit_memo_2)?;
 
         assert_eq!(circuit.witness(flag)?, expect_equal);
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
