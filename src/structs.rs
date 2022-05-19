@@ -108,7 +108,6 @@ impl From<&AssetCode> for BaseField {
 }
 
 /// Amount value type
-#[tagged_blob("AMOUNT_VALUE")]
 #[derive(
     Debug,
     Clone,
@@ -132,7 +131,13 @@ impl From<&AssetCode> for BaseField {
     PartialOrd,
     Ord,
     Sum,
+    Deserialize,
+    Serialize,
+    Display,
+    FromStr,
+    LowerHex,
 )]
+#[serde(from = "u128", into = "u128")]
 #[from(types(u64, u32, u8))]
 pub struct Amount(pub(crate) u128);
 
