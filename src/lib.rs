@@ -180,6 +180,7 @@ use ark_std::{boxed::Box, format, string::ToString, vec, vec::Vec};
 use errors::TxnApiError;
 use freeze::FreezeNote;
 use jf_plonk::{proof_system::structs::Proof, transcript::SolidityTranscript};
+use jf_primitives::signatures::{schnorr::SchnorrSignatureScheme, SignatureScheme};
 use jf_utils::tagged_blob;
 use mint::MintNote;
 use proof::{freeze::FreezeVerifyingKey, mint::MintVerifyingKey};
@@ -308,7 +309,7 @@ impl TransactionNote {
     ) -> Result<(), TxnApiError> {
         let digest = get_receiver_memos_digest(recv_memos)?;
         self.txn_memo_ver_key()
-            .verify(&[digest], sig)
+            .verify(&[digest], sig, SchnorrSignatureScheme::<CurveParam>::CS_ID)
             .map_err(TxnApiError::FailedReceiverMemoSignature)
     }
 
@@ -576,7 +577,7 @@ pub fn sign_receiver_memos(
     recv_memos: &[ReceiverMemo],
 ) -> Result<Signature, TxnApiError> {
     let digest = get_receiver_memos_digest(recv_memos)?;
-    Ok(keypair.sign(&[digest]))
+    Ok(keypair.sign(&[digest], SchnorrSignatureScheme::<CurveParam>::CS_ID))
 }
 
 #[cfg(test)]

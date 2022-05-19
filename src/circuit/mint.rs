@@ -142,7 +142,7 @@ impl MintCircuit {
         )?;
 
         // 3. Compare derived viewing_memo with that in the public input.
-        viewing_memo.is_equal(circuit, &derived_viewing_memo)
+        viewing_memo.check_equal(circuit, &derived_viewing_memo)
     }
 }
 
