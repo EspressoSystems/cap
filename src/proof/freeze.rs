@@ -360,9 +360,9 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let fee_keypair = UserKeyPair::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
-        let input_amounts = vec![Amount(20), Amount(30)];
-        let fee_input_amount = Amount(10);
-        let fee = Amount(5);
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let builder = FreezeParamsBuilder::new(
             2,
             &input_amounts,
@@ -403,7 +403,7 @@ mod test {
         );
 
         // negative fee
-        let bad_fee = fee_input_amount + Amount(2);
+        let bad_fee = fee_input_amount + Amount::from(2u64);
         let builder = FreezeParamsBuilder::new(
             2,
             &input_amounts,
@@ -432,9 +432,9 @@ mod test {
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 
-        let input_amounts = vec![Amount(20), Amount(30)];
-        let fee_input_amount = Amount(10);
-        let fee = Amount(5);
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
         let recv_memos_ver_key = KeyPair::generate(rng).ver_key();
@@ -464,10 +464,10 @@ mod test {
         .is_ok());
 
         // another instance
-        let fee_input_amount = Amount(rng.next_u64() as u128);
-        let amounts_2 = Amount(rng.next_u32() as u128);
-        let amounts_3 = Amount(rng.next_u32() as u128);
-        let fee = Amount(rng.gen_range(1..fee_input_amount.0));
+        let fee_input_amount = Amount::from(rng.next_u64() as u128);
+        let amounts_2 = Amount::from(rng.next_u32() as u128);
+        let amounts_3 = Amount::from(rng.next_u32() as u128);
+        let fee = Amount::from(rng.gen_range(1..fee_input_amount.0));
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
         let builder = FreezeParamsBuilder::new(

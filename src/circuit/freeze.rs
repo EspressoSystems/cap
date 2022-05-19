@@ -284,7 +284,7 @@ mod tests {
         let pub_input = FreezePublicInput {
             merkle_root: NodeValue::from_scalar(BaseField::from(20u8)),
             native_asset_code: AssetCode::native(),
-            fee: Amount(30u128),
+            fee: Amount::from(30u128),
             input_nullifiers,
             output_commitments,
         };
@@ -322,9 +322,9 @@ mod tests {
         let tree_depth = 2;
         let fee_keypair = UserKeyPair::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
-        let input_amounts = vec![Amount(20), Amount(30)];
-        let fee_input_amount = Amount(10);
-        let fee = Amount(5);
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let builder = FreezeParamsBuilder::new(
             tree_depth,
             &input_amounts,
@@ -339,7 +339,7 @@ mod tests {
         // wrong fee balance
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.fee = Amount(3);
+            bad_pub_input.fee = Amount::from(3u64);
             check_freezing_circuit(&witness, &bad_pub_input, false)?;
         }
 
@@ -360,7 +360,7 @@ mod tests {
         // inconsistent amount
         {
             let mut bad_witness = witness.clone();
-            bad_witness.output_ros[1].amount += Amount(1);
+            bad_witness.output_ros[1].amount += Amount::from(1u64);
             let pub_input = FreezePublicInput::from_witness(&bad_witness).unwrap();
             check_freezing_circuit(&bad_witness, &pub_input, false)?;
         }

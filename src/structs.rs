@@ -133,6 +133,7 @@ impl From<&AssetCode> for BaseField {
     Ord,
     Sum,
 )]
+#[from(types(u64, u32, u8))]
 pub struct Amount(pub(crate) u128);
 
 impl Amount {
@@ -485,7 +486,7 @@ impl AssetPolicy {
 
     /// True if `reveal_threshold` is not the default value, false otherwise
     pub fn is_reveal_threshold_set(&self) -> bool {
-        self.reveal_threshold != Amount(0)
+        self.reveal_threshold != Amount::from(0u64)
     }
 
     /// Set the auditor public key
@@ -917,7 +918,7 @@ impl RecordOpening {
         (
             Self::new(
                 rng,
-                Amount(0),
+                Amount::from(0u64),
                 AssetDefinition::dummy(),
                 pub_key,
                 freeze_flag,
@@ -1433,7 +1434,7 @@ impl AuditData {
             }
             let mut amount_bytes = [0u8; 16];
             amount_bytes.copy_from_slice(&big_int.to_bytes_le()[0..16]);
-            Some(Amount(u128::from_le_bytes(amount_bytes)))
+            Some(Amount::from(u128::from_le_bytes(amount_bytes)))
         } else {
             None
         };
@@ -1685,9 +1686,9 @@ mod test {
             let universal_param = universal_setup_for_staging(max_degree, rng)?;
             let (proving_key, ..) = proof::mint::preprocess(&universal_param, tree_depth)?;
 
-            let input_amount = Amount(10);
-            let fee = Amount(4);
-            let mint_amount = Amount(35);
+            let input_amount = Amount::from(10u64);
+            let fee = Amount::from(4u64);
+            let mint_amount = Amount::from(35u64);
             let issuer_keypair = UserKeyPair::generate(rng);
             let receiver_keypair = UserKeyPair::generate(rng);
             let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -1991,7 +1992,7 @@ mod test {
 
         let ro = RecordOpening::new(
             &mut rng,
-            Amount(23),
+            Amount::from(23u64),
             asset_def,
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -2016,7 +2017,7 @@ mod test {
             asset_def.policy.auditor_pk = AuditorPubKey::default();
             let ro = RecordOpening::new(
                 &mut rng,
-                Amount(23),
+                Amount::from(23u64),
                 asset_def.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,

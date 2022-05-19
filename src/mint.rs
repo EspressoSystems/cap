@@ -230,8 +230,8 @@ mod test {
         let (proving_key, verifying_key, _) =
             proof::mint::preprocess(&universal_param, tree_depth)?;
 
-        let input_amount = Amount(10);
-        let mint_amount = Amount(35);
+        let input_amount = Amount::from(10u64);
+        let mint_amount = Amount::from(35u64);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -239,7 +239,7 @@ mod test {
         // ====================================
         // zero fee
         // ====================================
-        let fee = Amount(0);
+        let fee = Amount::from(0u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -267,7 +267,7 @@ mod test {
         // ====================================
         // non-zero fee
         // ====================================
-        let fee = Amount(4);
+        let fee = Amount::from(4u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -340,7 +340,7 @@ mod test {
         // wrong fee > input amount
         {
             let mut bad_builder = builder.clone();
-            bad_builder.fee = bad_builder.fee_ro.amount + Amount(1);
+            bad_builder.fee = bad_builder.fee_ro.amount + Amount::from(1u64);
             assert!(bad_builder.build_mint_note(rng, &proving_key).is_err());
         }
 

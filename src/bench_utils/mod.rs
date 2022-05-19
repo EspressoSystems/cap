@@ -275,9 +275,9 @@ pub fn get_builder_freeze<'a>(
     num_inputs: usize,
     tree_depth: u8,
 ) -> FreezeParamsBuilder<'a> {
-    let input_amounts = vec![Amount(15_u128); num_inputs - 1];
-    let fee_input_amount = Amount(10);
-    let fee = Amount(5);
+    let input_amounts = vec![Amount::from(15_u128); num_inputs - 1];
+    let fee_input_amount = Amount::from(10u64);
+    let fee = Amount::from(5u64);
 
     FreezeParamsBuilder::new(
         tree_depth,
@@ -296,9 +296,9 @@ pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
     auditor_keypair: &'a AuditorKeyPair,
     tree_depth: u8,
 ) -> MintParamsBuilder<'a> {
-    let input_amount = Amount(10);
-    let fee = Amount(4);
-    let mint_amount = Amount(35);
+    let input_amount = Amount::from(10u64);
+    let fee = Amount::from(4u64);
+    let mint_amount = Amount::from(35u64);
 
     MintParamsBuilder::new(
         rng,
@@ -320,12 +320,12 @@ pub fn get_builder_transfer(
 ) -> TransferParamsBuilder {
     let cred_expiry = 9999;
 
-    let amount_input = Amount(1);
+    let amount_input = Amount::from(1u64);
     let amount_inputs = vec![amount_input; num_inputs - 1];
 
     // Ensure that "sum of input amounts == sum of output amounts"
-    let mut amount_outputs: Vec<Amount> = vec![Amount((num_inputs - 1) as u128)];
-    amount_outputs.extend(vec![Amount(0); num_outputs - 2].iter());
+    let mut amount_outputs: Vec<Amount> = vec![Amount::from((num_inputs - 1) as u128)];
+    amount_outputs.extend(vec![Amount::from(0u64); num_outputs - 2].iter());
 
     TransferParamsBuilder::new_non_native(
         num_inputs,
@@ -333,7 +333,7 @@ pub fn get_builder_transfer(
         Some(tree_depth),
         user_keypairs.iter().collect(),
     )
-    .set_input_amounts(Amount(30), &amount_inputs)
-    .set_output_amounts(Amount(29), &amount_outputs)
+    .set_input_amounts(Amount::from(30u64), &amount_inputs)
+    .set_output_amounts(Amount::from(29u64), &amount_outputs)
     .set_input_creds(cred_expiry)
 }

@@ -518,11 +518,11 @@ mod tests {
             .is_err());
         builder.output_ros = vec![]; // prune all output and reset
         let builder =
-            builder.set_output_amounts(19.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..]);
+            builder.set_output_amounts(19u64.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..]);
 
         // 3.invalid inputs/outputs
         let mut builder = builder;
-        builder.input_ros[0].amount += Amount(1);
+        builder.input_ros[0].amount += Amount::from(1u64);
         assert!(builder
             .build_transfer_note(
                 &mut prng,
@@ -531,7 +531,7 @@ mod tests {
                 extra_proof_bound_data.clone()
             )
             .is_err());
-        builder.input_ros[0].amount -= Amount(1);
+        builder.input_ros[0].amount -= Amount::from(1u64);
 
         // 4. inconsistent MT roots
         let mut mt_info = builder.input_acc_member_witnesses[0].clone();
@@ -595,8 +595,14 @@ mod tests {
                 Some(depth),
                 vec![&keypair; num_input],
             )
-            .set_input_amounts(Amount(30), &[Amount(20), Amount(10)])
-            .set_output_amounts(Amount(19), &[Amount(20), Amount(10)])
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(20u64), Amount::from(10u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(20u64), Amount::from(10u64)],
+            )
             .set_input_creds(cred_expiry)
             .update_input_asset_def(1, second_asset_def.clone())
             .update_output_asset_def(1, second_asset_def);
@@ -724,8 +730,8 @@ mod tests {
         let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
-        let fee_input = Amount(30);
-        let fee_chg = Amount(19);
+        let fee_input = Amount::from(30u64);
+        let fee_chg = Amount::from(19u64);
         let input_amounts = Amount::from_vec(&[10, 0, 20]);
         let output_amounts = Amount::from_vec(&[2, 3, 4, 5, 16]);
 

@@ -223,15 +223,15 @@ mod test {
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 
-        let input_amounts = vec![Amount(20), Amount(30)];
-        let fee_input_amount = Amount(10);
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
 
         // ====================================
         // zero fee
         // ====================================
-        let fee = Amount(0);
+        let fee = Amount::from(0u64);
 
         let builder = FreezeParamsBuilder::new(
             tree_depth,
@@ -247,7 +247,7 @@ mod test {
         // ====================================
         // non-zero fee
         // ====================================
-        let fee = Amount(5);
+        let fee = Amount::from(5u64);
 
         let builder = FreezeParamsBuilder::new(
             tree_depth,
@@ -302,7 +302,7 @@ mod test {
         {
             let bad_builder = builder
                 .clone()
-                .update_fee_input_amount(builder.fee - Amount(1));
+                .update_fee_input_amount(builder.fee - Amount::from(1u64));
             assert!(bad_builder.build_freeze_note(rng, &proving_key).is_err());
         }
 

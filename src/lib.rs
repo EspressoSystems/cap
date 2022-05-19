@@ -646,7 +646,7 @@ mod test {
         // The original fee amount 5 changes after changing the `rand()` functions in
         // `ParamBuilder`. Is there an API that returns the correct fee amount
         // automatically? TODO: replace this hardwired value
-        assert_eq!(fee, Amount(69_u128));
+        assert_eq!(fee, Amount::from(45_u128));
 
         // Overflow
         let txn = params.txns[0].clone();
@@ -656,7 +656,7 @@ mod test {
         };
 
         let mut v = v.unwrap();
-        v.aux_info.fee = Amount(u128::MAX);
+        v.aux_info.fee = Amount::from(u128::MAX);
         let mut txns = params.txns.clone();
         txns.push(TransactionNote::Transfer(v));
 
@@ -725,6 +725,8 @@ mod test {
             &verifying_keys
         )
         .is_err());
+        // TODO: this check will fail when all of the transactions are native, which
+        // happened with certain probability
         roots[0] = old_root_0;
         assert!(txn_batch_verify(
             &params.txns,

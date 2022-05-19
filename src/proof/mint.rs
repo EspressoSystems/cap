@@ -287,9 +287,9 @@ mod test {
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 2;
-        let input_amount = Amount(30);
-        let fee = Amount(10);
-        let mint_amount = Amount(15);
+        let input_amount = Amount::from(30u64);
+        let fee = Amount::from(10u64);
+        let mint_amount = Amount::from(15u64);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -312,7 +312,7 @@ mod test {
         );
 
         // negative fee should fail
-        let bad_fee = input_amount + Amount(1);
+        let bad_fee = input_amount + Amount::from(1u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -341,9 +341,9 @@ mod test {
         let universal_param = universal_setup_for_staging(max_degree, rng)?;
         let (proving_key, verifying_key, _) = mint::preprocess(&universal_param, tree_depth)?;
 
-        let input_amount = Amount(10);
-        let fee = Amount(4);
-        let mint_amount = Amount(35);
+        let input_amount = Amount::from(10u64);
+        let fee = Amount::from(4u64);
+        let mint_amount = Amount::from(35u64);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);
@@ -391,9 +391,9 @@ mod test {
         .is_err());
 
         // another instance
-        let input_amount = Amount(rng.next_u64() as u128);
+        let input_amount = Amount::from(rng.next_u64() as u128);
         let fee = rng.gen_range(1..input_amount.0).into();
-        let mint_amount = Amount(rng.next_u64() as u128);
+        let mint_amount = Amount::from(rng.next_u64() as u128);
         let issuer_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let auditor_keypair = AuditorKeyPair::generate(rng);

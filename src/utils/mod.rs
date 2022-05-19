@@ -202,7 +202,7 @@ mod tests {
 
         let ro_1 = RecordOpening::new(
             &mut rng,
-            23.into(),
+            23u64.into(),
             asset_def_native.clone(),
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -210,7 +210,7 @@ mod tests {
 
         let ro_2 = RecordOpening::new(
             &mut rng,
-            23.into(),
+            23u64.into(),
             asset_def_2.clone(),
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -218,7 +218,7 @@ mod tests {
 
         let ro_3 = RecordOpening::new(
             &mut rng,
-            23.into(),
+            23u64.into(),
             asset_def_3.clone(),
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -757,7 +757,7 @@ pub(crate) mod txn_helpers {
         if inputs
             .iter()
             .skip(1)
-            .any(|input| input.asset_def.is_dummy() && input.amount != Amount(0))
+            .any(|input| input.asset_def.is_dummy() && input.amount != Amount::from(0u32))
         {
             Err(TxnApiError::InvalidParameter(
                 "Dummy inputs must have 0 amount".to_string(),
@@ -806,7 +806,7 @@ pub(crate) mod txn_helpers {
 
             let ro_in_1 = RecordOpening::new(
                 &mut rng,
-                10.into(),
+                10u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -814,7 +814,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_1 = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -822,7 +822,7 @@ pub(crate) mod txn_helpers {
 
             let inputs = [&ro_in_1];
             let outputs = [&ro_out_1];
-            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 5.into());
+            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 5u64.into());
 
             // input amount is lower than output amount
             assert!(derive_fee(&outputs, &inputs).is_err());
@@ -830,7 +830,7 @@ pub(crate) mod txn_helpers {
             // Many records openings, all of which are native
             let ro_in_2 = RecordOpening::new(
                 &mut rng,
-                7.into(),
+                7u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -838,7 +838,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_2 = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -846,7 +846,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_3 = RecordOpening::new(
                 &mut rng,
-                6.into(),
+                6u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -854,7 +854,7 @@ pub(crate) mod txn_helpers {
 
             let inputs = [&ro_in_1, &ro_in_2];
             let outputs = [&ro_out_1, &ro_out_2, &ro_out_3];
-            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 1.into());
+            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 1u64.into());
 
             // input amount is lower than output amount
             assert!(derive_fee(&outputs, &inputs).is_err());
@@ -862,7 +862,7 @@ pub(crate) mod txn_helpers {
             // Many records openings, some of which are non native
             let ro_in_non_native = RecordOpening::new(
                 &mut rng,
-                7.into(),
+                7u64.into(),
                 asset_def_non_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -870,7 +870,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_non_native = RecordOpening::new(
                 &mut rng,
-                7.into(),
+                7u64.into(),
                 asset_def_non_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -878,7 +878,7 @@ pub(crate) mod txn_helpers {
 
             let inputs = [&ro_in_1, &ro_in_non_native];
             let outputs = [&ro_out_1, &ro_out_non_native];
-            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 5.into());
+            assert_eq!(derive_fee(&inputs, &outputs).unwrap(), 5u64.into());
 
             // input amount is lower than output amount
             assert!(derive_fee(&outputs, &inputs).is_err());
@@ -909,7 +909,7 @@ pub(crate) mod txn_helpers {
 
             let ro_in_non_native = RecordOpening::new(
                 &mut rng,
-                10.into(),
+                10u64.into(),
                 asset_def_non_native_1.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -917,7 +917,7 @@ pub(crate) mod txn_helpers {
 
             let ro_in_native = RecordOpening::new(
                 &mut rng,
-                10.into(),
+                10u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -926,7 +926,7 @@ pub(crate) mod txn_helpers {
             let ro_in_asset_1 = ro_in_non_native.clone();
             let ro_in_asset_2 = RecordOpening::new(
                 &mut rng,
-                10.into(),
+                10u64.into(),
                 asset_def_non_native_2.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -934,7 +934,7 @@ pub(crate) mod txn_helpers {
 
             let ro_in_non_native_bad_policy = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_freezer_key_non_null_tracer_key_null.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -942,7 +942,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_native = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_native.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -950,7 +950,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_non_native = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_non_native_1.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -958,7 +958,7 @@ pub(crate) mod txn_helpers {
 
             let ro_out_non_native_bad_policy = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_freezer_key_non_null_tracer_key_null.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
@@ -967,7 +967,7 @@ pub(crate) mod txn_helpers {
             let ro_out_asset_1 = ro_out_non_native.clone();
             let ro_out_asset_2 = RecordOpening::new(
                 &mut rng,
-                5.into(),
+                5u64.into(),
                 asset_def_non_native_2.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,

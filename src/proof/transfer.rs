@@ -231,7 +231,7 @@ impl<'a> TransferWitness<'a> {
         let asset_def = AssetDefinition::native();
         let input_secret = {
             let ro = RecordOpening {
-                amount: 0.into(),
+                amount: 0u64.into(),
                 asset_def: asset_def.clone(),
                 pub_key: Default::default(),
                 freeze_flag: Default::default(),
@@ -375,7 +375,7 @@ impl TransferPublicInput {
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for outputs.".to_string()))?;
 
-        let fee = Amount(u128::checked_sub(input_sum.0, output_sum.0).ok_or_else(|| {
+        let fee = Amount::from(u128::checked_sub(input_sum.0, output_sum.0).ok_or_else(|| {
             TxnApiError::InvalidParameter("The fee cannot be negative".to_string())
         })?);
 
@@ -484,8 +484,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
         let builder = TransferParamsBuilder::new_non_native(2, 6, None, user_keypairs)
-            .set_input_amounts(30.into(), &[25.into()])
-            .set_output_amounts(19.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..])
+            .set_input_amounts(30u64.into(), &[25u64.into()])
+            .set_output_amounts(19u64.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
 
@@ -525,8 +525,8 @@ mod test {
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
         let builder = TransferParamsBuilder::new_native(2, 3, None, user_keypairs)
-            .set_input_amounts(20.into(), &Amount::from_vec(&[10])[..])
-            .set_output_amounts(14.into(), &Amount::from_vec(&[4, 6])[..])
+            .set_input_amounts(20u64.into(), &Amount::from_vec(&[10])[..])
+            .set_output_amounts(14u64.into(), &Amount::from_vec(&[4, 6])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
         // check asset_def
@@ -543,8 +543,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
         let builder = TransferParamsBuilder::new_non_native(2, 3, None, user_keypairs)
-            .set_input_amounts(30.into(), &Amount::from_vec(&[10])[..])
-            .set_output_amounts(19.into(), &Amount::from_vec(&[4, 6])[..])
+            .set_input_amounts(30u64.into(), &Amount::from_vec(&[10])[..])
+            .set_output_amounts(19u64.into(), &Amount::from_vec(&[4, 6])[..])
             .set_input_creds(cred_expiry);
         let witness = builder.build_witness(rng);
         assert!(
@@ -562,7 +562,7 @@ mod test {
 
         // negative fee should fail
         let mut bad_witness = witness.clone();
-        bad_witness.output_record_openings[0].amount = 31.into();
+        bad_witness.output_record_openings[0].amount = 31u64.into();
         assert!(
             TransferPublicInput::from_witness(&bad_witness, valid_until).is_err(),
             "create public input from wrong witness with negative fee should fail"
@@ -570,7 +570,7 @@ mod test {
 
         // overflow total input amounts should fail
         let mut bad_witness = witness.clone();
-        bad_witness.input_secrets[1].ro.amount = Amount(u128::MAX - 1);
+        bad_witness.input_secrets[1].ro.amount = Amount::from(u128::MAX - 1);
         assert!(
             TransferPublicInput::from_witness(&bad_witness, valid_until).is_err(),
             "create public input from wrong witness with overflown total input amounts should fail"
@@ -578,7 +578,7 @@ mod test {
 
         // overflow total output amounts should fail
         let mut bad_witness = witness.clone();
-        bad_witness.output_record_openings[1].amount = Amount(u128::MAX - 13);
+        bad_witness.output_record_openings[1].amount = Amount::from(u128::MAX - 13);
         assert!(TransferPublicInput::from_witness(
             &bad_witness,
             valid_until,
@@ -616,8 +616,8 @@ mod test {
             Some(depth),
             user_keypairs,
         )
-        .set_input_amounts(30.into(), &Amount::from_vec(&[25])[..])
-        .set_output_amounts(19.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..])
+        .set_input_amounts(30u64.into(), &Amount::from_vec(&[25])[..])
+        .set_output_amounts(19u64.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..])
         .set_input_creds(cred_expiry);
         let witness_1 = builder.build_witness(rng);
         let pub_input_1 = TransferPublicInput::from_witness(&witness_1, valid_until)?;
@@ -655,8 +655,8 @@ mod test {
         let user_keypairs = vec![&user_keypair; 1];
         let builder =
             TransferParamsBuilder::new_native(num_input, num_output, Some(depth), user_keypairs)
-                .set_input_amounts(30.into(), &Amount::from_vec(&[])[..])
-                .set_output_amounts(13.into(), &Amount::from_vec(&[15])[..])
+                .set_input_amounts(30u64.into(), &Amount::from_vec(&[])[..])
+                .set_output_amounts(13u64.into(), &Amount::from_vec(&[15])[..])
                 .set_input_creds(cred_expiry);
         let witness_2 = builder.build_witness(rng);
         let pub_input_2 = TransferPublicInput::from_witness(&witness_2, valid_until)?;

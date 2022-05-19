@@ -413,7 +413,7 @@ mod tests {
             merkle_root: NodeValue::from_scalar(BaseField::from(10u8)),
             native_asset_code: AssetCode::native(),
             valid_until: 123u64,
-            fee: Amount(8u128),
+            fee: Amount::from(8u64),
             input_nullifiers: vec![Nullifier(BaseField::from(2u8)); 5],
             output_commitments: vec![RecordCommitment::from(&output_ros[0]); 4],
             audit_memo: AuditMemo::new_for_transfer_note(
@@ -445,9 +445,15 @@ mod tests {
 
         // transfer amount doesn't exceed the limit, the policy won't be applied
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs.clone())
-            .set_reveal_threshold(Amount(30))
-            .set_input_amounts(Amount(30), &[Amount(20), Amount(10)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_reveal_threshold(Amount::from(30u64))
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(20u64), Amount::from(10u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_input_creds(cred_expiry);
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
@@ -462,9 +468,15 @@ mod tests {
 
         // transfer amount exceeds the limit, the policy will be applied
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs.clone())
-            .set_reveal_threshold(Amount(20))
-            .set_input_amounts(Amount(30), &[Amount(20), Amount(10)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_reveal_threshold(Amount::from(20u64))
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(20u64), Amount::from(10u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_input_creds(cred_expiry);
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
@@ -492,9 +504,15 @@ mod tests {
 
         // no threshold policy, tracing policy is always applied
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
-            .set_reveal_threshold(Amount(0))
-            .set_input_amounts(Amount(1), &[Amount(2), Amount(1)])
-            .set_output_amounts(Amount(1), &[Amount(1), Amount(2)])
+            .set_reveal_threshold(Amount::from(0u64))
+            .set_input_amounts(
+                Amount::from(1u64),
+                &[Amount::from(2u64), Amount::from(1u64)],
+            )
+            .set_output_amounts(
+                Amount::from(1u64),
+                &[Amount::from(1u64), Amount::from(2u64)],
+            )
             .set_input_creds(cred_expiry);
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
@@ -529,8 +547,14 @@ mod tests {
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 3];
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
-            .set_input_amounts(Amount(30), &[Amount(20), Amount(10)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(20u64), Amount::from(10u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_input_creds(cred_expiry);
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
@@ -571,10 +595,10 @@ mod tests {
         let builder = builder.update_input_asset_def(0, transfer_asset_def);
 
         // bad path: wrong balance
-        let builder = builder.update_input_amount(0, Amount(100));
+        let builder = builder.update_input_amount(0, Amount::from(100u64));
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, false)?;
-        let builder = builder.update_input_amount(0, Amount(20));
+        let builder = builder.update_input_amount(0, Amount::from(20u64));
 
         // bad path: wrong output commitment
         let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
@@ -593,7 +617,7 @@ mod tests {
 
         // bad path: wrong txn fee
         let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
-        pub_input.fee = Amount(21u128);
+        pub_input.fee = Amount::from(21u128);
         check_transfer_circuit(&witness, &pub_input, false)?;
 
         // bad path: expired credential
@@ -634,8 +658,14 @@ mod tests {
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
-            .set_input_amounts(Amount(30), &[Amount(30), Amount(0)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(30u64), Amount::from(0u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_input_creds(cred_expiry);
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, true)?;
@@ -650,19 +680,31 @@ mod tests {
         // test 1: dummy record with non-zero amount should fail
         let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
         let mut builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
-            .set_input_amounts(Amount(30), &[Amount(30), Amount(0)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(30u64), Amount::from(0u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_dummy_input_record(1)
             .set_input_creds(cred_expiry);
-        builder.input_ros[2].amount = Amount(10); // need to update amount AFTER setting dummy input
+        builder.input_ros[2].amount = Amount::from(10u64); // need to update amount AFTER setting dummy input
         let (witness, pub_input) = create_witness_and_pub_input(&builder);
         check_transfer_circuit(&witness, &pub_input, false)?;
 
         // test 2: dummy record with 0 amount should pass
         let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
-            .set_input_amounts(Amount(30), &[Amount(30), Amount(0)])
-            .set_output_amounts(Amount(19), &[Amount(17), Amount(13)])
+            .set_input_amounts(
+                Amount::from(30u64),
+                &[Amount::from(30u64), Amount::from(0u64)],
+            )
+            .set_output_amounts(
+                Amount::from(19u64),
+                &[Amount::from(17u64), Amount::from(13u64)],
+            )
             .set_dummy_input_record(1)
             .set_input_creds(cred_expiry);
         let (mut witness, mut pub_input) = create_witness_and_pub_input(&builder);
