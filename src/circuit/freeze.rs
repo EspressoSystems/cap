@@ -234,7 +234,7 @@ impl FreezePubInputVar {
     ) -> Result<Self, PlonkError> {
         let merkle_root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
-        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee))?;
+        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee.0))?;
         let input_nullifiers = pub_input
             .input_nullifiers
             .iter()
@@ -261,7 +261,8 @@ mod tests {
     use crate::{
         keys::{FreezerKeyPair, UserKeyPair, UserPubKey},
         structs::{
-            AssetCode, AssetDefinition, AssetPolicy, FreezeFlag, Nullifier, RecordCommitment,
+            Amount, AssetCode, AssetDefinition, AssetPolicy, FreezeFlag, Nullifier,
+            RecordCommitment,
         },
         utils::params_builder::FreezeParamsBuilder,
         BaseField, NodeValue,
@@ -283,7 +284,7 @@ mod tests {
         let pub_input = FreezePublicInput {
             merkle_root: NodeValue::from_scalar(BaseField::from(20u8)),
             native_asset_code: AssetCode::native(),
-            fee: 30u64,
+            fee: Amount::from(30u128),
             input_nullifiers,
             output_commitments,
         };
@@ -321,9 +322,9 @@ mod tests {
         let tree_depth = 2;
         let fee_keypair = UserKeyPair::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
-        let input_amounts = vec![20, 30];
-        let fee_input_amount = 10;
-        let fee = 5;
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let builder = FreezeParamsBuilder::new(
             tree_depth,
             &input_amounts,
@@ -338,7 +339,7 @@ mod tests {
         // wrong fee balance
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.fee = 3;
+            bad_pub_input.fee = Amount::from(3u64);
             check_freezing_circuit(&witness, &bad_pub_input, false)?;
         }
 
@@ -359,7 +360,7 @@ mod tests {
         // inconsistent amount
         {
             let mut bad_witness = witness.clone();
-            bad_witness.output_ros[1].amount += 1;
+            bad_witness.output_ros[1].amount += Amount::from(1u64);
             let pub_input = FreezePublicInput::from_witness(&bad_witness).unwrap();
             check_freezing_circuit(&bad_witness, &pub_input, false)?;
         }

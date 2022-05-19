@@ -20,7 +20,7 @@ use crate::{
     freeze::FreezeNoteInput,
     keys::{FreezerKeyPair, FreezerPubKey, UserKeyPair},
     proof::UniversalParam,
-    structs::{AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
+    structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
     AccMemberWitness, BaseField, MerkleTree, NodeValue, PairingEngine, VerKey,
 };
 use ark_serialize::*;
@@ -247,7 +247,7 @@ impl<'a> FreezeWitness<'a> {
 pub(crate) struct FreezePublicInput {
     pub(crate) merkle_root: NodeValue,
     pub(crate) native_asset_code: AssetCode,
-    pub(crate) fee: u64,
+    pub(crate) fee: Amount,
     pub(crate) input_nullifiers: Vec<Nullifier>,
     pub(crate) output_commitments: Vec<RecordCommitment>,
 }
@@ -329,7 +329,7 @@ impl FreezePublicInput {
         let mut result = vec![
             self.merkle_root.to_scalar(),
             self.native_asset_code.0,
-            BaseField::from(self.fee),
+            BaseField::from(self.fee.0),
         ];
         for nullifier in &self.input_nullifiers {
             result.push(nullifier.0);
@@ -348,6 +348,7 @@ mod test {
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
         proof::{freeze, universal_setup_for_staging},
+        structs::Amount,
         utils::params_builder::FreezeParamsBuilder,
         KeyPair,
     };
@@ -359,9 +360,9 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let fee_keypair = UserKeyPair::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
-        let input_amounts = vec![20, 30];
-        let fee_input_amount = 10;
-        let fee = 5;
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let builder = FreezeParamsBuilder::new(
             2,
             &input_amounts,
@@ -402,7 +403,7 @@ mod test {
         );
 
         // negative fee
-        let bad_fee = fee_input_amount + 2;
+        let bad_fee = fee_input_amount + Amount::from(2u64);
         let builder = FreezeParamsBuilder::new(
             2,
             &input_amounts,
@@ -431,9 +432,9 @@ mod test {
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 
-        let input_amounts = vec![20, 30];
-        let fee_input_amount = 10;
-        let fee = 5;
+        let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
+        let fee_input_amount = Amount::from(10u64);
+        let fee = Amount::from(5u64);
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
         let recv_memos_ver_key = KeyPair::generate(rng).ver_key();
@@ -463,10 +464,10 @@ mod test {
         .is_ok());
 
         // another instance
-        let fee_input_amount = rng.next_u32() as u64;
-        let amounts_2 = rng.next_u32() as u64;
-        let amounts_3 = rng.next_u32() as u64;
-        let fee = rng.gen_range(1..fee_input_amount);
+        let fee_input_amount = Amount::from(rng.next_u64() as u128);
+        let amounts_2 = Amount::from(rng.next_u32() as u128);
+        let amounts_3 = Amount::from(rng.next_u32() as u128);
+        let fee = Amount::from(rng.gen_range(1..fee_input_amount.0));
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
         let builder = FreezeParamsBuilder::new(

@@ -31,7 +31,7 @@ use crate::{
     },
     sign_receiver_memos,
     structs::{
-        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
+        Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
         ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, NoteType, ReceiverMemo,
         RecordOpening, RevealMap, TxnFeeInfo,
     },
@@ -432,7 +432,7 @@ impl<'a> TransferParamsBuilder<'a> {
         self.refresh_merkle_root()
     }
 
-    pub(crate) fn set_reveal_threshold(mut self, reveal_threshold: u64) -> Self {
+    pub(crate) fn set_reveal_threshold(mut self, reveal_threshold: Amount) -> Self {
         assert!(
             self.transfer_asset_def.is_some(),
             "reveal_threshold cannot be set on native asset"
@@ -478,7 +478,7 @@ impl<'a> TransferParamsBuilder<'a> {
     ///   overall left over amount
     /// * `amounts` - list of input amounts (the first amount corresponds to the
     ///   native asset)
-    pub fn set_input_amounts(mut self, fee_input: u64, amounts: &[u64]) -> Self {
+    pub fn set_input_amounts(mut self, fee_input: Amount, amounts: &[Amount]) -> Self {
         assert!(self.input_ros.is_empty(), "Input records already set");
         assert_eq!(
             amounts.len() + 1,
@@ -521,7 +521,7 @@ impl<'a> TransferParamsBuilder<'a> {
     /// Define the outputs amounts of a Transfer note
     /// * `amounts` - list of input amounts (the first amount corresponds to the
     ///   native asset)
-    pub fn set_output_amounts(mut self, fee_chg: u64, amounts: &[u64]) -> Self {
+    pub fn set_output_amounts(mut self, fee_chg: Amount, amounts: &[Amount]) -> Self {
         assert!(self.output_ros.is_empty(), "Output records already set");
         assert_eq!(
             amounts.len() + 1,
@@ -646,7 +646,7 @@ impl<'a> TransferParamsBuilder<'a> {
     pub(crate) fn set_dummy_input_record(mut self, index: usize) -> Self {
         assert!(index < self.input_ros.len());
         self.input_ros[index + 1].asset_def = AssetDefinition::dummy(); // first position is reserved for input fee
-        self.input_ros[index + 1].amount = 0;
+        self.input_ros[index + 1].amount = Amount::from(0u64);
         // self.input_ros[index + 1].pub_key.address = Default::default();
         self.refresh_merkle_root()
     }
@@ -666,18 +666,18 @@ impl<'a> TransferParamsBuilder<'a> {
         self
     }
 
-    pub(crate) fn update_fee_input_amount(mut self, amount: u64) -> Self {
+    pub(crate) fn update_fee_input_amount(mut self, amount: Amount) -> Self {
         self.input_ros[0].amount = amount;
         self.refresh_merkle_root()
     }
 
-    pub(crate) fn update_input_amount(mut self, index: usize, amount: u64) -> Self {
+    pub(crate) fn update_input_amount(mut self, index: usize, amount: Amount) -> Self {
         assert!(index < self.input_ros.len());
         self.input_ros[index + 1].amount = amount;
         self.refresh_merkle_root()
     }
 
-    /// randomly generate/prepare a parameter builder with 50% chance
+    /// randomly generate/prepare a parameter builder with 20% chance
     /// transferring native asset type.
     pub(crate) fn rand<R>(
         rng: &mut R,
@@ -695,16 +695,17 @@ impl<'a> TransferParamsBuilder<'a> {
         let cred_expiry = rng.gen_range(valid_until + 1..2000);
         // guarantee: fee change < fee, the rest reserve balances
         let (fee_input, input_amounts, fee_chg, output_amounts) = {
-            let fee: u64 = rng.gen_range(1..20);
-            let fee_change = rng.gen_range(1..=fee);
-            let transfer_amount =
-                rng.gen_range(1..50) * (num_input as u64 - 1) * (num_output as u64 - 1);
-            let input_amounts = vec![transfer_amount / (num_input as u64 - 1); num_input - 1];
-            let output_amounts = vec![transfer_amount / (num_output as u64 - 1); num_output - 1];
+            let fee = Amount::from(rng.gen_range(1..20) as u64);
+            let fee_change = Amount::from(rng.gen_range(1..=fee.0));
+            let transfer_amount = Amount::from(
+                rng.gen_range(1..50) * (num_input as u128 - 1) * (num_output as u128 - 1) as u128,
+            );
+            let input_amounts = vec![transfer_amount / (num_input as u128 - 1); num_input - 1];
+            let output_amounts = vec![transfer_amount / (num_output as u128 - 1); num_output - 1];
             (fee, input_amounts, fee_change, output_amounts)
         };
 
-        let builder = if rng.gen_bool(0.5) {
+        let builder = if rng.gen_bool(0.2) {
             Self::new_native(num_input, num_output, tree_depth, user_keypairs)
         } else {
             Self::new_non_native(num_input, num_output, tree_depth, user_keypairs)
@@ -904,7 +905,7 @@ pub struct MintParamsBuilder<'a> {
     tree_depth: u8,
     pub(crate) issuer_keypair: &'a UserKeyPair,
     pub(crate) fee_ro: RecordOpening,
-    pub(crate) fee: u64,
+    pub(crate) fee: Amount,
     pub(crate) mint_ro: RecordOpening,
     pub(crate) ac_seed: AssetCodeSeed,
     pub(crate) ac_description: Vec<u8>,
@@ -920,9 +921,9 @@ impl<'a> MintParamsBuilder<'a> {
     pub fn new<R>(
         rng: &mut R,
         tree_depth: u8,
-        input_amount: u64,
-        fee: u64,
-        mint_amount: u64,
+        input_amount: Amount,
+        fee: Amount,
+        mint_amount: Amount,
         issuer_keypair: &'a UserKeyPair,
         receiver_keypair: &'a UserKeyPair,
         auditor_keypair: &'a AuditorKeyPair,
@@ -998,7 +999,7 @@ impl<'a> MintParamsBuilder<'a> {
         let fee_chg = if self.fee_ro.amount >= self.fee {
             self.fee_ro.amount - self.fee
         } else {
-            u64::MAX // to cause error later on
+            Amount::from(u128::MAX) // to cause error later on
         };
         let chg_ro = RecordOpening::new(
             rng,
@@ -1096,9 +1097,9 @@ impl<'a> MintParamsBuilder<'a> {
     where
         R: RngCore + CryptoRng,
     {
-        let input_amount: u64 = rng.gen_range(1..50);
-        let fee = rng.gen_range(1..=input_amount);
-        let mint_amount: u64 = rng.gen_range(1..100);
+        let input_amount = Amount::from(rng.gen_range(1..50) as u64);
+        let fee = Amount::from(rng.gen_range(1..=input_amount.0) as u64);
+        let mint_amount = Amount::from(rng.gen_range(1..100) as u64);
         Self::new(
             rng,
             tree_depth,
@@ -1118,16 +1119,16 @@ pub struct FreezeParamsBuilder<'a> {
     tree_depth: u8,
     pub(crate) inputs: Vec<FreezeNoteInput<'a>>,
     pub(crate) fee_input: FeeInput<'a>,
-    pub(crate) fee: u64,
+    pub(crate) fee: Amount,
 }
 
 impl<'a> FreezeParamsBuilder<'a> {
     /// Instantiate a new FreezeParamsBuilder
     pub fn new(
         tree_depth: u8,
-        input_amounts: &[u64],
-        fee_input_amount: u64,
-        fee: u64,
+        input_amounts: &[Amount],
+        fee_input_amount: Amount,
+        fee: Amount,
         fee_keypair: &'a UserKeyPair,
         freezing_keypairs: Vec<&'a FreezerKeyPair>,
     ) -> Self {
@@ -1200,10 +1201,10 @@ impl<'a> FreezeParamsBuilder<'a> {
         assert!(num_input > 0, "require at least one input for freezing");
         let mut input_amounts = vec![];
         for _ in 0..num_input {
-            input_amounts.push(rng.gen_range(1..50));
+            input_amounts.push(Amount::from(rng.gen_range(1..50) as u64));
         }
-        let fee_input_amount = rng.gen_range(1..10);
-        let fee = rng.gen_range(1..=fee_input_amount);
+        let fee_input_amount = Amount::from(rng.gen_range(1..10) as u64);
+        let fee = Amount::from(rng.gen_range(1..=fee_input_amount.0) as u64);
         let builder = Self::new(
             tree_depth,
             &input_amounts,
@@ -1273,7 +1274,7 @@ impl<'a> FreezeParamsBuilder<'a> {
         self
     }
 
-    pub(crate) fn update_fee_input_amount(mut self, fee_amount: u64) -> Self {
+    pub(crate) fn update_fee_input_amount(mut self, fee_amount: Amount) -> Self {
         self.fee_input.ro.amount = fee_amount;
         self.refresh_merkle_root();
         self
@@ -1390,7 +1391,7 @@ impl AssetPolicy {
             cred_pk: CredIssuerKeyPair::generate(rng).pub_key(),
             freezer_pk: FreezerKeyPair::generate(rng).pub_key(),
             reveal_map: RevealMap::rand_for_test(rng),
-            reveal_threshold: rng.next_u32() as u64,
+            reveal_threshold: Amount::from(rng.next_u64() as u128),
         }
     }
 }
@@ -1398,7 +1399,7 @@ impl AssetPolicy {
 impl RecordOpening {
     /// Create a random record opening. Only used for testing.
     pub fn rand_for_test<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
-        let amount = rng.next_u32() as u64; // In order to avoid possible u64 overflows
+        let amount = Amount::from(rng.next_u64() as u128); // In order to avoid possible u128 overflows
         let asset_def = AssetDefinition::rand_for_test(rng);
         let pub_key = UserKeyPair::generate(rng).pub_key();
         let freeze_flag = FreezeFlag::Unfrozen;

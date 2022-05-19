@@ -38,7 +38,7 @@ use jf_cap::{
     },
     sign_receiver_memos,
     structs::{
-        AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditData, BlindFactor,
+        Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, AuditData, BlindFactor,
         ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, Nullifier, ReceiverMemo,
         RecordCommitment, RecordOpening, TxnFeeInfo,
     },
@@ -89,7 +89,7 @@ impl LedgerStateMock {
         &mut self,
         rng: &mut R,
         owner_pub_key: UserPubKey,
-        amount: u64,
+        amount: Amount,
     ) -> (RecordOpening, u64) {
         let ro = RecordOpening::new(
             rng,
@@ -110,7 +110,7 @@ impl LedgerStateMock {
         &mut self,
         rng: &mut R,
         owner_pub_key: UserPubKey,
-        amount: u64,
+        amount: Amount,
         asset_definition: AssetDefinition,
     ) -> (RecordOpening, u64) {
         let ro = RecordOpening::new(
@@ -799,7 +799,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: u64,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, false)
@@ -810,7 +810,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: u64,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, true)
@@ -821,7 +821,7 @@ impl<'a> FreezerMock<'a> {
         &mut self,
         rng: &mut R,
         user: &UserAddress,
-        fee: u64,
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
         freeze: bool, // true: freeze, false: unfreeze
     ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
@@ -1002,10 +1002,10 @@ impl<'a> SimpleUserWalletMock<'a> {
     }
 
     /// computes spendable funds for given asset code
-    pub fn available_funds(&self, asset_code: &AssetCode) -> u64 {
+    pub fn available_funds(&self, asset_code: &AssetCode) -> Amount {
         match self.unspent_records.get(asset_code) {
             Some(records) => records.iter().map(|(record, _uid)| record.amount).sum(),
-            None => 0u64,
+            None => 0u128.into(),
         }
     }
 
@@ -1142,7 +1142,7 @@ impl<'a> SimpleUserWalletMock<'a> {
 
     /// find a record and corresponding uid on the native asset type with enough
     /// funds to pay transaction fee
-    fn find_record_for_fee(&self, fee: u64) -> Result<(RecordOpening, u64)> {
+    fn find_record_for_fee(&self, fee: Amount) -> Result<(RecordOpening, u64)> {
         let unspent_native_assets = self
             .unspent_records
             .get(&AssetDefinition::native().code)
@@ -1164,10 +1164,10 @@ impl<'a> SimpleUserWalletMock<'a> {
     fn find_records(
         &self,
         asset_code: &AssetCode,
-        amount: u64,
-    ) -> Result<(Vec<(RecordOpening, u64)>, u64)> {
+        amount: Amount,
+    ) -> Result<(Vec<(RecordOpening, u64)>, Amount)> {
         let mut result = vec![];
-        let mut current_amount = 0u64;
+        let mut current_amount: Amount = 0u128.into();
         let unspent_records = self
             .unspent_records
             .get(asset_code)
@@ -1193,13 +1193,13 @@ impl<'a> SimpleUserWalletMock<'a> {
     pub fn spend_native<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        output_addresses_and_amounts: &[(UserPubKey, u64)],
-        fee: u64,
+        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
-        let total_output_amount: u64 = output_addresses_and_amounts
+        let total_output_amount: Amount = output_addresses_and_amounts
             .iter()
-            .fold(0, |acc, (_, amount)| acc + amount)
+            .fold(0u64.into(), |acc: Amount, (_, amount)| acc + *amount)
             + fee;
 
         // find input records of the asset type to spent
@@ -1301,8 +1301,8 @@ impl<'a> SimpleUserWalletMock<'a> {
         &mut self,
         rng: &mut R,
         asset_def: &AssetDefinition,
-        output_addresses_and_amounts: &[(UserPubKey, u64)],
-        fee: u64,
+        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        fee: Amount,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
         assert_ne!(
@@ -1310,9 +1310,9 @@ impl<'a> SimpleUserWalletMock<'a> {
             AssetDefinition::native(),
             "call `spend_native()` instead"
         );
-        let total_output_amount: u64 = output_addresses_and_amounts
+        let total_output_amount: Amount = output_addresses_and_amounts
             .iter()
-            .fold(0, |acc, (_, amount)| acc + amount);
+            .fold(0u64.into(), |acc, (_, amount)| acc + *amount);
 
         let (fee_ro, fee_uid) = self.find_record_for_fee(fee)?;
         {
@@ -1386,7 +1386,7 @@ impl<'a> SimpleUserWalletMock<'a> {
             ));
         }
         // change in the asset type being transfered (not fee change)
-        if change > 0 {
+        if change > 0u64.into() {
             let change_ro = RecordOpening::new(
                 rng,
                 change,
@@ -1538,9 +1538,9 @@ impl<'a> AssetIssuerMock<'a> {
     pub fn mint<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        fee: u64,
+        fee: Amount,
         asset_code: &AssetCode,
-        amount: u64,
+        amount: Amount,
         owner: UserPubKey,
         merkle_tree_oracle: &MerkleTree<BaseField>,
     ) -> Result<(MintNote, Signature<CurveParam>, ReceiverMemo)> {
@@ -1624,7 +1624,7 @@ pub fn example_native_asset_transfer() {
     let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let receiver_pub_key = receiver_wallet.pub_key();
 
-    let mint_amount = 10;
+    let mint_amount = 10u64.into();
     let (record_opening_in, uid) =
         ledger_state.mock_mint_native_asset(rng, sender_pub_key.clone(), mint_amount);
     sender_wallet.add_record_opening(record_opening_in, uid);
@@ -1633,8 +1633,8 @@ pub fn example_native_asset_transfer() {
         mint_amount
     );
 
-    let fee = 1;
-    let change_back = 2;
+    let fee = 1u64.into();
+    let change_back = 2u64.into();
     let (xfr_note, recv_memos, recv_memos_sig) = sender_wallet
         .spend_native(
             rng,
@@ -1682,7 +1682,7 @@ pub fn example_native_asset_transfer() {
     let (xfr_note2, recv_memos2, _recv_memos_sig2) = receiver_wallet
         .spend_native(
             rng,
-            &[(sender_pub_key, mint_amount - 2 * fee - change_back)],
+            &[(sender_pub_key, mint_amount - fee - fee - change_back)],
             fee,
             &ledger_state.mt,
         )
@@ -1699,10 +1699,13 @@ pub fn example_native_asset_transfer() {
     sender_wallet.scan_txn(&txn2, &recv_memos2, uid_offset);
     assert_eq!(
         sender_wallet.available_funds(&AssetCode::native()),
-        mint_amount - 2 * fee
+        mint_amount - fee - fee
     );
     receiver_wallet.scan_txn(&txn2, &recv_memos2, uid_offset);
-    assert_eq!(receiver_wallet.available_funds(&AssetCode::native()), 0);
+    assert_eq!(
+        receiver_wallet.available_funds(&AssetCode::native()),
+        0u64.into()
+    );
 }
 
 /// This tests shows how to generate and verify transfer notes transferring non
@@ -1729,8 +1732,8 @@ pub fn example_non_native_asset_transfer() {
     let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let recv_pub_key = receiver_wallet.pub_key();
     assert_ne!(recv_pub_key, sender_wallet.pub_key());
-    let native_amount = 10;
-    let non_native_amount = 15;
+    let native_amount = 10u64.into();
+    let non_native_amount = 15u64.into();
 
     let (asset_code, ..) = AssetCode::random(rng);
     let policy = AssetPolicy::default();
@@ -1748,7 +1751,7 @@ pub fn example_non_native_asset_transfer() {
     );
     sender_wallet.add_record_opening(record_opening_in, uid);
 
-    let fee = 2;
+    let fee = 2u64.into();
     let (xfr_note, recv_memos, recv_memos_sig) = sender_wallet
         .spend_non_native(
             rng,
@@ -1818,8 +1821,8 @@ pub fn example_test_traced_asset_transfer() {
     let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let recv_pub_key = receiver_wallet.pub_key();
-    let native_amount = 10;
-    let non_native_amount = 15;
+    let native_amount = 10u64.into();
+    let non_native_amount = 15u64.into();
 
     let auditor_keypair = AuditorKeyPair::generate(rng);
     let policy = AssetPolicy::default()
@@ -1842,7 +1845,7 @@ pub fn example_test_traced_asset_transfer() {
     );
     sender_wallet.add_record_opening(record_opening_in.clone(), uid);
 
-    let fee = 2;
+    let fee = 2u64.into();
     let (xfr_note, recv_memos, recv_memos_sig) = sender_wallet
         .spend_non_native(
             rng,
@@ -1931,8 +1934,8 @@ pub fn example_traced_non_native_asset_with_credentials() {
     let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
     let recv_pub_key = receiver_wallet.pub_key();
-    let native_amount = 10;
-    let non_native_amount = 15;
+    let native_amount = 10u64.into();
+    let non_native_amount = 15u64.into();
 
     let auditor_keypair = AuditorKeyPair::generate(rng);
     let cred_issuer_keypair = CredIssuerKeyPair::generate(rng);
@@ -1980,7 +1983,7 @@ pub fn example_traced_non_native_asset_with_credentials() {
     );
     sender_wallet.add_record_opening(record_opening_in.clone(), uid);
 
-    let fee = 2;
+    let fee = 2u64.into();
     let (xfr_note, recv_memos, recv_memos_sig) = sender_wallet
         .spend_non_native(
             rng,
@@ -2045,7 +2048,7 @@ fn check_transfer_audit_data(
     data: &AuditData,
     expected_code: AssetCode,
     expected_user_address: Option<UserAddress>,
-    expected_amount: Option<u64>,
+    expected_amount: Option<Amount>,
     expected_blind_factor: Option<BlindFactor>,
     expected_attributes: Vec<Option<IdentityAttribute>>,
 ) {
@@ -2065,7 +2068,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // setting up wallets
     let mut senders_wallets = vec![];
-    let amounts = [10u64, 20, 30, 40];
+    let amounts = Amount::from_vec(&[10, 20, 30, 40]);
     for _ in amounts.iter() {
         let user_wallet = SimpleUserWalletMock::generate(rng, &srs);
         senders_wallets.push(user_wallet);
@@ -2081,7 +2084,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // generate set of xfr_notes
     let mut xfr_notes = vec![];
-    let fee = 1;
+    let fee = Amount::from(1u128);
     for (wallet, amount) in senders_wallets.iter_mut().zip(amounts.iter()) {
         let (xfr_note, _recv_memos, _recv_memos_sig) = wallet
             .spend_native(
@@ -2129,7 +2132,7 @@ fn example_fee_collection_and_batch_verification() {
     );
     assert_eq!(
         block_proposer.wallet.available_funds(&AssetCode::native()),
-        fee * (amounts.len() as u64)
+        fee * (amounts.len() as u128)
     );
 }
 
@@ -2146,16 +2149,16 @@ fn example_mint() {
     let owner_pub_key = owner_wallet.pub_key();
     // initialize the wallet with some native asset to be used to pay txn fee
     {
-        let amount = 10;
+        let amount = 10u64.into();
         let (init_balance_ro, uid) =
             ledger_state.mock_mint_native_asset(rng, asset_issuer.wallet.pub_key(), amount);
         asset_issuer.wallet.add_record_opening(init_balance_ro, uid);
     }
 
     // issue/mint a new asset
-    let mint_amount: u64 = 1000000;
+    let mint_amount = 1000000u64.into();
     let asset_code = asset_issuer.new_asset_definition(rng, b"BankX USD", AssetPolicy::default());
-    let fee = 1;
+    let fee = 1u64.into();
     let (mint_note, _sig, fee_chg_recv_memo) = asset_issuer
         .mint(
             rng,
@@ -2216,8 +2219,8 @@ fn example_freeze() {
     // setting up wallets
     let mut user1 = SimpleUserWalletMock::generate(rng, &srs); // sender
     let mut user2 = SimpleUserWalletMock::generate(rng, &srs); // receiver
-    let native_amount = 10;
-    let non_native_amount = 5;
+    let native_amount = 10u64.into();
+    let non_native_amount = 5u64.into();
 
     // set up freezer
     let (asset_code, _) = AssetCode::random(rng);
@@ -2252,7 +2255,7 @@ fn example_freeze() {
     let mut uid_offset = ledger_state.next_uid();
 
     // user1  transfer freezable asset to user2
-    let fee = 1;
+    let fee = 1u64.into();
     let (xfr, recv_memos, _sig) = user1
         .spend_non_native(
             rng,
@@ -2293,13 +2296,18 @@ fn example_freeze() {
         .unwrap();
     check_freezer_status(&freezer, native_amount, &user2, 1, 0, 0, 0);
     // user2's funds available after scanning block
-    assert_eq!(user2.available_funds(&asset_code), 0);
+    assert_eq!(user2.available_funds(&asset_code), 0u64.into());
     user2.scan_block(&block, &[&recv_memos], prev_uid_offset);
     assert_eq!(user2.available_funds(&asset_code), non_native_amount);
 
     // freezer freezes user2 freezable records
     let (freeze_note, recv_memos, _sig) = freezer
-        .freeze_user(rng, &user2.pub_key().address(), fee, &ledger_state.mt)
+        .freeze_user(
+            rng,
+            &user2.pub_key().address(),
+            fee.into(),
+            &ledger_state.mt,
+        )
         .unwrap();
 
     check_freezer_status(&freezer, native_amount, &user2, 1, 0, 1, 0);
@@ -2329,17 +2337,22 @@ fn example_freeze() {
         .scan_block(&block, &[&recv_memos], prev_uid_offset)
         .unwrap();
 
-    check_freezer_status(&freezer, native_amount - fee, &user2, 0, 1, 0, 0);
+    check_freezer_status(&freezer, (native_amount - fee).into(), &user2, 0, 1, 0, 0);
 
     // user2's funds unavailable after scanning block
     user2.scan_block(&block, &[&recv_memos], prev_uid_offset);
-    assert_eq!(user2.available_funds(&asset_code), 0);
+    assert_eq!(user2.available_funds(&asset_code), 0u64.into());
 
     let (unfreeze_note, freeze_recv_memos, _sig) = freezer
-        .unfreeze_user(rng, &user2.pub_key().address(), 1, &ledger_state.mt)
+        .unfreeze_user(
+            rng,
+            &user2.pub_key().address(),
+            1u64.into(),
+            &ledger_state.mt,
+        )
         .unwrap();
 
-    check_freezer_status(&freezer, native_amount - fee, &user2, 0, 1, 0, 1);
+    check_freezer_status(&freezer, (native_amount - fee).into(), &user2, 0, 1, 0, 1);
 
     // add a minting note with another freezable record
     let mut issuer = AssetIssuerMock::new(rng, &srs);
@@ -2352,11 +2365,11 @@ fn example_freeze() {
     let (record, uid) =
         ledger_state.mock_mint_native_asset(rng, issuer.wallet.pub_key(), native_amount);
     issuer.wallet.add_record_opening(record, uid);
-    let new_asset_amount = 20u64;
+    let new_asset_amount = 20u128.into();
     let (mint_note, _sig, fee_ch_recv_memo) = issuer
         .mint(
             rng,
-            fee,
+            fee.into(),
             &new_asset_code,
             new_asset_amount,
             user1.pub_key(),
@@ -2394,8 +2407,8 @@ fn example_freeze() {
         )
         .unwrap();
 
-    check_freezer_status(&freezer, native_amount - 2 * fee, &user2, 1, 0, 0, 0);
-    check_freezer_status(&freezer, native_amount - 2 * fee, &user1, 1, 0, 0, 0);
+    check_freezer_status(&freezer, native_amount - fee - fee, &user2, 1, 0, 0, 0);
+    check_freezer_status(&freezer, native_amount - fee - fee, &user1, 1, 0, 0, 0);
     // check user 2 funds available again
     user2.scan_block(
         &block,
@@ -2404,7 +2417,7 @@ fn example_freeze() {
     );
     assert_eq!(user2.available_funds(&asset_code), non_native_amount);
 
-    assert_eq!(user1.available_funds(&new_asset_code), 0);
+    assert_eq!(user1.available_funds(&new_asset_code), 0u64.into());
     user1.scan_block(
         &block,
         &[&freeze_recv_memos, &mint_recv_memos],
@@ -2415,7 +2428,7 @@ fn example_freeze() {
 
 fn check_freezer_status(
     freezer: &FreezerMock,
-    available_native_funds: u64,
+    available_native_funds: Amount,
     user: &SimpleUserWalletMock,
     user_freezable_records: usize,
     user_releasable_records: usize,
