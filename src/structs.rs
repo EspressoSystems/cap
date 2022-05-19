@@ -107,7 +107,13 @@ impl From<&AssetCode> for BaseField {
     }
 }
 
-/// Amount value type
+/// Record Amount type
+/// # How to convert between unsigned int types
+/// ```ignore
+/// let a = Amount::from(10u64);
+/// let b : Amount = 8u32.into();
+/// let c : u128 = a.into();
+/// ```
 #[derive(
     Debug,
     Clone,

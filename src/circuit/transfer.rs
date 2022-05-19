@@ -545,6 +545,17 @@ mod tests {
         let rng = &mut ark_std::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
+        let user_keypairs = vec![&user_keypair; 2];
+        // bad path: output amount out of range
+        let builder = TransferParamsBuilder::new_non_native(2, 2, Some(2), user_keypairs)
+            .set_input_amounts(Amount::from(30u64), &[Amount::from(u128::MAX - 100)])
+            .set_output_amounts(Amount::from(19u64), &[Amount::from(u128::MAX - 100)])
+            .set_input_creds(cred_expiry);
+        let (witness, pub_input) = create_witness_and_pub_input(&builder);
+        check_transfer_circuit(&witness, &pub_input, false)?;
+
+        // good path
+        let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 3];
         let builder = TransferParamsBuilder::new_non_native(3, 3, Some(2), user_keypairs)
             .set_input_amounts(
