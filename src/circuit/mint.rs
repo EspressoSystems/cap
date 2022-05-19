@@ -215,10 +215,11 @@ impl MintPubInputVar {
         let root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
         let input_nullifier = circuit.create_public_variable(pub_input.input_nullifier.0)?;
-        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee))?;
+        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee.0))?;
         let mint_rc = circuit.create_public_variable(pub_input.mint_rc.0)?;
         let chg_rc = circuit.create_public_variable(pub_input.chg_rc.0)?;
-        let mint_amount = circuit.create_public_variable(BaseField::from(pub_input.mint_amount))?;
+        let mint_amount =
+            circuit.create_public_variable(BaseField::from(pub_input.mint_amount.0))?;
         let mint_ac = circuit.create_public_variable(pub_input.mint_ac.0)?;
         let mint_internal_ac = circuit.create_public_variable(pub_input.mint_internal_ac.0)?;
         let mint_policy = AssetPolicyVar::new(circuit, &pub_input.mint_policy)?;
@@ -248,8 +249,9 @@ mod tests {
         errors::TxnApiError,
         keys::{UserKeyPair, ViewerKeyPair},
         structs::{
-            AssetCode, AssetCodeDigest, AssetCodeSeed, AssetPolicy, CommitmentValue, FreezeFlag,
-            InternalAssetCode, Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
+            Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetPolicy, CommitmentValue,
+            FreezeFlag, InternalAssetCode, Nullifier, RecordCommitment, RecordOpening,
+            ViewableMemo,
         },
         utils::params_builder::MintParamsBuilder,
         BaseField, ScalarField,
@@ -269,10 +271,10 @@ mod tests {
             merkle_root: NodeValue::from_scalar(BaseField::from(10u8)),
             native_asset_code: AssetCode::native(),
             input_nullifier: Nullifier(BaseField::from(5u8)),
-            fee: 8u64,
+            fee: Amount::from(8u128),
             mint_rc: RecordCommitment::from(&mint_ro),
             chg_rc: RecordCommitment::from(&RecordOpening::rand_for_test(rng)),
-            mint_amount: 30u64,
+            mint_amount: Amount::from(30u128),
             mint_ac,
             mint_internal_ac,
             mint_policy: AssetPolicy::rand_for_test(rng),
@@ -297,9 +299,9 @@ mod tests {
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let tree_depth = 2;
-        let input_amount = 30;
-        let fee = 20;
-        let mint_amount = 10;
+        let input_amount = Amount::from(30u64);
+        let fee = Amount::from(20u64);
+        let mint_amount = Amount::from(10u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -364,7 +366,7 @@ mod tests {
         // bad path: mint amount out of range
         {
             let mut bad_witness = witness.clone();
-            bad_witness.fee_ro.amount = u64::max_value();
+            bad_witness.fee_ro.amount = Amount::from(u128::max_value());
             let pub_input = MintPublicInput::from_witness(&witness)?;
             check_mint_circuit(&bad_witness, &pub_input, false)?;
         }
@@ -381,7 +383,7 @@ mod tests {
         // bad path: fee + change != input amount
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.fee += 1;
+            bad_pub_input.fee += Amount::from(1u64);
             check_mint_circuit(&witness, &bad_pub_input, false)?;
         }
 
@@ -406,7 +408,7 @@ mod tests {
         // bad path: inconsistent public mint amount/asset_code/policy
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.mint_amount = mint_amount + 1;
+            bad_pub_input.mint_amount = mint_amount + Amount::from(1u64);
             check_mint_circuit(&witness, &bad_pub_input, false)?;
 
             let mut bad_pub_input = pub_input.clone();

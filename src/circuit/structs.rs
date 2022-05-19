@@ -122,7 +122,7 @@ impl RecordOpeningVar {
         circuit: &mut PlonkCircuit<BaseField>,
         ro: &RecordOpening,
     ) -> Result<Self, PlonkError> {
-        let amount = circuit.create_variable(BaseField::from(ro.amount))?;
+        let amount = circuit.create_variable(BaseField::from(ro.amount.0))?;
         let asset_code = circuit.create_variable(ro.asset_def.code.0)?;
         let owner_addr = UserAddressVar(
             circuit
@@ -208,7 +208,8 @@ impl AssetPolicyVar {
         let cred_pk = circuit.create_signature_vk_variable(&policy.cred_pk.0)?;
         let freezer_pk =
             circuit.create_point_variable(Point::from(policy.freezer_pk.0.into_affine()))?;
-        let reveal_threshold = circuit.create_variable(BaseField::from(policy.reveal_threshold))?;
+        let reveal_threshold =
+            circuit.create_variable(BaseField::from(policy.reveal_threshold.0))?;
         Ok(Self {
             viewer_pk,
             cred_pk,

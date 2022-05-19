@@ -19,14 +19,13 @@
 use crate::{
     errors::TxnApiError,
     proof::{self, freeze::FreezeVerifyingKey, transfer::TransferVerifyingKey, UniversalParam},
-    structs::{AssetCode, Nullifier, RecordCommitment, ViewableMemo},
+    structs::{Amount, AssetCode, Nullifier, RecordCommitment, ViewableMemo},
     transfer::TransferNote,
     BaseField, MintVerifyingKey, PairingEngine,
 };
 use ark_std::vec::Vec;
 use jf_plonk::proof_system::structs::VerifyingKey;
 use jf_primitives::merkle_tree::NodeValue;
-use rand::{CryptoRng, RngCore};
 
 impl MintVerifyingKey {
     /// Expose the verifying key
@@ -56,7 +55,7 @@ pub struct TransferPublicInput {
     pub merkle_root: NodeValue<BaseField>,
     pub native_asset_code: AssetCode,
     pub valid_until: u64,
-    pub fee: u64,
+    pub fee: Amount,
     pub input_nullifiers: Vec<Nullifier>,
     pub output_commitments: Vec<RecordCommitment>,
     pub viewing_memo: ViewableMemo,
