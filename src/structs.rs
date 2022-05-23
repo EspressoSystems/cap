@@ -24,6 +24,7 @@ use ark_ff::{BigInteger, BigInteger256, Field, PrimeField, UniformRand, Zero};
 use ark_serialize::*;
 use ark_std::{
     borrow::ToOwned,
+    convert::TryFrom,
     format,
     rand::{CryptoRng, RngCore, SeedableRng},
     string::ToString,
@@ -173,6 +174,25 @@ impl CanonicalDeserialize for Amount {
         reader.read_exact(&mut bytes)?;
         let res = u128::from_le_bytes(bytes);
         Ok(Self(res))
+    }
+}
+
+impl TryFrom<primitive_types::U256> for Amount {
+    type Error = TxnApiError;
+
+    fn try_from(value: primitive_types::U256) -> Result<Self, Self::Error> {
+        if value <= primitive_types::U256::from(u128::MAX) {
+            let mut bytes_u256 = [0u8; 32];
+            value.to_little_endian(&mut bytes_u256);
+            let mut bytes = [0u8; 16];
+            bytes.copy_from_slice(&bytes_u256[..16]);
+
+            Ok(Self::from(u128::from_le_bytes(bytes)))
+        } else {
+            Err(TxnApiError::InvalidParameter(
+                "input U256 value larger than Amount's bound".to_string(),
+            ))
+        }
     }
 }
 
@@ -1600,7 +1620,7 @@ impl<'kp> TxnFeeInfo<'kp> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ark_std::test_rng;
+    use ark_std::{convert::TryInto, test_rng};
 
     mod reveal_map {
         use super::*;
@@ -1961,7 +1981,8 @@ mod test {
     }
 
     #[test]
-    fn test_amount_arithmetics() {
+    fn test_amount() {
+        // Arithmetics
         let rng = &mut ark_std::test_rng();
         let a = u64::rand(rng) as u128 / 2;
         let a_amount = Amount::from(a);
@@ -1979,6 +2000,15 @@ mod test {
         let c = b / a;
         let c_amount = b_amount / a;
         assert_eq!(c_amount, c.into());
+
+        // Conversion to U256
+        let a = primitive_types::U256::from(u64::MAX);
+        assert_eq!(Amount::try_from(a).unwrap(), Amount::from(u64::MAX));
+        let b = primitive_types::U256::from(u64::MAX - 1);
+        let b_amount: Amount = b.try_into().unwrap();
+        assert_eq!(b_amount, Amount::from(u64::MAX - 1));
+        let c = a * a * b;
+        assert!(Amount::try_from(c).is_err());
     }
 
     #[test]
