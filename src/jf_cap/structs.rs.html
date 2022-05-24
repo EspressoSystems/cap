@@ -2061,6 +2061,36 @@
 <span id="2056">2056</span>
 <span id="2057">2057</span>
 <span id="2058">2058</span>
+<span id="2059">2059</span>
+<span id="2060">2060</span>
+<span id="2061">2061</span>
+<span id="2062">2062</span>
+<span id="2063">2063</span>
+<span id="2064">2064</span>
+<span id="2065">2065</span>
+<span id="2066">2066</span>
+<span id="2067">2067</span>
+<span id="2068">2068</span>
+<span id="2069">2069</span>
+<span id="2070">2070</span>
+<span id="2071">2071</span>
+<span id="2072">2072</span>
+<span id="2073">2073</span>
+<span id="2074">2074</span>
+<span id="2075">2075</span>
+<span id="2076">2076</span>
+<span id="2077">2077</span>
+<span id="2078">2078</span>
+<span id="2079">2079</span>
+<span id="2080">2080</span>
+<span id="2081">2081</span>
+<span id="2082">2082</span>
+<span id="2083">2083</span>
+<span id="2084">2084</span>
+<span id="2085">2085</span>
+<span id="2086">2086</span>
+<span id="2087">2087</span>
+<span id="2088">2088</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -2087,6 +2117,7 @@
 <span class="kw">use</span> <span class="ident">ark_serialize</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">ark_std</span>::{
     <span class="ident">borrow::ToOwned</span>,
+    <span class="ident">convert::TryFrom</span>,
     <span class="ident">format</span>,
     <span class="ident">rand</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>, <span class="ident">SeedableRng</span>},
     <span class="ident">string::ToString</span>,
@@ -2236,6 +2267,25 @@
         <span class="ident">reader</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;mut</span> <span class="ident">bytes</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">u128::from_le_bytes</span>(<span class="ident">bytes</span>);
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>(<span class="ident">res</span>))
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">ethabi::ethereum_types::U256</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Amount</span> {
+    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">TxnApiError</span>;
+
+    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">value</span>: <span class="ident">ethabi::ethereum_types::U256</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="ident">value</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">ethabi::ethereum_types::U256::from</span>(<span class="ident">u128::MAX</span>) {
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes_u256</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
+            <span class="ident">value</span>.<span class="ident">to_little_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">bytes_u256</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">16</span>];
+            <span class="ident">bytes</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">bytes_u256</span>[..<span class="number">16</span>]);
+
+            <span class="prelude-val">Ok</span>(<span class="ident"><span class="self">Self</span>::from</span>(<span class="ident">u128::from_le_bytes</span>(<span class="ident">bytes</span>)))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
+                <span class="string">&quot;input U256 value larger than Amount&#39;s bound&quot;</span>.<span class="ident">to_string</span>(),
+            ))
+        }
     }
 }
 
@@ -3663,7 +3713,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">ark_std::test_rng</span>;
+    <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">convert::TryInto</span>, <span class="ident">test_rng</span>};
 
     <span class="kw">mod</span> <span class="ident">reveal_map</span> {
         <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
@@ -4024,7 +4074,8 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_amount_arithmetics</span>() {
+    <span class="kw">fn</span> <span class="ident">test_amount</span>() {
+        <span class="comment">// Arithmetics</span>
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">u64::rand</span>(<span class="ident">rng</span>) <span class="kw">as</span> <span class="ident">u128</span> <span class="op">/</span> <span class="number">2</span>;
         <span class="kw">let</span> <span class="ident">a_amount</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="ident">a</span>);
@@ -4042,6 +4093,15 @@
         <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">b</span> <span class="op">/</span> <span class="ident">a</span>;
         <span class="kw">let</span> <span class="ident">c_amount</span> <span class="op">=</span> <span class="ident">b_amount</span> <span class="op">/</span> <span class="ident">a</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">c_amount</span>, <span class="ident">c</span>.<span class="ident">into</span>());
+
+        <span class="comment">// Conversion to U256</span>
+        <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">ethabi::ethereum_types::U256::from</span>(<span class="ident">u64::MAX</span>);
+        <span class="macro">assert_eq!</span>(<span class="ident">Amount::try_from</span>(<span class="ident">a</span>).<span class="ident">unwrap</span>(), <span class="ident">Amount::from</span>(<span class="ident">u64::MAX</span>));
+        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">ethabi::ethereum_types::U256::from</span>(<span class="ident">u64::MAX</span> <span class="op">-</span> <span class="number">1</span>);
+        <span class="kw">let</span> <span class="ident">b_amount</span>: <span class="ident">Amount</span> <span class="op">=</span> <span class="ident">b</span>.<span class="ident">try_into</span>().<span class="ident">unwrap</span>();
+        <span class="macro">assert_eq!</span>(<span class="ident">b_amount</span>, <span class="ident">Amount::from</span>(<span class="ident">u64::MAX</span> <span class="op">-</span> <span class="number">1</span>));
+        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">a</span> <span class="op">*</span> <span class="ident">a</span> <span class="op">*</span> <span class="ident">b</span>;
+        <span class="macro">assert!</span>(<span class="ident">Amount::try_from</span>(<span class="ident">c</span>).<span class="ident">is_err</span>());
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
