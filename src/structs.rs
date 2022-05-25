@@ -177,11 +177,17 @@ impl CanonicalDeserialize for Amount {
     }
 }
 
-impl TryFrom<ethabi::ethereum_types::U256> for Amount {
+impl From<Amount> for primitive_types::U256 {
+    fn from(amt: Amount) -> Self {
+        u128::from(amt).into()
+    }
+}
+
+impl TryFrom<primitive_types::U256> for Amount {
     type Error = TxnApiError;
 
-    fn try_from(value: ethabi::ethereum_types::U256) -> Result<Self, Self::Error> {
-        if value <= ethabi::ethereum_types::U256::from(u128::MAX) {
+    fn try_from(value: primitive_types::U256) -> Result<Self, Self::Error> {
+        if value <= primitive_types::U256::from(u128::MAX) {
             let mut bytes_u256 = [0u8; 32];
             value.to_little_endian(&mut bytes_u256);
             let mut bytes = [0u8; 16];
@@ -2002,11 +2008,12 @@ mod test {
         assert_eq!(c_amount, c.into());
 
         // Conversion to U256
-        let a = ethabi::ethereum_types::U256::from(u64::MAX);
+        let a = primitive_types::U256::from(u64::MAX);
         assert_eq!(Amount::try_from(a).unwrap(), Amount::from(u64::MAX));
-        let b = ethabi::ethereum_types::U256::from(u64::MAX - 1);
+        let b = primitive_types::U256::from(u64::MAX - 1);
         let b_amount: Amount = b.try_into().unwrap();
         assert_eq!(b_amount, Amount::from(u64::MAX - 1));
+        assert_eq!(b, primitive_types::U256::from(b_amount));
         let c = a * a * b;
         assert!(Amount::try_from(c).is_err());
     }
