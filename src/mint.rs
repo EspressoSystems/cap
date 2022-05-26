@@ -17,8 +17,8 @@ use crate::{
         self, MintProvingKey, MintPublicInput, MintValidityProof, MintVerifyingKey, MintWitness,
     },
     structs::{
-        AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode, Nullifier,
-        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
+        Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode,
+        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
     },
     utils::txn_helpers::{mint::*, *},
     KeyPair, NodeValue, ScalarField, VerKey,
@@ -48,9 +48,7 @@ pub struct MintNote {
     /// output commitment for the minted asset
     pub mint_comm: RecordCommitment,
     /// the amount of the minted asset
-    // Question(ZZ) I believe nowadays the amount field is 128 bits for most blockchain
-    // system. We probably will want to change this for future-proof (e.g. cross chain)
-    pub mint_amount: u64,
+    pub mint_amount: Amount,
     /// the asset definition of the asset
     pub mint_asset_def: AssetDefinition,
     /// the asset code
@@ -79,7 +77,7 @@ pub struct MintAuxInfo {
     /// Merkle tree accumulator root
     pub merkle_root: NodeValue,
     /// Proposed transaction fee in native asset type
-    pub fee: u64,
+    pub fee: Amount,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
     pub txn_memo_ver_key: VerKey,
@@ -216,7 +214,7 @@ mod test {
             universal_setup_for_staging,
         },
         sign_receiver_memos,
-        structs::{AssetCodeSeed, AssetDefinition, FreezeFlag, ReceiverMemo},
+        structs::{Amount, AssetCodeSeed, AssetDefinition, FreezeFlag, ReceiverMemo},
         utils::params_builder::{MintParamsBuilder, PolicyRevealAttr},
         KeyPair, NodeValue, TransactionNote,
     };
@@ -232,8 +230,8 @@ mod test {
         let (proving_key, verifying_key, _) =
             proof::mint::preprocess(&universal_param, tree_depth)?;
 
-        let input_amount = 10;
-        let mint_amount = 35;
+        let input_amount = Amount::from(10u64);
+        let mint_amount = Amount::from(35u64);
         let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
@@ -241,7 +239,7 @@ mod test {
         // ====================================
         // zero fee
         // ====================================
-        let fee = 0;
+        let fee = Amount::from(0u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -269,7 +267,7 @@ mod test {
         // ====================================
         // non-zero fee
         // ====================================
-        let fee = 4;
+        let fee = Amount::from(4u64);
         let builder = MintParamsBuilder::new(
             rng,
             tree_depth,
@@ -342,7 +340,7 @@ mod test {
         // wrong fee > input amount
         {
             let mut bad_builder = builder.clone();
-            bad_builder.fee = bad_builder.fee_ro.amount + 1;
+            bad_builder.fee = bad_builder.fee_ro.amount + Amount::from(1u64);
             assert!(bad_builder.build_mint_note(rng, &proving_key).is_err());
         }
 
@@ -358,7 +356,7 @@ mod test {
 
     fn test_mint_note_helper(
         builder: &MintParamsBuilder,
-        mint_amount: u64,
+        mint_amount: Amount,
         proving_key: &MintProvingKey,
         verifying_key: &MintVerifyingKey,
         receiver_keypair: &UserKeyPair,

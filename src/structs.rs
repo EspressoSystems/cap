@@ -24,6 +24,7 @@ use ark_ff::{BigInteger, BigInteger256, Field, PrimeField, UniformRand, Zero};
 use ark_serialize::*;
 use ark_std::{
     borrow::ToOwned,
+    convert::TryFrom,
     format,
     rand::{CryptoRng, RngCore, SeedableRng},
     string::ToString,
@@ -104,6 +105,94 @@ impl InternalAssetCode {
 impl From<&AssetCode> for BaseField {
     fn from(ac: &AssetCode) -> Self {
         ac.0
+    }
+}
+
+/// Record Amount type
+/// # How to convert between unsigned int types
+/// ```ignore
+/// let a = Amount::from(10u64);
+/// let b : Amount = 8u32.into();
+/// let c : u128 = a.into();
+/// ```
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Default,
+    Hash,
+    Eq,
+    From,
+    Into,
+    Add,
+    AddAssign,
+    Sub,
+    SubAssign,
+    Mul,
+    MulAssign,
+    Div,
+    DivAssign,
+    Rem,
+    RemAssign,
+    PartialOrd,
+    Ord,
+    Sum,
+    Deserialize,
+    Serialize,
+    Display,
+    FromStr,
+    LowerHex,
+)]
+#[serde(from = "u128", into = "u128")]
+#[from(types(u64, u32, u8))]
+pub struct Amount(pub(crate) u128);
+
+impl Amount {
+    /// Generate a vector of Amount from a u128 vector
+    pub fn from_vec(vals: &[u128]) -> Vec<Self> {
+        vals.iter().map(|x| Amount(*x)).collect()
+    }
+}
+
+impl CanonicalSerialize for Amount {
+    #[inline]
+    fn serialize<W: Write>(&self, mut writer: W) -> Result<(), SerializationError> {
+        Ok(writer.write_all(&((*self).0 as u128).to_le_bytes())?)
+    }
+
+    #[inline]
+    fn serialized_size(&self) -> usize {
+        core::mem::size_of::<u128>()
+    }
+}
+
+impl CanonicalDeserialize for Amount {
+    #[inline]
+    fn deserialize<R: Read>(mut reader: R) -> Result<Self, SerializationError> {
+        let mut bytes = [0u8; core::mem::size_of::<u128>()];
+        reader.read_exact(&mut bytes)?;
+        let res = u128::from_le_bytes(bytes);
+        Ok(Self(res))
+    }
+}
+
+impl TryFrom<ethabi::ethereum_types::U256> for Amount {
+    type Error = TxnApiError;
+
+    fn try_from(value: ethabi::ethereum_types::U256) -> Result<Self, Self::Error> {
+        if value <= ethabi::ethereum_types::U256::from(u128::MAX) {
+            let mut bytes_u256 = [0u8; 32];
+            value.to_little_endian(&mut bytes_u256);
+            let mut bytes = [0u8; 16];
+            bytes.copy_from_slice(&bytes_u256[..16]);
+
+            Ok(Self::from(u128::from_le_bytes(bytes)))
+        } else {
+            Err(TxnApiError::InvalidParameter(
+                "input U256 value larger than Amount's bound".to_string(),
+            ))
+        }
     }
 }
 
@@ -380,7 +469,7 @@ pub struct AssetPolicy {
     pub(crate) freezer_pk: FreezerPubKey,
     pub(crate) reveal_map: RevealMap,
     // the asset viewing is applied only when the transfer amount exceeds `reveal_threshold`.
-    pub(crate) reveal_threshold: u64,
+    pub(crate) reveal_threshold: Amount,
 }
 
 impl AssetPolicy {
@@ -407,7 +496,7 @@ impl AssetPolicy {
     }
 
     /// Referecne to revealing threshold
-    pub fn reveal_threshold(&self) -> u64 {
+    pub fn reveal_threshold(&self) -> Amount {
         self.reveal_threshold
     }
 
@@ -421,14 +510,14 @@ impl AssetPolicy {
     }
 
     /// Set revealing threshold policy
-    pub fn set_reveal_threshold(mut self, reveal_threshold: u64) -> Self {
+    pub fn set_reveal_threshold(mut self, reveal_threshold: Amount) -> Self {
         self.reveal_threshold = reveal_threshold;
         self
     }
 
     /// True if `reveal_threshold` is not the default value, false otherwise
     pub fn is_reveal_threshold_set(&self) -> bool {
-        self.reveal_threshold != 0
+        self.reveal_threshold != Amount::from(0u64)
     }
 
     /// Set the viewer public key
@@ -588,7 +677,7 @@ impl AssetPolicy {
         result.extend_from_slice(&self.viewer_pk.to_scalars());
         result.extend_from_slice(&self.cred_pk.to_scalars());
         result.extend_from_slice(&self.freezer_pk.to_scalars());
-        result.push(BaseField::from(self.reveal_threshold));
+        result.push(BaseField::from(self.reveal_threshold.0));
         result
     }
 }
@@ -813,7 +902,7 @@ impl CanonicalDeserialize for FreezeFlag {
 )]
 pub struct RecordOpening {
     /// value
-    pub amount: u64,
+    pub amount: Amount,
     /// asset definition
     pub asset_def: AssetDefinition,
     /// owner public key
@@ -828,7 +917,7 @@ impl RecordOpening {
     /// Create a new RecordOpening with a random blind factor
     pub fn new<R>(
         rng: &mut R,
-        amount: u64,
+        amount: Amount,
         asset_def: AssetDefinition,
         pub_key: UserPubKey,
         freeze_flag: FreezeFlag,
@@ -858,7 +947,13 @@ impl RecordOpening {
         let keypair = UserKeyPair::generate(rng);
         let pub_key = keypair.pub_key();
         (
-            Self::new(rng, 0, AssetDefinition::dummy(), pub_key, freeze_flag),
+            Self::new(
+                rng,
+                Amount::from(0u64),
+                AssetDefinition::dummy(),
+                pub_key,
+                freeze_flag,
+            ),
             keypair,
         )
     }
@@ -883,12 +978,12 @@ impl RecordOpening {
         let reveal_map_and_freeze_flag = BaseField::from(self.asset_def.policy.reveal_map).double()
             + BaseField::from(freeze_flag);
 
-        let reveal_threshold = BaseField::from(self.asset_def.policy.reveal_threshold);
+        let reveal_threshold = BaseField::from(self.asset_def.policy.reveal_threshold.0);
 
         let comm = RescueCommitment::new(12)
             .commit(
                 &[
-                    BaseField::from(self.amount),
+                    BaseField::from(self.amount.0),
                     BaseField::from(&self.asset_def.code),
                     user_pubkey_x,
                     user_pubkey_y,
@@ -1141,13 +1236,13 @@ impl ViewableMemo {
                 "Transaction asset definition cannot be dummy".to_string(),
             ));
         }
-        let transfer_amount: u64 = safe_sum_u64(
+        let transfer_amount: Amount = safe_sum_amount(
             input_ros
                 .iter()
                 .skip(1)
                 .filter(|ro| !ro.asset_def.is_dummy())
                 .map(|ro| ro.amount)
-                .collect::<Vec<u64>>()
+                .collect::<Vec<Amount>>()
                 .as_slice(),
         )
         .ok_or_else(|| TxnApiError::InvalidParameter("Sum overflow for inputs.".to_string()))?;
@@ -1168,7 +1263,7 @@ impl ViewableMemo {
                     asset_fields.copy_from_slice(&[
                         pk_x,
                         pk_y,
-                        BaseField::from(input_ro.amount),
+                        BaseField::from(input_ro.amount.0),
                         input_ro.blind.0,
                     ]);
                     // id viewing fields
@@ -1201,7 +1296,7 @@ impl ViewableMemo {
                     vals.extend_from_slice(&[
                         pk_x,
                         pk_y,
-                        BaseField::from(output_ro.amount),
+                        BaseField::from(output_ro.amount.0),
                         output_ro.blind.0,
                     ]);
                 }
@@ -1255,7 +1350,7 @@ pub struct ViewableData {
     /// visible user address
     pub user_address: Option<UserAddress>,
     /// visible amount
-    pub amount: Option<u64>,
+    pub amount: Option<Amount>,
     /// visible blinding factor
     pub blinding_factor: Option<BlindFactor>,
     /// visible attributes
@@ -1366,14 +1461,16 @@ impl ViewableData {
 
         let amount = if asset_definition.policy.is_amount_revealed() {
             let big_int = data[2].into_repr();
-            if big_int > BigInteger256::from(u64::MAX) {
+            let mut u128_max_bits_le = vec![true; 128];
+            u128_max_bits_le.resize(256, false);
+            if big_int > BigInteger256::from_bits_le(&u128_max_bits_le) {
                 return Err(TxnApiError::FailedViewableMemoDecryption(
                     "Invalid amount".to_ascii_lowercase(),
                 ));
             }
-            let mut u64_bytes = [0u8; 8];
-            u64_bytes.copy_from_slice(&big_int.to_bytes_le()[0..8]);
-            Some(u64::from_le_bytes(u64_bytes))
+            let mut amount_bytes = [0u8; 16];
+            amount_bytes.copy_from_slice(&big_int.to_bytes_le()[0..16]);
+            Some(Amount::from(u128::from_le_bytes(amount_bytes)))
         } else {
             None
         };
@@ -1490,7 +1587,7 @@ pub struct TxnFeeInfo<'kp> {
     /// Fee input spending info
     pub fee_input: FeeInput<'kp>,
     /// Fee to pay
-    pub fee_amount: u64,
+    pub fee_amount: Amount,
     /// Fee change record opening
     pub fee_chg_ro: RecordOpening,
 }
@@ -1500,7 +1597,7 @@ impl<'kp> TxnFeeInfo<'kp> {
     pub fn new<R: CryptoRng + RngCore>(
         rng: &mut R,
         fee_input: FeeInput<'kp>,
-        fee: u64,
+        fee: Amount,
     ) -> Result<(Self, RecordOpening), TxnApiError> {
         if fee_input.ro.amount < fee {
             return Err(TxnApiError::InvalidParameter(
@@ -1528,7 +1625,7 @@ impl<'kp> TxnFeeInfo<'kp> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use ark_std::test_rng;
+    use ark_std::{convert::TryInto, test_rng};
 
     mod reveal_map {
         use super::*;
@@ -1625,9 +1722,9 @@ mod test {
             let universal_param = universal_setup_for_staging(max_degree, rng)?;
             let (proving_key, ..) = proof::mint::preprocess(&universal_param, tree_depth)?;
 
-            let input_amount = 10;
-            let fee = 4;
-            let mint_amount = 35;
+            let input_amount = Amount::from(10u64);
+            let fee = Amount::from(4u64);
+            let mint_amount = Amount::from(35u64);
             let minter_keypair = UserKeyPair::generate(rng);
             let receiver_keypair = UserKeyPair::generate(rng);
             let viewer_keypair = ViewerKeyPair::generate(rng);
@@ -1712,9 +1809,9 @@ mod test {
             let (x, y) = (&user_address).into();
 
             // Wrong amount
-            let wrong_amount = BaseField::from(u64::MAX) + BaseField::from(1_u64);
+            let wrong_amount = BaseField::from(u128::MAX) + BaseField::from(1_u128);
             let mut data = vec![x, y, wrong_amount];
-            data.extend_from_slice(&[BaseField::from(1_u64); VIEWABLE_DATA_LEN - 3]);
+            data.extend_from_slice(&[BaseField::from(1_u128); VIEWABLE_DATA_LEN - 3]);
             let transfer_data =
                 ViewableData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
             assert!(transfer_data.is_ok());
@@ -1894,8 +1991,45 @@ mod test {
     }
 
     #[test]
+    fn test_amount() {
+        // Arithmetics
+        let rng = &mut ark_std::test_rng();
+        let a = u64::rand(rng) as u128 / 2;
+        let a_amount = Amount::from(a);
+        let b = a + u32::rand(rng) as u128;
+        let b_amount = Amount::from(b);
+        let c = a + b;
+        let c_amount = a_amount + b_amount;
+        assert_eq!(c_amount, c.into());
+        let c = b - a;
+        let c_amount = b_amount - a_amount;
+        assert_eq!(c_amount, c.into());
+        let c = b * a;
+        let c_amount = b_amount * a;
+        assert_eq!(c_amount, c.into());
+        let c = b / a;
+        let c_amount = b_amount / a;
+        assert_eq!(c_amount, c.into());
+
+        // Conversion to U256
+        let a = ethabi::ethereum_types::U256::from(u64::MAX);
+        assert_eq!(Amount::try_from(a).unwrap(), Amount::from(u64::MAX));
+        let b = ethabi::ethereum_types::U256::from(u64::MAX - 1);
+        let b_amount: Amount = b.try_into().unwrap();
+        assert_eq!(b_amount, Amount::from(u64::MAX - 1));
+        let c = a * a * b;
+        assert!(Amount::try_from(c).is_err());
+    }
+
+    #[test]
     fn test_serde() {
         let mut rng = ark_std::test_rng();
+
+        // amount value related
+        let amount_value = Amount::from(u128::rand(&mut rng));
+        let ser_bytes = bincode::serialize(&amount_value).unwrap();
+        let amount_value_rec: Amount = bincode::deserialize(&ser_bytes[..]).unwrap();
+        assert_eq!(amount_value, amount_value_rec);
 
         // asset code related
         let asset_code_seed = AssetCodeSeed::generate(&mut rng);
@@ -1909,7 +2043,7 @@ mod test {
 
         let ro = RecordOpening::new(
             &mut rng,
-            23,
+            Amount::from(23u64),
             asset_def,
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
@@ -1934,7 +2068,7 @@ mod test {
             asset_def.policy.viewer_pk = ViewerPubKey::default();
             let ro = RecordOpening::new(
                 &mut rng,
-                23,
+                Amount::from(23u64),
                 asset_def.clone(),
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,

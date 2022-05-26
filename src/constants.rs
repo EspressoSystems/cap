@@ -48,7 +48,7 @@ pub const ATTRS_LEN: usize = 8;
 pub const MAX_TIMESTAMP_LEN: usize = 20;
 
 /// Amount value size (in bits)
-pub(crate) const AMOUNT_LEN: usize = 63;
+pub(crate) const AMOUNT_LEN: usize = 127;
 
 // 31 bytes a chunk
 pub(crate) const BLS_SCALAR_BYTE_CAPACITY: usize = BLS_SCALAR_BIT_CAPACITY as usize / 8;
