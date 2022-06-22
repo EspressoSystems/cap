@@ -181,6 +181,7 @@ use crate::{
 use ark_serialize::*;
 use ark_std::{boxed::Box, format, string::ToString, vec, vec::Vec};
 use errors::TxnApiError;
+use espresso_systems_common::cap as tag;
 use freeze::FreezeNote;
 use jf_plonk::{proof_system::structs::Proof, transcript::SolidityTranscript};
 use jf_primitives::signatures::{schnorr::SchnorrSignatureScheme, SignatureScheme};
@@ -360,7 +361,7 @@ impl From<FreezeNote> for TransactionNote {
 
 /// A transaction verifying key contains a proof verification key of possibly
 /// various transaction types, including transfer, mint and freeze.
-#[tagged_blob("TXVERKEY")]
+#[tagged_blob(tag::TXVERKEY)]
 #[derive(Debug, Clone)]
 pub enum TransactionVerifyingKey {
     /// verification key for validity proof in transfer note

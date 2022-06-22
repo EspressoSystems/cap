@@ -31,6 +31,7 @@ use ark_std::{
     vec,
     vec::Vec,
 };
+use espresso_systems_common::cap as tag;
 use jf_primitives::{
     aead,
     commitment::Commitment as RescueCommitment,
@@ -55,14 +56,14 @@ pub enum NoteType {
 }
 
 /// A unique identifier/code for an asset type
-#[tagged_blob("INTERNAL_ASSET_CODE")]
+#[tagged_blob(tag::INTERNAL_ASSET_CODE)]
 #[derive(
     Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
 )]
 pub struct InternalAssetCode(pub(crate) BaseField);
 
 /// The random seed used in AssetCode derivation
-#[tagged_blob("ASSET_SEED")]
+#[tagged_blob(tag::ASSET_SEED)]
 #[derive(Debug, Copy, Clone, Default, CanonicalSerialize, CanonicalDeserialize, PartialEq)]
 pub struct AssetCodeSeed(pub(crate) BaseField);
 
@@ -203,7 +204,7 @@ impl TryFrom<primitive_types::U256> for Amount {
 }
 
 /// Asset code structure
-#[tagged_blob("ASSET_CODE")]
+#[tagged_blob(tag::ASSET_CODE)]
 #[derive(
     Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
 )]
@@ -691,7 +692,7 @@ impl AssetPolicy {
 /// Asset Definition
 /// * `code` -- asset code as unique id code
 /// * `policy` -- asset policy attached
-#[tagged_blob("ASSET_DEF")]
+#[tagged_blob(tag::ASSET_DEF)]
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default, CanonicalDeserialize, CanonicalSerialize)]
 pub struct AssetDefinition {
     /// asset code as unique id code
@@ -750,7 +751,7 @@ impl AssetDefinition {
 pub(crate) type CommitmentValue = BaseField;
 
 /// The blind factor used to produce a hiding commitment
-#[tagged_blob("BLIND")]
+#[tagged_blob(tag::BLIND)]
 #[derive(
     Copy, Clone, Debug, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize,
 )]
@@ -773,7 +774,7 @@ impl From<BaseField> for BlindFactor {
 }
 
 /// The nullifier represents a spent/consumed asset record
-#[tagged_blob("NUL")]
+#[tagged_blob(tag::NUL)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub struct Nullifier(pub(crate) BaseField);
 
@@ -788,7 +789,7 @@ impl Nullifier {
 }
 
 /// Asset record to be published
-#[tagged_blob("REC")]
+#[tagged_blob(tag::REC)]
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, CanonicalSerialize, CanonicalDeserialize)]
 pub struct RecordCommitment(pub(crate) CommitmentValue);
 
@@ -1010,13 +1011,13 @@ impl RecordOpening {
 }
 
 // The actual credential which is basically a Schnorr signature over attributes
-#[tagged_blob("CRED")]
+#[tagged_blob(tag::CRED)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub(crate) struct Credential(pub(crate) Signature);
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
 /// issued by an identity issuer.
-#[tagged_blob("ID")]
+#[tagged_blob(tag::ID)]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub struct IdentityAttribute(pub(crate) BaseField);
 
@@ -1199,7 +1200,7 @@ impl ExpirableCredential {
 /// Memos for auditors such as auditors required by the asset policy.
 /// Concretely, it is a ciphertext over details of a
 /// transaction, enabling asset tracing and identity tracing.
-#[tagged_blob("AUDMEMO")]
+#[tagged_blob(tag::AUDMEMO)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub struct AuditMemo(pub(crate) elgamal::Ciphertext<CurveParam>);
 
@@ -1507,7 +1508,7 @@ impl AuditData {
 }
 // TODO: (alex) add this after Philippe's MT MR merged
 /// The proof of membership in an accumulator (Merkle tree) for an asset record
-#[tagged_blob("RECMEMO")]
+#[tagged_blob(tag::RECMEMO)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 /// Encrypted Message for owners of transaction outputs
 pub struct ReceiverMemo(pub(crate) aead::Ciphertext);

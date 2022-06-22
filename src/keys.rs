@@ -39,6 +39,7 @@ use ark_std::{
     vec::Vec,
     UniformRand,
 };
+use espresso_systems_common::cap as tag;
 use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
@@ -56,7 +57,7 @@ use jf_utils::{hash_to_field, tagged_blob};
 pub type UserAddress = schnorr::VerKey<CurveParam>;
 
 /// The public key of a `UserKeyPair`
-#[tagged_blob("USERPUBKEY")]
+#[tagged_blob(tag::USERPUBKEY)]
 #[derive(Clone, Default, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub struct UserPubKey {
     pub(crate) address: UserAddress,
@@ -123,7 +124,7 @@ impl UserPubKey {
 }
 
 /// A key pair for the user who owns and can consume records (spend asset)
-#[tagged_blob("USERKEY")]
+#[tagged_blob(tag::USERKEY)]
 #[derive(Debug, Default, Clone, CanonicalSerialize, CanonicalDeserialize)]
 pub struct UserKeyPair {
     pub(crate) addr_keypair: schnorr::KeyPair<CurveParam>,
@@ -191,7 +192,7 @@ impl UserKeyPair {
 }
 
 /// Public key for the credential issuer
-#[tagged_blob("CREDPUBKEY")]
+#[tagged_blob(tag::CREDPUBKEY)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
 pub struct CredIssuerPubKey(pub(crate) schnorr::VerKey<CurveParam>);
 
@@ -215,7 +216,7 @@ impl CredIssuerPubKey {
 }
 
 /// Key pair for the credential issuer
-#[tagged_blob("CREDKEY")]
+#[tagged_blob(tag::CREDKEY)]
 #[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct CredIssuerKeyPair(pub(crate) schnorr::KeyPair<CurveParam>);
 
@@ -243,7 +244,7 @@ impl CredIssuerKeyPair {
 }
 
 /// Public key for the auditor
-#[tagged_blob("AUDPUBKEY")]
+#[tagged_blob(tag::AUDPUBKEY)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
 pub struct AuditorPubKey(pub(crate) elgamal::EncKey<CurveParam>);
 
@@ -270,7 +271,7 @@ impl AuditorPubKey {
     }
 }
 /// Key pair for the auditor
-#[tagged_blob("AUDKEY")]
+#[tagged_blob(tag::AUDKEY)]
 #[derive(Debug, Clone, CanonicalDeserialize, CanonicalSerialize)]
 pub struct AuditorKeyPair(pub(crate) elgamal::KeyPair<CurveParam>);
 
@@ -367,7 +368,7 @@ impl AuditorKeyPair {
 }
 
 /// Public key for the freezer
-#[tagged_blob("FREEZEPUBKEY")]
+#[tagged_blob(tag::FREEZEPUBKEY)]
 #[derive(Clone, Debug, Eq, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct FreezerPubKey(pub(crate) GroupProjective<CurveParam>);
 
@@ -392,7 +393,7 @@ impl PartialEq for FreezerPubKey {
 }
 
 /// Key pair for the freezer
-#[tagged_blob("FREEZEKEY")]
+#[tagged_blob(tag::FREEZEKEY)]
 #[derive(Clone, Debug, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct FreezerKeyPair {
     pub(crate) sec_key: ScalarField,
@@ -468,7 +469,7 @@ fn compute_nullifier_key(
 
 /// Secret key used to nullify records, can only be derived by either the record
 /// owner (`UserKeyPair`) or the correct freezer (`FreezerKeyPair`)
-#[tagged_blob("NULKEY")]
+#[tagged_blob(tag::NULKEY)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 pub(crate) struct NullifierKey(pub(crate) BaseField);
 
