@@ -287,13 +287,12 @@ pub(crate) mod txn_helpers {
     };
     use ark_serialize::CanonicalSerialize;
     use ark_std::{
-        collections::HashMap,
+        collections::{BTreeSet, HashMap},
         format,
         string::{String, ToString},
         vec,
         vec::Vec,
     };
-    use itertools::Itertools;
     use jf_primitives::merkle_tree::{MerkleLeaf, MerkleLeafProof, MerkleTree};
     use jf_utils::hash_to_field;
     use rand::{CryptoRng, RngCore};
@@ -301,7 +300,8 @@ pub(crate) mod txn_helpers {
     pub(crate) fn check_distinct_input_nullifiers(
         nullifiers: &[Nullifier],
     ) -> Result<(), TxnApiError> {
-        if nullifiers.iter().all_unique() {
+        let mut seen = BTreeSet::new();
+        if nullifiers.iter().all(|nf| seen.insert(*nf)) {
             Ok(())
         } else {
             Err(TxnApiError::InvalidParameter(

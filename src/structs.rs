@@ -774,7 +774,18 @@ impl From<BaseField> for BlindFactor {
 
 /// The nullifier represents a spent/consumed asset record
 #[tagged_blob("NUL")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+)]
 pub struct Nullifier(pub(crate) BaseField);
 
 impl Nullifier {

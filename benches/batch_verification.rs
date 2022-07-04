@@ -13,7 +13,6 @@
 extern crate criterion;
 
 use criterion::Criterion;
-use itertools::Itertools;
 use jf_cap::{
     bench_utils::{
         compute_title_batch, get_builder_freeze, get_builder_mint, get_builder_transfer,
