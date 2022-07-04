@@ -205,7 +205,17 @@ impl TryFrom<primitive_types::U256> for Amount {
 /// Asset code structure
 #[tagged_blob("ASSET_CODE")]
 #[derive(
-    Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Default,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+    Hash,
+    Eq,
 )]
 pub struct AssetCode(pub(crate) BaseField);
 
