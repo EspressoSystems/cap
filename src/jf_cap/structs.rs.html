@@ -2098,6 +2098,27 @@
 <span id="2093">2093</span>
 <span id="2094">2094</span>
 <span id="2095">2095</span>
+<span id="2096">2096</span>
+<span id="2097">2097</span>
+<span id="2098">2098</span>
+<span id="2099">2099</span>
+<span id="2100">2100</span>
+<span id="2101">2101</span>
+<span id="2102">2102</span>
+<span id="2103">2103</span>
+<span id="2104">2104</span>
+<span id="2105">2105</span>
+<span id="2106">2106</span>
+<span id="2107">2107</span>
+<span id="2108">2108</span>
+<span id="2109">2109</span>
+<span id="2110">2110</span>
+<span id="2111">2111</span>
+<span id="2112">2112</span>
+<span id="2113">2113</span>
+<span id="2114">2114</span>
+<span id="2115">2115</span>
+<span id="2116">2116</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -2305,7 +2326,17 @@
 <span class="doccomment">/// Asset code structure</span>
 <span class="attribute">#[<span class="ident">tagged_blob</span>(<span class="string">&quot;ASSET_CODE&quot;</span>)]</span>
 <span class="attribute">#[<span class="ident">derive</span>(
-    <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Default</span>, <span class="ident">CanonicalSerialize</span>, <span class="ident">CanonicalDeserialize</span>, <span class="ident">Hash</span>, <span class="ident">Eq</span>,
+    <span class="ident">Debug</span>,
+    <span class="ident">Clone</span>,
+    <span class="ident">Copy</span>,
+    <span class="ident">PartialEq</span>,
+    <span class="ident">PartialOrd</span>,
+    <span class="ident">Ord</span>,
+    <span class="ident">Default</span>,
+    <span class="ident">CanonicalSerialize</span>,
+    <span class="ident">CanonicalDeserialize</span>,
+    <span class="ident">Hash</span>,
+    <span class="ident">Eq</span>,
 )]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AssetCode</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">BaseField</span>);
 
@@ -2874,7 +2905,18 @@
 
 <span class="doccomment">/// The nullifier represents a spent/consumed asset record</span>
 <span class="attribute">#[<span class="ident">tagged_blob</span>(<span class="string">&quot;NUL&quot;</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>, <span class="ident">CanonicalSerialize</span>, <span class="ident">CanonicalDeserialize</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(
+    <span class="ident">Debug</span>,
+    <span class="ident">Clone</span>,
+    <span class="ident">Copy</span>,
+    <span class="ident">PartialEq</span>,
+    <span class="ident">Eq</span>,
+    <span class="ident">PartialOrd</span>,
+    <span class="ident">Ord</span>,
+    <span class="ident">Hash</span>,
+    <span class="ident">CanonicalSerialize</span>,
+    <span class="ident">CanonicalDeserialize</span>,
+)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Nullifier</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">BaseField</span>);
 
 <span class="kw">impl</span> <span class="ident">Nullifier</span> {
