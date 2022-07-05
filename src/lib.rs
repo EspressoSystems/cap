@@ -583,6 +583,25 @@ pub fn sign_receiver_memos(
     Ok(keypair.sign(&[digest], SchnorrSignatureScheme::<CurveParam>::CS_ID))
 }
 
+/// crate prelude consisting important traits and structs
+pub mod preclude {
+    pub use super::{
+        calculate_fee, derive_txns_fee_records, sign_receiver_memos, TransactionNote,
+        TransactionVerifyingKey,
+    };
+    pub use crate::{
+        constants::*,
+        errors::*,
+        freeze::*,
+        keys::*,
+        mint::*,
+        proof::universal_setup_for_staging,
+        structs::*,
+        transfer::{AuxInfo as TransferNoteAuxInfo, TransferNote, TransferNoteInput},
+        types::*,
+    };
+}
+
 #[cfg(test)]
 mod test {
     use crate::{
