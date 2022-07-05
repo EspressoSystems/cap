@@ -2,6 +2,8 @@
 
 ## Pending
 
+- Removed `itertools` dependency, replace `HashMap` with `BTreeMap` (#60)
+
 ### Breaking changes
 
 ### Features

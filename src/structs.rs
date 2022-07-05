@@ -205,7 +205,17 @@ impl TryFrom<primitive_types::U256> for Amount {
 /// Asset code structure
 #[tagged_blob("ASSET_CODE")]
 #[derive(
-    Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    PartialOrd,
+    Ord,
+    Default,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+    Hash,
+    Eq,
 )]
 pub struct AssetCode(pub(crate) BaseField);
 
@@ -774,7 +784,18 @@ impl From<BaseField> for BlindFactor {
 
 /// The nullifier represents a spent/consumed asset record
 #[tagged_blob("NUL")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+)]
 pub struct Nullifier(pub(crate) BaseField);
 
 impl Nullifier {

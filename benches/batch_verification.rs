@@ -13,7 +13,6 @@
 extern crate criterion;
 
 use criterion::Criterion;
-use itertools::Itertools;
 use jf_cap::{
     bench_utils::{
         compute_title_batch, get_builder_freeze, get_builder_mint, get_builder_transfer,
@@ -35,7 +34,7 @@ fn run_batch_verification(
     roots: &[NodeValue],
     timestamp: u64,
 ) {
-    let verify_keys = verify_keys.iter().map(|x| x).collect_vec();
+    let verify_keys: Vec<_> = verify_keys.iter().map(|x| x).collect();
     assert!(txn_batch_verify(notes, roots, timestamp, &verify_keys).is_ok());
 }
 
