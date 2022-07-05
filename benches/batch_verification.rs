@@ -34,7 +34,7 @@ fn run_batch_verification(
     roots: &[NodeValue],
     timestamp: u64,
 ) {
-    let verify_keys = verify_keys.iter().map(|x| x).collect_vec();
+    let verify_keys: Vec<_> = verify_keys.iter().map(|x| x).collect();
     assert!(txn_batch_verify(notes, roots, timestamp, &verify_keys).is_ok());
 }
 
