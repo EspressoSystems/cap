@@ -17,7 +17,7 @@ use jf_cap::{
         compute_sizes, compute_title_simple, get_builder_mint, save_result_to_file_simple, GEN,
         TREE_DEPTH, VERIFY,
     },
-    keys::{AuditorKeyPair, UserKeyPair},
+    keys::{UserKeyPair, ViewerKeyPair},
     mint::MintNote,
     proof::{
         mint,
@@ -61,14 +61,14 @@ fn run_benchmark_mint(c: &mut Criterion, filename_list: &mut Vec<String>) {
     let srs = universal_setup(domain_size, &mut prng).unwrap();
     let (proving_key, verifying_key, n_constraints) = mint::preprocess(&srs, TREE_DEPTH).unwrap();
 
-    let issuer_keypair = UserKeyPair::generate(&mut prng);
+    let minter_keypair = UserKeyPair::generate(&mut prng);
     let receiver_keypair = UserKeyPair::generate(&mut prng);
-    let auditor_keypair = AuditorKeyPair::generate(&mut prng);
+    let viewer_keypair = ViewerKeyPair::generate(&mut prng);
     let builder = get_builder_mint(
         &mut prng,
-        &issuer_keypair,
+        &minter_keypair,
         &receiver_keypair,
-        &auditor_keypair,
+        &viewer_keypair,
         TREE_DEPTH,
     );
 

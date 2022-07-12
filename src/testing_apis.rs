@@ -19,7 +19,7 @@
 use crate::{
     errors::TxnApiError,
     proof::{self, freeze::FreezeVerifyingKey, transfer::TransferVerifyingKey},
-    structs::{Amount, AssetCode, AuditMemo, Nullifier, RecordCommitment},
+    structs::{Amount, AssetCode, Nullifier, RecordCommitment, ViewingMemo},
     transfer::TransferNote,
     BaseField, MintVerifyingKey, PairingEngine,
 };
@@ -58,7 +58,7 @@ pub struct TransferPublicInput {
     pub fee: Amount,
     pub input_nullifiers: Vec<Nullifier>,
     pub output_commitments: Vec<RecordCommitment>,
-    pub audit_memo: AuditMemo,
+    pub viewing_memo: ViewableMemo,
 }
 
 impl From<TransferPublicInput> for proof::transfer::TransferPublicInput {
@@ -70,7 +70,7 @@ impl From<TransferPublicInput> for proof::transfer::TransferPublicInput {
             fee: other.fee,
             input_nullifiers: other.input_nullifiers,
             output_commitments: other.output_commitments,
-            audit_memo: other.audit_memo,
+            viewing_memo: other.viewing_memo,
         }
     }
 }
@@ -84,7 +84,7 @@ impl From<proof::transfer::TransferPublicInput> for TransferPublicInput {
             fee: other.fee,
             input_nullifiers: other.input_nullifiers,
             output_commitments: other.output_commitments,
-            audit_memo: other.audit_memo,
+            viewing_memo: other.viewing_memo,
         }
     }
 }

@@ -3,6 +3,7 @@
 ## Pending
 
 - Removed `itertools` dependency, replace `HashMap` with `BTreeMap` (#60)
+- Update terminologies (`Auditor` -> `Viewer`, `issuer` -> `minter`) (#61)
 
 ### Breaking changes
 

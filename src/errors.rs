@@ -40,8 +40,8 @@ pub enum TxnApiError {
     FailedReceiverMemoSignature(PrimitivesError),
     /// Failed Transaction Memo Signature: {0}"
     FailedTxMemoSignature(PrimitivesError),
-    /// Failed AuditMemo Decryption: {0}
-    FailedAuditMemoDecryption(String),
+    /// Failed ViewableMemo Decryption: {0}
+    FailedViewableMemoDecryption(String),
     /// I/O failure: {0}
     IoError(String),
     /// Invalid parameters: {0}
