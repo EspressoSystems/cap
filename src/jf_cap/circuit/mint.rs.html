@@ -472,11 +472,11 @@
 <span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
 <span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="doccomment">//! Circuit for the issuance of auditable anonymously-transferable asset.</span>
+<span class="doccomment">//! Circuit for the issuance of user configurable asset.</span>
 <span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">gadgets</span>::{<span class="ident">Spender</span>, <span class="ident">TransactionGadgets</span>},
     <span class="ident">gadgets_helper::TransactionGadgetsHelper</span>,
-    <span class="ident">structs::AuditMemoVar</span>,
+    <span class="ident">structs::ViewableMemoVar</span>,
 };
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">circuit::structs</span>::{<span class="ident">AssetPolicyVar</span>, <span class="ident">RecordOpeningVar</span>},
@@ -501,8 +501,8 @@
     <span class="doccomment">/// Build a circuit during preprocessing for derivation of proving key and</span>
     <span class="doccomment">/// verifying key.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_for_preprocessing</span>(<span class="ident">tree_depth</span>: <span class="ident">u8</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">usize</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::default</span>();
-        <span class="kw">let</span> <span class="ident">dummy_witness</span> <span class="op">=</span> <span class="ident">MintWitness::dummy</span>(<span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">issuer_keypair</span>);
+        <span class="kw">let</span> <span class="ident">minter_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::default</span>();
+        <span class="kw">let</span> <span class="ident">dummy_witness</span> <span class="op">=</span> <span class="ident">MintWitness::dummy</span>(<span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">minter_keypair</span>);
         <span class="kw">let</span> <span class="ident">dummy_pub_input</span> <span class="op">=</span> <span class="ident">MintPublicInput::from_witness</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_witness</span>)<span class="question-mark">?</span>;
         <span class="ident"><span class="self">Self</span>::build</span>(<span class="kw-2">&amp;</span><span class="ident">dummy_witness</span>, <span class="kw-2">&amp;</span><span class="ident">dummy_pub_input</span>)
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">TxnApiError::FailedSnark</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>)))
@@ -536,7 +536,7 @@
         <span class="kw">let</span> (<span class="ident">nullifier</span>, <span class="ident">root</span>) <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">prove_spend</span>(
             <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">fee_ro</span>,
             <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">acc_member_witness</span>,
-            <span class="ident">witness</span>.<span class="ident">issuer_sk</span>,
+            <span class="ident">witness</span>.<span class="ident">creator_sk</span>,
             <span class="ident">Spender::User</span>,
         )<span class="question-mark">?</span>;
         <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">root</span>)<span class="question-mark">?</span>;
@@ -569,23 +569,23 @@
         <span class="comment">// Input/Change records should have identical user addresses</span>
         <span class="ident">circuit</span>.<span class="ident">point_equal_gate</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">fee_ro</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">chg_ro</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// Audit memo is correctly constructed when `auditor_pk` is not null</span>
-        <span class="kw">let</span> <span class="ident">b_dummy_audit_pk</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">mint_policy</span>.<span class="ident">is_dummy_audit_pk</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">b_correct_audit_memo</span> <span class="op">=</span>
-            <span class="ident"><span class="self">Self</span>::is_correct_audit_memo</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">audit_memo</span>)<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">b_dummy_audit_pk</span>, <span class="ident">b_correct_audit_memo</span>)<span class="question-mark">?</span>;
+        <span class="comment">// Viewer memo is correctly constructed when `viewer_pk` is not null</span>
+        <span class="kw">let</span> <span class="ident">b_dummy_viewing_pk</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">mint_policy</span>.<span class="ident">is_dummy_viewing_pk</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">b_correct_viewing_memo</span> <span class="op">=</span>
+            <span class="ident"><span class="self">Self</span>::is_correct_viewing_memo</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">viewing_memo</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">b_dummy_viewing_pk</span>, <span class="ident">b_correct_viewing_memo</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">n_constraints</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">num_gates</span>();
         <span class="ident">circuit</span>.<span class="ident">finalize_for_arithmetization</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((<span class="self">Self</span>(<span class="ident">circuit</span>), <span class="ident">n_constraints</span>))
     }
 
-    <span class="doccomment">/// Check whether a minting audit memo has encrypted the correct data,</span>
+    <span class="doccomment">/// Check whether a minting viewing memo has encrypted the correct data,</span>
     <span class="doccomment">/// returns &quot;one&quot; variable if valid, &quot;zero&quot; otherwise</span>
-    <span class="kw">fn</span> <span class="ident">is_correct_audit_memo</span>(
+    <span class="kw">fn</span> <span class="ident">is_correct_viewing_memo</span>(
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">MintWitnessVar</span>,
-        <span class="ident">audit_memo</span>: <span class="kw-2">&amp;</span><span class="ident">AuditMemoVar</span>,
+        <span class="ident">viewing_memo</span>: <span class="kw-2">&amp;</span><span class="ident">ViewableMemoVar</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="comment">// 1. Prepare message to be encrypted: note (amount, asset_code, policy) are</span>
         <span class="comment">// public, thus no need to encrypt</span>
@@ -596,29 +596,29 @@
             <span class="ident">mint_ro</span>.<span class="ident">blind</span>,
         ];
 
-        <span class="comment">// 2. Derive audit memo.</span>
-        <span class="kw">let</span> <span class="ident">derived_audit_memo</span> <span class="op">=</span> <span class="ident">AuditMemoVar::derive</span>(
+        <span class="comment">// 2. Derive viewing memo.</span>
+        <span class="kw">let</span> <span class="ident">derived_viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemoVar::derive</span>(
             <span class="ident">circuit</span>,
-            <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">mint_ro</span>.<span class="ident">policy</span>.<span class="ident">auditor_pk</span>,
+            <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">mint_ro</span>.<span class="ident">policy</span>.<span class="ident">viewer_pk</span>,
             <span class="kw-2">&amp;</span><span class="ident">message</span>,
-            <span class="ident">witness</span>.<span class="ident">audit_memo_enc_rand</span>,
+            <span class="ident">witness</span>.<span class="ident">viewing_memo_enc_rand</span>,
         )<span class="question-mark">?</span>;
 
-        <span class="comment">// 3. Compare derived audit_memo with that in the public input.</span>
-        <span class="ident">audit_memo</span>.<span class="ident">check_equal</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">derived_audit_memo</span>)
+        <span class="comment">// 3. Compare derived viewing_memo with that in the public input.</span>
+        <span class="ident">viewing_memo</span>.<span class="ident">check_equal</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">derived_viewing_memo</span>)
     }
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">MintWitnessVar</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">mint_ro</span>: <span class="ident">RecordOpeningVar</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">issuer_sk</span>: <span class="ident">Variable</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">creator_sk</span>: <span class="ident">Variable</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">fee_ro</span>: <span class="ident">RecordOpeningVar</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">acc_member_witness</span>: <span class="ident">AccMemberWitnessVar</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">chg_ro</span>: <span class="ident">RecordOpeningVar</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">ac_seed</span>: <span class="ident">Variable</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">ac_digest</span>: <span class="ident">Variable</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">audit_memo_enc_rand</span>: <span class="ident">Variable</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">viewing_memo_enc_rand</span>: <span class="ident">Variable</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MintWitnessVar</span> {
@@ -628,8 +628,8 @@
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">MintWitness</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">mint_ro</span> <span class="op">=</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">mint_ro</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">issuer_sk</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(
-            <span class="ident">witness</span>.<span class="ident">issuer_keypair</span>.<span class="ident">address_secret_ref</span>(),
+        <span class="kw">let</span> <span class="ident">creator_sk</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(
+            <span class="ident">witness</span>.<span class="ident">minter_keypair</span>.<span class="ident">address_secret_ref</span>(),
         ))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">fee_ro</span> <span class="op">=</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">fee_ro</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">acc_member_witness</span> <span class="op">=</span>
@@ -637,17 +637,17 @@
         <span class="kw">let</span> <span class="ident">chg_ro</span> <span class="op">=</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">chg_ro</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">ac_seed</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">witness</span>.<span class="ident">ac_seed</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">ac_digest</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">witness</span>.<span class="ident">ac_digest</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">audit_memo_enc_rand</span> <span class="op">=</span>
-            <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">audit_memo_enc_rand</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span>
+            <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">viewing_memo_enc_rand</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">mint_ro</span>,
-            <span class="ident">issuer_sk</span>,
+            <span class="ident">creator_sk</span>,
             <span class="ident">fee_ro</span>,
             <span class="ident">acc_member_witness</span>,
             <span class="ident">chg_ro</span>,
             <span class="ident">ac_seed</span>,
             <span class="ident">ac_digest</span>,
-            <span class="ident">audit_memo_enc_rand</span>,
+            <span class="ident">viewing_memo_enc_rand</span>,
         })
     }
 }
@@ -664,13 +664,13 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">chg_rc</span>: <span class="ident">Variable</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">fee</span>: <span class="ident">Variable</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">input_nullifier</span>: <span class="ident">Variable</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">audit_memo</span>: <span class="ident">AuditMemoVar</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">viewing_memo</span>: <span class="ident">ViewableMemoVar</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">MintPubInputVar</span> {
     <span class="doccomment">/// Create a minting public input variable.</span>
     <span class="doccomment">/// The order: (root, native_ac, input_nullifier, fee, mint_rc, chg_rc,</span>
-    <span class="doccomment">/// mint_amount, mint_ac, mint_policy, audit_memo)</span>
+    <span class="doccomment">/// mint_amount, mint_ac, mint_policy, viewing_memo)</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
         <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">MintPublicInput</span>,
@@ -687,8 +687,8 @@
         <span class="kw">let</span> <span class="ident">mint_internal_ac</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">pub_input</span>.<span class="ident">mint_internal_ac</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">mint_policy</span> <span class="op">=</span> <span class="ident">AssetPolicyVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">mint_policy</span>)<span class="question-mark">?</span>;
         <span class="ident">mint_policy</span>.<span class="ident">set_public</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">audit_memo</span> <span class="op">=</span> <span class="ident">AuditMemoVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">audit_memo</span>)<span class="question-mark">?</span>;
-        <span class="ident">audit_memo</span>.<span class="ident">set_public</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemoVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">viewing_memo</span>)<span class="question-mark">?</span>;
+        <span class="ident">viewing_memo</span>.<span class="ident">set_public</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">root</span>,
             <span class="ident">native_asset_code</span>,
@@ -700,7 +700,7 @@
             <span class="ident">chg_rc</span>,
             <span class="ident">fee</span>,
             <span class="ident">input_nullifier</span>,
-            <span class="ident">audit_memo</span>,
+            <span class="ident">viewing_memo</span>,
         })
     }
 }
@@ -710,11 +710,11 @@
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">MintCircuit</span>, <span class="ident">MintPubInputVar</span>, <span class="ident">MintPublicInput</span>, <span class="ident">MintWitness</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">errors::TxnApiError</span>,
-        <span class="ident">keys</span>::{<span class="ident">AuditorKeyPair</span>, <span class="ident">UserKeyPair</span>},
+        <span class="ident">keys</span>::{<span class="ident">UserKeyPair</span>, <span class="ident">ViewerKeyPair</span>},
         <span class="ident">structs</span>::{
-            <span class="ident">Amount</span>, <span class="ident">AssetCode</span>, <span class="ident">AssetCodeDigest</span>, <span class="ident">AssetCodeSeed</span>, <span class="ident">AssetPolicy</span>, <span class="ident">AuditMemo</span>,
-            <span class="ident">CommitmentValue</span>, <span class="ident">FreezeFlag</span>, <span class="ident">InternalAssetCode</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordCommitment</span>,
-            <span class="ident">RecordOpening</span>,
+            <span class="ident">Amount</span>, <span class="ident">AssetCode</span>, <span class="ident">AssetCodeDigest</span>, <span class="ident">AssetCodeSeed</span>, <span class="ident">AssetPolicy</span>, <span class="ident">CommitmentValue</span>,
+            <span class="ident">FreezeFlag</span>, <span class="ident">InternalAssetCode</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordCommitment</span>, <span class="ident">RecordOpening</span>,
+            <span class="ident">ViewableMemo</span>,
         },
         <span class="ident">utils::params_builder::MintParamsBuilder</span>,
         <span class="ident">BaseField</span>, <span class="ident">ScalarField</span>,
@@ -741,7 +741,7 @@
             <span class="ident">mint_ac</span>,
             <span class="ident">mint_internal_ac</span>,
             <span class="ident">mint_policy</span>: <span class="ident">AssetPolicy::rand_for_test</span>(<span class="ident">rng</span>),
-            <span class="ident">audit_memo</span>: <span class="ident">AuditMemo::new_for_mint_note</span>(<span class="kw-2">&amp;</span><span class="ident">mint_ro</span>, <span class="ident">ScalarField::rand</span>(<span class="ident">rng</span>)),
+            <span class="ident">viewing_memo</span>: <span class="ident">ViewableMemo::new_for_mint_note</span>(<span class="kw-2">&amp;</span><span class="ident">mint_ro</span>, <span class="ident">ScalarField::rand</span>(<span class="ident">rng</span>)),
         };
         <span class="kw">let</span> <span class="ident">pub_input_vec</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">to_scalars</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit::new_turbo_plonk</span>();
@@ -758,9 +758,9 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_mint_circuit_build</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="ident">issuer_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">minter_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">receiver_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
-        <span class="kw">let</span> <span class="ident">auditor_keypair</span> <span class="op">=</span> <span class="ident">AuditorKeyPair::generate</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">viewer_keypair</span> <span class="op">=</span> <span class="ident">ViewerKeyPair::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">2</span>;
         <span class="kw">let</span> <span class="ident">input_amount</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="number">30u64</span>);
         <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="number">20u64</span>);
@@ -771,9 +771,9 @@
             <span class="ident">input_amount</span>,
             <span class="ident">fee</span>,
             <span class="ident">mint_amount</span>,
-            <span class="kw-2">&amp;</span><span class="ident">issuer_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">minter_keypair</span>,
             <span class="kw-2">&amp;</span><span class="ident">receiver_keypair</span>,
-            <span class="kw-2">&amp;</span><span class="ident">auditor_keypair</span>,
+            <span class="kw-2">&amp;</span><span class="ident">viewer_keypair</span>,
         );
 
         <span class="kw">let</span> (<span class="ident">witness</span>, <span class="ident">pub_input</span>) <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_witness_and_public_input</span>(<span class="ident">rng</span>)<span class="question-mark">?</span>;
@@ -891,11 +891,11 @@
             <span class="ident">check_mint_circuit</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">bad_pub_input</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
         }
 
-        <span class="comment">// bad path: wrong audit memo</span>
+        <span class="comment">// bad path: wrong viewing memo</span>
         {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bad_pub_input</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">clone</span>();
-            <span class="ident">bad_pub_input</span>.<span class="ident">audit_memo</span> <span class="op">=</span>
-                <span class="ident">AuditMemo::new_for_mint_note</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">mint_ro</span>, <span class="ident">ScalarField::zero</span>());
+            <span class="ident">bad_pub_input</span>.<span class="ident">viewing_memo</span> <span class="op">=</span>
+                <span class="ident">ViewableMemo::new_for_mint_note</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">mint_ro</span>, <span class="ident">ScalarField::zero</span>());
             <span class="ident">check_mint_circuit</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">bad_pub_input</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
         }
 

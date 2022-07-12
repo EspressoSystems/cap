@@ -815,7 +815,7 @@
 
 <span class="doccomment">//! API library for the _configurable asset policy_ system which allows for</span>
 <span class="doccomment">//! issuance, transfers and (un)freezing of arbitrary asset that are fully</span>
-<span class="doccomment">//! private, yet publicly verifiable and auditable. It is strongly recommended</span>
+<span class="doccomment">//! private, yet publicly verifiable and viewable. It is strongly recommended</span>
 <span class="doccomment">//! to refer to at least the first two chapters of [Spec] for an introduction to</span>
 <span class="doccomment">//! core concepts, data structures and main workflows.</span>
 <span class="doccomment">//!</span>
@@ -823,8 +823,8 @@
 <span class="doccomment">//! As explained in Chapter 1.2 of [Spec], there are 5 main roles and all their</span>
 <span class="doccomment">//! public/private key related materials can be found under the [keys] module.</span>
 <span class="doccomment">//! Common actions involving a key can usually be found as associated methods</span>
-<span class="doccomment">//! of the key struct -- e.g. for an auditor/tracer to decrypt memos for</span>
-<span class="doccomment">//! him/her, use [`keys::AuditorKeyPair::open_transfer_audit_memo()`].</span>
+<span class="doccomment">//! of the key struct -- e.g. for an viewer to decrypt memos for</span>
+<span class="doccomment">//! him/her, use [`keys::ViewerKeyPair::open_transfer_viewing_memo()`].</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # 3 Types of Transaction and Their Workflows</span>
 <span class="doccomment">//! As explained in Chapter 2.1 of [Spec], we support 3 types of transaction</span>

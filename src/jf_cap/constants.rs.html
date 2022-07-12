@@ -135,17 +135,17 @@
 };
 
 <span class="doccomment">/// Maximum length of a reveal map := (b_0,b_1,b_2, attr_map) where first three</span>
-<span class="doccomment">/// bits enables asset tracing, namely revealing (upk, at, \gamma) and the</span>
+<span class="doccomment">/// bits enables asset viewing, namely revealing (upk, at, \gamma) and the</span>
 <span class="doccomment">/// attr_map is a bitmap for all attributes issued in a identity credential.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">REVEAL_MAP_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3</span> <span class="op">+</span> <span class="ident">ATTRS_LEN</span>;
 
 <span class="doccomment">/// length in scalars of (address.x, address.y, amount, blinding factor)</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const</span> <span class="ident">ASSET_TRACING_MAP_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">4</span>;
 
-<span class="doccomment">/// length in scalars of decrypted transfer audit</span>
+<span class="doccomment">/// length in scalars of decrypted transfer viewing</span>
 <span class="doccomment">/// (address.x, address.y, amount, blinding factor,</span>
 <span class="doccomment">/// id_attr_1,...,id_attr_{ATTRS_LEN}</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AUDIT_DATA_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">REVEAL_MAP_LEN</span> <span class="op">+</span> <span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VIEWABLE_DATA_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">REVEAL_MAP_LEN</span> <span class="op">+</span> <span class="number">1</span>;
 
 <span class="doccomment">/// the number of identity attributes</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ATTRS_LEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
@@ -186,7 +186,7 @@
 <span class="comment">// pub const NATIVE_ASSET_DEFINITION: AssetDefinition = AssetDefinition {</span>
 <span class="comment">//     code: AssetCode(BLS_SCALAR_ONE),</span>
 <span class="comment">//     policy: AssetPolicy {</span>
-<span class="comment">//         auditor_pk: AuditorPubKey(elgamal::EncKey {</span>
+<span class="comment">//         viewer_pk: ViewerPubKey(elgamal::EncKey {</span>
 <span class="comment">//             key: JUBJUB_POINT_ZERO,</span>
 <span class="comment">//         }),</span>
 <span class="comment">//         cred_pk: CredIssuerPubKey(schnorr_dsa::VerKey(JUBJUB_POINT_ZERO)),</span>

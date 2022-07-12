@@ -1012,6 +1012,7 @@
 <span id="1007">1007</span>
 <span id="1008">1008</span>
 <span id="1009">1009</span>
+<span id="1010">1010</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -1290,7 +1291,7 @@
 
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">errors::TxnApiError</span>,
-        <span class="ident">keys</span>::{<span class="ident">AuditorPubKey</span>, <span class="ident">CredIssuerPubKey</span>, <span class="ident">FreezerPubKey</span>},
+        <span class="ident">keys</span>::{<span class="ident">CredIssuerPubKey</span>, <span class="ident">FreezerPubKey</span>},
         <span class="ident">structs</span>::{<span class="ident">Amount</span>, <span class="ident">BlindFactor</span>, <span class="ident">FreezeFlag</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordOpening</span>},
         <span class="ident">transfer::TransferNoteInput</span>,
     };
@@ -1348,9 +1349,9 @@
 
         <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_input_pub_key</span>(
             <span class="ident">ro_fee</span>: <span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>,
-            <span class="ident">issuer_keypair</span>: <span class="kw-2">&amp;</span><span class="ident">UserKeyPair</span>,
+            <span class="ident">minter_keypair</span>: <span class="kw-2">&amp;</span><span class="ident">UserKeyPair</span>,
         ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-            <span class="kw">if</span> <span class="ident">ro_fee</span>.<span class="ident">pub_key</span> <span class="op">!</span><span class="op">=</span> <span class="ident">issuer_keypair</span>.<span class="ident">pub_key</span>() {
+            <span class="kw">if</span> <span class="ident">ro_fee</span>.<span class="ident">pub_key</span> <span class="op">!</span><span class="op">=</span> <span class="ident">minter_keypair</span>.<span class="ident">pub_key</span>() {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
                     <span class="string">&quot;The key pair does not match the public key in the input record&quot;</span>.<span class="ident">to_string</span>(),
                 ));
@@ -1374,7 +1375,9 @@
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">transfer</span> {
         <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-        <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">proof::transfer::TransferProvingKey</span>, <span class="ident">structs::AssetDefinition</span>};
+        <span class="kw">use</span> <span class="kw">crate</span>::{
+            <span class="ident">keys::ViewerPubKey</span>, <span class="ident">proof::transfer::TransferProvingKey</span>, <span class="ident">structs::AssetDefinition</span>,
+        };
 
         <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_proving_key_consistency</span>(
             <span class="ident">proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span>,
@@ -1424,8 +1427,8 @@
         <span class="doccomment">/// 1. the first record in inputs and outputs is of native asset def</span>
         <span class="doccomment">/// 2. the rest of records in inputs and outputs are of the same asset</span>
         <span class="doccomment">/// code (namely the transferred asset code)</span>
-        <span class="doccomment">/// 3. when freezer_pk is non-dummy, the auditor_pk must be non-dummy,</span>
-        <span class="doccomment">/// since freezing depends on auditor to retrieve record</span>
+        <span class="doccomment">/// 3. when freezer_pk is non-dummy, the viewer_pk must be non-dummy,</span>
+        <span class="doccomment">/// since freezing depends on viewer to retrieve record</span>
         <span class="doccomment">/// plaintext data</span>
         <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_asset_def</span>(
             <span class="ident">inputs</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">RecordOpening</span>],
@@ -1469,14 +1472,13 @@
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(<span class="string">&quot;The output records are not consistent with the asset definition of the records being transferred.&quot;</span>.<span class="ident">to_string</span>()));
             }
 
-            <span class="kw">let</span> <span class="ident">non_null_freezer_null_auditor_flag</span> <span class="op">=</span>
-                <span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">chain</span>(<span class="ident">outputs</span>.<span class="ident">iter</span>()).<span class="ident">any</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> {
-                    <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">freezer_pk</span> <span class="op">!</span><span class="op">=</span> <span class="ident">FreezerPubKey::default</span>()
-                        <span class="op">&amp;&amp;</span> <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">auditor_pk</span> <span class="op">==</span> <span class="ident">AuditorPubKey::default</span>()
-                });
-            <span class="kw">if</span> <span class="ident">non_null_freezer_null_auditor_flag</span> {
+            <span class="kw">let</span> <span class="ident">non_null_freezer_null_viewer_flag</span> <span class="op">=</span> <span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">chain</span>(<span class="ident">outputs</span>.<span class="ident">iter</span>()).<span class="ident">any</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> {
+                <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">freezer_pk</span> <span class="op">!</span><span class="op">=</span> <span class="ident">FreezerPubKey::default</span>()
+                    <span class="op">&amp;&amp;</span> <span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">viewer_pk</span> <span class="op">==</span> <span class="ident">ViewerPubKey::default</span>()
+            });
+            <span class="kw">if</span> <span class="ident">non_null_freezer_null_viewer_flag</span> {
                 <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">TxnApiError::InvalidParameter</span>(
-                    <span class="string">&quot;Freezing requires tracing enabled.&quot;</span>.<span class="ident">to_string</span>(),
+                    <span class="string">&quot;Freezing requires visibility enabled.&quot;</span>.<span class="ident">to_string</span>(),
                 ));
             }
             <span class="prelude-val">Ok</span>(())
@@ -1509,7 +1511,7 @@
             <span class="prelude-val">Ok</span>(<span class="ident">assumed_root</span>)
         }
 
-        <span class="doccomment">/// Check that input credentials are present and valid when tracing</span>
+        <span class="doccomment">/// Check that input credentials are present and valid when viewing</span>
         <span class="doccomment">/// policy&#39;s cred_pk is non-empty</span>
         <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">check_creds</span>(
             <span class="ident">inputs</span>: <span class="kw-2">&amp;</span>[<span class="ident">TransferNoteInput</span>],
@@ -1802,7 +1804,7 @@
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
     <span class="kw">mod</span> <span class="ident">tests</span> {
         <span class="kw">use</span> <span class="kw">crate</span>::{
-            <span class="ident">keys</span>::{<span class="ident">AuditorPubKey</span>, <span class="ident">UserKeyPair</span>},
+            <span class="ident">keys</span>::{<span class="ident">UserKeyPair</span>, <span class="ident">ViewerPubKey</span>},
             <span class="ident">structs</span>::{<span class="ident">AssetDefinition</span>, <span class="ident">FreezeFlag</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordOpening</span>},
             <span class="ident">utils::txn_helpers</span>::{
                 <span class="ident">check_distinct_input_nullifiers</span>, <span class="ident">derive_fee</span>, <span class="ident">transfer::check_asset_def</span>,
@@ -1915,10 +1917,10 @@
             <span class="kw">let</span> <span class="ident">asset_def_native</span> <span class="op">=</span> <span class="ident">AssetDefinition::native</span>();
             <span class="kw">let</span> <span class="ident">asset_def_non_native_1</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
             <span class="kw">let</span> <span class="ident">asset_def_non_native_2</span> <span class="op">=</span> <span class="ident">AssetDefinition::rand_for_test</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def_freezer_key_non_null_tracer_key_null</span> <span class="op">=</span> <span class="ident">asset_def_non_native_2</span>.<span class="ident">clone</span>();
-            <span class="ident">asset_def_freezer_key_non_null_tracer_key_null</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def_freezer_key_non_null_viewer_key_null</span> <span class="op">=</span> <span class="ident">asset_def_non_native_2</span>.<span class="ident">clone</span>();
+            <span class="ident">asset_def_freezer_key_non_null_viewer_key_null</span>
                 .<span class="ident">policy</span>
-                .<span class="ident">auditor_pk</span> <span class="op">=</span> <span class="ident">AuditorPubKey::default</span>();
+                .<span class="ident">viewer_pk</span> <span class="op">=</span> <span class="ident">ViewerPubKey::default</span>();
             <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rng</span>);
 
             <span class="kw">let</span> <span class="ident">ro_in_non_native</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
@@ -1949,7 +1951,7 @@
             <span class="kw">let</span> <span class="ident">ro_in_non_native_bad_policy</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
                 <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>,
                 <span class="number">5u64</span>.<span class="ident">into</span>(),
-                <span class="ident">asset_def_freezer_key_non_null_tracer_key_null</span>.<span class="ident">clone</span>(),
+                <span class="ident">asset_def_freezer_key_non_null_viewer_key_null</span>.<span class="ident">clone</span>(),
                 <span class="ident">user_keypair</span>.<span class="ident">pub_key</span>(),
                 <span class="ident">FreezeFlag::Unfrozen</span>,
             );
@@ -1973,7 +1975,7 @@
             <span class="kw">let</span> <span class="ident">ro_out_non_native_bad_policy</span> <span class="op">=</span> <span class="ident">RecordOpening::new</span>(
                 <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>,
                 <span class="number">5u64</span>.<span class="ident">into</span>(),
-                <span class="ident">asset_def_freezer_key_non_null_tracer_key_null</span>.<span class="ident">clone</span>(),
+                <span class="ident">asset_def_freezer_key_non_null_viewer_key_null</span>.<span class="ident">clone</span>(),
                 <span class="ident">user_keypair</span>.<span class="ident">pub_key</span>(),
                 <span class="ident">FreezeFlag::Unfrozen</span>,
             );

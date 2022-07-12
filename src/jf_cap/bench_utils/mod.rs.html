@@ -355,7 +355,7 @@
 
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">keys</span>::{<span class="ident">AuditorKeyPair</span>, <span class="ident">FreezerKeyPair</span>, <span class="ident">UserKeyPair</span>},
+    <span class="ident">keys</span>::{<span class="ident">FreezerKeyPair</span>, <span class="ident">UserKeyPair</span>, <span class="ident">ViewerKeyPair</span>},
     <span class="ident">structs::Amount</span>,
     <span class="ident">utils::params_builder</span>::{<span class="ident">FreezeParamsBuilder</span>, <span class="ident">MintParamsBuilder</span>, <span class="ident">TransferParamsBuilder</span>},
 };
@@ -635,9 +635,9 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_builder_mint</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-    <span class="ident">issuer_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
+    <span class="ident">minter_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
     <span class="ident">receiver_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
-    <span class="ident">auditor_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">AuditorKeyPair</span>,
+    <span class="ident">viewer_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">ViewerKeyPair</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
 ) -&gt; <span class="ident">MintParamsBuilder</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">input_amount</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="number">10u64</span>);
@@ -650,9 +650,9 @@
         <span class="ident">input_amount</span>,
         <span class="ident">fee</span>,
         <span class="ident">mint_amount</span>,
-        <span class="ident">issuer_keypair</span>,
+        <span class="ident">minter_keypair</span>,
         <span class="ident">receiver_keypair</span>,
-        <span class="ident">auditor_keypair</span>,
+        <span class="ident">viewer_keypair</span>,
     )
 }
 

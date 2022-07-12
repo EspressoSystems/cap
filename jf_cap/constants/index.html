@@ -7,9 +7,6 @@
     <h1 class="fqn"><span class="in-band">Module <a href="../index.html">jf_cap</a>::<wbr><a class="mod" href="#">constants</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../clipboard.svg" width="19" height="18" alt="Copy item path"></button></span></h1><span class="out-of-band"><a class="srclink" href="../../src/jf_cap/constants.rs.html#12-95">source</a> · <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Constants used across the whole library</p>
 </div></details><h2 id="constants" class="small-section-header"><a href="#constants">Constants</a></h2>
 <div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.ATTRS_LEN.html" title="jf_cap::constants::ATTRS_LEN constant">ATTRS_LEN</a></div><div class="item-right docblock-short"><p>the number of identity attributes</p>
-</div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.AUDIT_DATA_LEN.html" title="jf_cap::constants::AUDIT_DATA_LEN constant">AUDIT_DATA_LEN</a></div><div class="item-right docblock-short"><p>length in scalars of decrypted transfer audit
-(address.x, address.y, amount, blinding factor,
-id_attr_1,…,id_attr_{ATTRS_LEN}</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.BLS_SCALAR_BIT_CAPACITY.html" title="jf_cap::constants::BLS_SCALAR_BIT_CAPACITY constant">BLS_SCALAR_BIT_CAPACITY</a></div><div class="item-right docblock-short"><p>The number of bits that can be reliably stored for BaseField. (Should equal
 SELF::MODULUS_BITS - 1)</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.BLS_SCALAR_BIT_LEN.html" title="jf_cap::constants::BLS_SCALAR_BIT_LEN constant">BLS_SCALAR_BIT_LEN</a></div><div class="item-right docblock-short"><p>Length of a ScalarField</p>
@@ -22,7 +19,10 @@ timestamp.</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.NATIVE_ASSET_CODE.html" title="jf_cap::constants::NATIVE_ASSET_CODE constant">NATIVE_ASSET_CODE</a></div><div class="item-right docblock-short"><p>Native asset code, cannot be 0 as then code is identical to default code</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.PER_ATTR_BYTE_CAPACITY.html" title="jf_cap::constants::PER_ATTR_BYTE_CAPACITY constant">PER_ATTR_BYTE_CAPACITY</a></div><div class="item-right docblock-short"><p>number of byte can each <code>identityAttribute</code> take.</p>
 </div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.REVEAL_MAP_LEN.html" title="jf_cap::constants::REVEAL_MAP_LEN constant">REVEAL_MAP_LEN</a></div><div class="item-right docblock-short"><p>Maximum length of a reveal map := (b_0,b_1,b_2, attr_map) where first three
-bits enables asset tracing, namely revealing (upk, at, \gamma) and the
+bits enables asset viewing, namely revealing (upk, at, \gamma) and the
 attr_map is a bitmap for all attributes issued in a identity credential.</p>
+</div></div><div class="item-row"><div class="item-left module-item"><a class="constant" href="constant.VIEWABLE_DATA_LEN.html" title="jf_cap::constants::VIEWABLE_DATA_LEN constant">VIEWABLE_DATA_LEN</a></div><div class="item-right docblock-short"><p>length in scalars of decrypted transfer viewing
+(address.x, address.y, amount, blinding factor,
+id_attr_1,…,id_attr_{ATTRS_LEN}</p>
 </div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
 </body></html>
