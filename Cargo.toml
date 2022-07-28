@@ -18,10 +18,10 @@ ark-ff = { version = "0.3.0", default-features = false }
 commit = { git = "https://github.com/EspressoSystems/commit.git", tag = "0.1.0" }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 serde_derive = { version = "1.0", default-features = false }
-jf-plonk = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git", tag = "0.1.1" }
-jf-rescue = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git", tag = "0.1.1" }
-jf-primitives = { features=["std"], git = "https://github.com/EspressoSystems/jellyfish.git", tag = "0.1.1" }
-jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", tag = "0.1.1" }
+jf-plonk = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "cap-rollup" }
+jf-rescue = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "cap-rollup" }
+jf-primitives = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "cap-rollup" }
+jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "cap-rollup" }
 sha2 = { version = "0.9.5", default-features = false }
 structopt = { version = "0.3.22", default-features = false }
 rand = { version = "0.8.4", default-features = false, features = [ "alloc" ] }

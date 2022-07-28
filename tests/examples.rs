@@ -252,20 +252,20 @@ impl MockBlock {
 }
 
 /// Simple Validator that verify transfers against current ledger state
-pub struct ValidatorMock<'a> {
+pub struct ValidatorMock {
     // mapping between transaction type description and corresponding verifying key
     verifying_keys: HashMap<String, Rc<TransactionVerifyingKey>>,
-    srs: &'a UniversalParam,
+    srs: Rc<UniversalParam>,
     // for fee collection ownership
-    wallet: SimpleUserWalletMock<'a>,
+    wallet: SimpleUserWalletMock,
 }
 
-impl<'a> ValidatorMock<'a> {
+impl ValidatorMock {
     /// Create a new validator/block proposer containing a user wallet
-    pub fn new<R: CryptoRng + RngCore>(rng: &mut R, srs: &'a UniversalParam) -> ValidatorMock<'a> {
+    pub fn new<R: CryptoRng + RngCore>(rng: &mut R, srs: Rc<UniversalParam>) -> ValidatorMock {
         ValidatorMock {
             verifying_keys: HashMap::new(),
-            srs,
+            srs: Rc::clone(&srs),
             wallet: SimpleUserWalletMock::generate(rng, srs),
         }
     }
@@ -558,15 +558,15 @@ impl ViewerMock {
 
 /// Simple freezer who is also an viewer that views record openings (but for
 /// simplicity does not view identity attributes)
-pub struct FreezerMock<'a> {
+pub struct FreezerMock {
     // Viewer: freezer needsviewing data and hence we assume that a freezer is also an viewer.
     // Alternatively, freezer and viewer can be independent entities and communicate via RPC
     viewer: ViewerMock,
     keypair: FreezerKeyPair,
-    srs: &'a UniversalParam,
-    proving_keys: HashMap<String, FreezeProvingKey<'a>>,
+    srs: Rc<UniversalParam>,
+    proving_keys: HashMap<String, FreezeProvingKey>,
     // wallet: wallet used to pay fees
-    wallet: SimpleUserWalletMock<'a>,
+    wallet: SimpleUserWalletMock,
     freezable_records: HashMap<UserAddress, HashSet<(RecordOpening, u64)>>, // record + uid
     releasable_records: HashMap<UserAddress, HashSet<(RecordOpening, u64)>>, // record + uid
     // unconfirmed_frozen_records:Frozen records where freeze transaction has been produced, but
@@ -591,13 +591,13 @@ pub struct FreezerMock<'a> {
     user_keys_oracle: HashMap<UserAddress, UserPubKey>,
 }
 
-impl<'a> FreezerMock<'a> {
+impl<'a> FreezerMock {
     /// Create a new freezer
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        srs: &'a UniversalParam,
+        srs: Rc<UniversalParam>,
         asset_code: AssetCode,
-    ) -> FreezerMock<'a> {
+    ) -> FreezerMock {
         let freezer_keypair = FreezerKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let asset_policy = AssetPolicy::default()
@@ -607,7 +607,7 @@ impl<'a> FreezerMock<'a> {
             .unwrap();
         let asset_definition = AssetDefinition::new(asset_code, asset_policy).unwrap();
         let viewer = ViewerMock::new(viewer_keypair, asset_definition);
-        let wallet = SimpleUserWalletMock::generate(rng, srs);
+        let wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
 
         FreezerMock {
             keypair: freezer_keypair,
@@ -635,18 +635,18 @@ impl<'a> FreezerMock<'a> {
         self.user_keys_oracle.insert(key.address(), key);
     }
 
-    fn get_proving_key(&self, n_inputs: usize) -> Option<&FreezeProvingKey<'a>> {
+    fn get_proving_key(&self, n_inputs: usize) -> Option<&FreezeProvingKey> {
         let description = format!("Freeze_{}", n_inputs);
         self.proving_keys.get(&description)
     }
 
-    fn compute_proving_key(&self, n_inputs: usize) -> FreezeProvingKey<'a> {
+    fn compute_proving_key(&self, n_inputs: usize) -> FreezeProvingKey {
         let (proving_key, ..) =
             jf_cap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
         proving_key
     }
 
-    fn insert_proving_key(&mut self, n_inputs: usize, proving_key: FreezeProvingKey<'a>) {
+    fn insert_proving_key(&mut self, n_inputs: usize, proving_key: FreezeProvingKey) {
         let description = format!("Freeze_{}", n_inputs);
         self.proving_keys.insert(description, proving_key);
     }
@@ -967,15 +967,15 @@ const UNEXPIRED_VALID_UNTIL: u64 = 2u64.pow(MAX_TIMESTAMP_LEN as u32) - 1;
 /// Simple naive wallet for users
 /// it stores spending keypair, all owned records by the key, and the credential
 /// linked to the user
-pub struct SimpleUserWalletMock<'a> {
+pub struct SimpleUserWalletMock {
     // spending, decrypting, signing keys
     keypair: UserKeyPair,
     // user credentials
     credential: Option<ExpirableCredential>,
     // reference to SRS
-    srs: &'a UniversalParam,
+    srs: Rc<UniversalParam>,
     // map from description string to corresponding verifying key
-    proving_keys: HashMap<String, TransferProvingKey<'a>>,
+    proving_keys: HashMap<String, TransferProvingKey>,
     // submitted record for spending, not confirmed by network yet
     // store mapping from nullifier to record opening and uid of the record (position in the merkle
     // tree)
@@ -986,12 +986,12 @@ pub struct SimpleUserWalletMock<'a> {
     unconfirmed_fee_chg_records: HashSet<RecordOpening>,
 }
 
-impl<'a> SimpleUserWalletMock<'a> {
+impl SimpleUserWalletMock {
     /// sample keypair and initiate empty record opening set
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        srs: &'a UniversalParam,
-    ) -> SimpleUserWalletMock<'a> {
+        srs: Rc<UniversalParam>,
+    ) -> SimpleUserWalletMock {
         SimpleUserWalletMock {
             keypair: UserKeyPair::generate(rng),
             credential: None,
@@ -1118,16 +1118,12 @@ impl<'a> SimpleUserWalletMock<'a> {
         owned_records_openings
     }
 
-    fn get_proving_key(
-        &self,
-        n_inputs: usize,
-        n_outputs: usize,
-    ) -> Option<&TransferProvingKey<'a>> {
+    fn get_proving_key(&self, n_inputs: usize, n_outputs: usize) -> Option<&TransferProvingKey> {
         let description = format!("Xfr_{}_{}", n_inputs, n_outputs);
         self.proving_keys.get(&description)
     }
 
-    fn compute_proving_key(&self, n_inputs: usize, n_outputs: usize) -> TransferProvingKey<'a> {
+    fn compute_proving_key(&self, n_inputs: usize, n_outputs: usize) -> TransferProvingKey {
         let (proving_key, ..) = preprocess(&self.srs, n_inputs, n_outputs, TREE_DEPTH).unwrap();
         proving_key
     }
@@ -1136,7 +1132,7 @@ impl<'a> SimpleUserWalletMock<'a> {
         &mut self,
         n_inputs: usize,
         n_outputs: usize,
-        proving_key: TransferProvingKey<'a>,
+        proving_key: TransferProvingKey,
     ) {
         let description = format!("Xfr_{}_{}", n_inputs, n_outputs);
         self.proving_keys.insert(description, proving_key);
@@ -1491,21 +1487,18 @@ impl<'a> SimpleUserWalletMock<'a> {
     }
 }
 
-pub struct AssetIssuerMock<'a> {
-    wallet: SimpleUserWalletMock<'a>,
+pub struct AssetIssuerMock {
+    wallet: SimpleUserWalletMock,
     // proving key for generating mint transaction
-    proving_key: MintProvingKey<'a>,
+    proving_key: MintProvingKey,
     // maps defined asset code to asset definition, seed and description of the asset
     defined_assets: HashMap<AssetCode, (AssetDefinition, AssetCodeSeed, Vec<u8>)>,
 }
 
-impl<'a> AssetIssuerMock<'a> {
+impl AssetIssuerMock {
     /// AssetIssuerMock struct constructor: Generate a user wallet and initiate
     /// set of defined assets
-    pub fn new<R: CryptoRng + RngCore>(
-        rng: &mut R,
-        srs: &'a UniversalParam,
-    ) -> AssetIssuerMock<'a> {
+    pub fn new<R: CryptoRng + RngCore>(rng: &mut R, srs: Rc<UniversalParam>) -> AssetIssuerMock {
         let wallet = SimpleUserWalletMock::generate(rng, srs);
         let (proving_key, ..) = jf_cap::proof::mint::preprocess(&wallet.srs, TREE_DEPTH).unwrap();
 
@@ -1617,13 +1610,13 @@ pub fn example_native_asset_transfer() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // 1. setting up state, one input owned by a single user
-    let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut sender_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let sender_pub_key = sender_wallet.pub_key();
 
-    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let receiver_pub_key = receiver_wallet.pub_key();
 
     let mint_amount = 10u64.into();
@@ -1648,7 +1641,7 @@ pub fn example_native_asset_transfer() {
 
     // validator
     let uid_offset = ledger_state.next_uid();
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let mock_timestamp = 10; // simulate current timestamp
     validator
         .validate_single_xfr_note(&ledger_state, &xfr_note, mock_timestamp)
@@ -1727,11 +1720,11 @@ pub fn example_non_native_asset_transfer() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // 1. setting up state, two inputs owned by a single user
-    let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
-    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut sender_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
+    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let recv_pub_key = receiver_wallet.pub_key();
     assert_ne!(recv_pub_key, sender_wallet.pub_key());
     let native_amount = 10u64.into();
@@ -1767,7 +1760,7 @@ pub fn example_non_native_asset_transfer() {
     let uid_offset = ledger_state.next_uid();
 
     // xfr note validation
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let mock_timestamp = 10; // simulate current timestamp
     validator
         .validate_single_xfr_note(&ledger_state, &xfr_note, mock_timestamp)
@@ -1817,11 +1810,11 @@ pub fn example_test_viewed_asset_transfer() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // 1. setting up state, two inputs owned by a single user
-    let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
-    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut sender_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
+    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let recv_pub_key = receiver_wallet.pub_key();
     let native_amount = 10u64.into();
     let non_native_amount = 15u64.into();
@@ -1861,7 +1854,7 @@ pub fn example_test_viewed_asset_transfer() {
     let mt_size_prev = ledger_state.next_uid();
 
     // xfr note validation
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let mock_timestamp = 10; // simulate current timestamp
     validator
         .validate_single_xfr_note(&ledger_state, &xfr_note, mock_timestamp)
@@ -1931,11 +1924,11 @@ pub fn example_viewed_non_native_asset_with_credentials() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // 1. setting up state, two inputs owned by a single user
-    let mut sender_wallet = SimpleUserWalletMock::generate(rng, &srs);
-    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut sender_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
+    let mut receiver_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let recv_pub_key = receiver_wallet.pub_key();
     let native_amount = 10u64.into();
     let non_native_amount = 15u64.into();
@@ -2000,7 +1993,7 @@ pub fn example_viewed_non_native_asset_with_credentials() {
     let mt_size_prev = ledger_state.next_uid();
 
     // xfr note validation
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let mock_timestamp = expiry; // simulate current timestamp
     validator
         .validate_single_xfr_note(&ledger_state, &xfr_note, mock_timestamp)
@@ -2068,16 +2061,16 @@ fn example_fee_collection_and_batch_verification() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // setting up wallets
     let mut senders_wallets = vec![];
     let amounts = Amount::from_vec(&[10, 20, 30, 40]);
     for _ in amounts.iter() {
-        let user_wallet = SimpleUserWalletMock::generate(rng, &srs);
+        let user_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
         senders_wallets.push(user_wallet);
     }
-    let receiver_pub_key = SimpleUserWalletMock::generate(rng, &srs).pub_key();
+    let receiver_pub_key = SimpleUserWalletMock::generate(rng, Rc::clone(&srs)).pub_key();
 
     // mocking ledger state and add assets to wallets
     for (amount, wallet) in amounts.iter().zip(senders_wallets.iter_mut()) {
@@ -2103,7 +2096,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // batch validate xfr_notes
     let txns: Vec<_> = xfr_notes.into_iter().map(|x| x.into()).collect();
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let mock_timestamp = 11;
     assert!(validator
         .validate_txns_batch(&ledger_state, &txns, mock_timestamp)
@@ -2111,7 +2104,7 @@ fn example_fee_collection_and_batch_verification() {
 
     // fee collection and block creation
     let ledger_len = ledger_state.next_uid();
-    let mut block_proposer = ValidatorMock::new(rng, &srs);
+    let mut block_proposer = ValidatorMock::new(rng, Rc::clone(&srs));
     let (fee_record_opening, block, block_sig) = block_proposer
         .collect_fee_and_build_block(rng, txns)
         .unwrap();
@@ -2145,11 +2138,11 @@ fn example_mint() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // setting up wallets
-    let mut asset_creator = AssetIssuerMock::new(rng, &srs);
-    let mut owner_wallet = SimpleUserWalletMock::generate(rng, &srs);
+    let mut asset_creator = AssetIssuerMock::new(rng, Rc::clone(&srs));
+    let mut owner_wallet = SimpleUserWalletMock::generate(rng, Rc::clone(&srs));
     let owner_pub_key = owner_wallet.pub_key();
     // initialize the wallet with some native asset to be used to pay txn fee
     {
@@ -2178,7 +2171,7 @@ fn example_mint() {
 
     let recv_memos = [fee_chg_recv_memo];
     // block proposer validator
-    let mut block_proposer = ValidatorMock::new(rng, &srs);
+    let mut block_proposer = ValidatorMock::new(rng, Rc::clone(&srs));
     let txns = vec![mint_note.into()];
     let now = 5;
     let uid_offset = ledger_state.next_uid();
@@ -2190,7 +2183,7 @@ fn example_mint() {
         .unwrap();
 
     // validators
-    let mut network_validator = ValidatorMock::new(rng, &srs);
+    let mut network_validator = ValidatorMock::new(rng, Rc::clone(&srs));
     assert!(network_validator
         .validate_block(
             &mut ledger_state,
@@ -2220,17 +2213,17 @@ fn example_freeze() {
     let rng = &mut ark_std::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
-    let srs = mock_retrieve_srs();
+    let srs = Rc::new(mock_retrieve_srs());
 
     // setting up wallets
-    let mut user1 = SimpleUserWalletMock::generate(rng, &srs); // sender
-    let mut user2 = SimpleUserWalletMock::generate(rng, &srs); // receiver
+    let mut user1 = SimpleUserWalletMock::generate(rng, Rc::clone(&srs)); // sender
+    let mut user2 = SimpleUserWalletMock::generate(rng, Rc::clone(&srs)); // receiver
     let native_amount = 10u64.into();
     let non_native_amount = 5u64.into();
 
     // set up freezer
     let (asset_code, _) = AssetCode::random(rng);
-    let mut freezer = FreezerMock::generate(rng, &srs, asset_code);
+    let mut freezer = FreezerMock::generate(rng, Rc::clone(&srs), asset_code);
     let asset_definition = freezer.asset_def();
 
     // mock mint native assets to user1 and freezer
@@ -2274,10 +2267,10 @@ fn example_freeze() {
     let timestamp = 1; // arbitrary: eg block height
 
     // network validates transfer
-    let mut validator = ValidatorMock::new(rng, &srs);
+    let mut validator = ValidatorMock::new(rng, Rc::clone(&srs));
     let block = {
         // block proposal, validation and ledger insertion
-        let block_proposer = ValidatorMock::new(rng, &srs);
+        let block_proposer = ValidatorMock::new(rng, Rc::clone(&srs));
         let (_collected_fee_opening, block, block_sig) = block_proposer
             .collect_fee_and_build_block(rng, vec![xfr.into()])
             .unwrap();
@@ -2320,7 +2313,7 @@ fn example_freeze() {
 
     let block = {
         // block proposal, validation and ledger insertion
-        let block_proposer = ValidatorMock::new(rng, &srs);
+        let block_proposer = ValidatorMock::new(rng, Rc::clone(&srs));
         let (_collected_fee_opening, block, block_sig) = block_proposer
             .collect_fee_and_build_block(rng, vec![freeze_note.into()])
             .unwrap();
@@ -2361,7 +2354,7 @@ fn example_freeze() {
     check_freezer_status(&freezer, (native_amount - fee).into(), &user2, 0, 1, 0, 1);
 
     // add a minting note with another freezable record
-    let mut creator = AssetIssuerMock::new(rng, &srs);
+    let mut creator = AssetIssuerMock::new(rng, Rc::clone(&srs));
     let new_asset_policy = AssetPolicy::default()
         .set_viewer_pub_key(freezer.viewer.pub_key())
         .reveal_record_opening()
@@ -2387,7 +2380,7 @@ fn example_freeze() {
 
     let block = {
         // block proposal, validation and ledger insertion
-        let block_proposer = ValidatorMock::new(rng, &srs);
+        let block_proposer = ValidatorMock::new(rng, Rc::clone(&srs));
         let (_collected_fee_opening, block, block_sig) = block_proposer
             .collect_fee_and_build_block(rng, vec![unfreeze_note.into(), mint_note.into()])
             .unwrap();

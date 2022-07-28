@@ -49,7 +49,7 @@ use ark_std::{
     rand::{CryptoRng, RngCore},
     string::ToString,
 };
-use jf_plonk::proof_system::structs::UniversalSrs;
+use jf_plonk::proof_system::{structs::UniversalSrs, UniversalSNARK};
 
 /// The universal parameters (Structured Reference String) for proving/verifying
 /// transaction validity of any type. Generate only once during a multi-party
