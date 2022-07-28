@@ -148,12 +148,12 @@ pub fn store_transfer_proving_key(
 /// Load the transfer proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_transfer_proving_key<'a>(
+pub fn load_transfer_proving_key(
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<TransferProvingKey<'a>, TxnApiError> {
+) -> Result<TransferProvingKey, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_transfer_proving_key_path(num_input, num_output, tree_depth),
@@ -276,10 +276,10 @@ pub fn store_mint_proving_key(
 /// Load the mint proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_mint_proving_key<'a>(
+pub fn load_mint_proving_key(
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<MintProvingKey<'a>, TxnApiError> {
+) -> Result<MintProvingKey, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_mint_proving_key_path(tree_depth),
@@ -398,11 +398,11 @@ pub fn store_freeze_proving_key(
 /// Load the freeze proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_freeze_proving_key<'a>(
+pub fn load_freeze_proving_key(
     num_input: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<FreezeProvingKey<'a>, TxnApiError> {
+) -> Result<FreezeProvingKey, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_freeze_proving_key_path(num_input, tree_depth),

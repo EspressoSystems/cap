@@ -41,7 +41,7 @@ use jf_plonk::{
     circuit::Circuit,
     proof_system::{
         structs::{Proof, ProvingKey, VerifyingKey},
-        PlonkKzgSnark, Snark,
+        PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
 };
@@ -57,15 +57,15 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct TransferProvingKey<'a> {
-    pub(crate) proving_key: ProvingKey<'a, PairingEngine>,
+pub struct TransferProvingKey {
+    pub(crate) proving_key: ProvingKey<PairingEngine>,
     pub(crate) n_inputs: usize,
     pub(crate) n_outputs: usize,
     pub(crate) tree_depth: u8,
 }
-deserialize_canonical_bytes!(TransferProvingKey<'a>);
+deserialize_canonical_bytes!(TransferProvingKey);
 
-impl<'a> TransferProvingKey<'a> {
+impl TransferProvingKey {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.n_inputs
@@ -105,8 +105,8 @@ impl TransferVerifyingKey {
     }
 }
 
-impl<'a> From<&TransferProvingKey<'a>> for TransferVerifyingKey {
-    fn from(pk: &TransferProvingKey<'a>) -> Self {
+impl From<&TransferProvingKey> for TransferVerifyingKey {
+    fn from(pk: &TransferProvingKey) -> Self {
         Self {
             verifying_key: pk.proving_key.vk.clone(),
             n_inputs: pk.n_inputs,
@@ -157,9 +157,9 @@ pub fn preprocess(
 
 /// Generate a transaction validity proof (a zk-SNARK proof) given the witness
 /// , public inputs, and the proving key.
-pub(crate) fn prove<'a, R: RngCore + CryptoRng>(
+pub(crate) fn prove<R: RngCore + CryptoRng>(
     rng: &mut R,
-    transfer_proving_key: &TransferProvingKey<'a>,
+    transfer_proving_key: &TransferProvingKey,
     witness: &TransferWitness,
     public_inputs: &TransferPublicInput,
     txn_memo_ver_key: &schnorr::VerKey<CurveParam>,

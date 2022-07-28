@@ -99,11 +99,11 @@ impl FreezeNote {
     /// * `returns`- On success returns the freezing note, receiver memos,
     ///   signature on receiver memos, and vector of output record openings.
     /// On error return TxnApIError.
-    pub fn generate<'a, R: CryptoRng + RngCore>(
+    pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<FreezeNoteInput<'a>>,
+        inputs: Vec<FreezeNoteInput>,
         txn_fee_info: TxnFeeInfo,
-        proving_key: &FreezeProvingKey<'a>,
+        proving_key: &FreezeProvingKey,
     ) -> Result<(Self, KeyPair, Vec<RecordOpening>), TxnApiError> {
         // 1. check input correctness
         check_inputs_len(inputs.len())?;

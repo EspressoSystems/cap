@@ -30,7 +30,7 @@ use ark_std::{format, string::ToString, vec, vec::Vec};
 use jf_plonk::{
     proof_system::{
         structs::{Proof, ProvingKey, VerifyingKey},
-        PlonkKzgSnark, Snark,
+        PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
 };
@@ -47,11 +47,11 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct MintProvingKey<'a> {
-    pub(crate) proving_key: ProvingKey<'a, PairingEngine>,
+pub struct MintProvingKey {
+    pub(crate) proving_key: ProvingKey<PairingEngine>,
     pub(crate) tree_depth: u8,
 }
-deserialize_canonical_bytes!(MintProvingKey<'a>);
+deserialize_canonical_bytes!(MintProvingKey);
 
 /// Key for verifying the validity of a Mint note during asset issuance.
 #[derive(

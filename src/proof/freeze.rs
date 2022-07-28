@@ -29,7 +29,7 @@ use jf_plonk::{
     circuit::Circuit,
     proof_system::{
         structs::{Proof, ProvingKey, VerifyingKey},
-        PlonkKzgSnark, Snark,
+        PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
 };
@@ -42,14 +42,14 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct FreezeProvingKey<'a> {
-    pub(crate) proving_key: ProvingKey<'a, PairingEngine>,
+pub struct FreezeProvingKey {
+    pub(crate) proving_key: ProvingKey<PairingEngine>,
     pub(crate) tree_depth: u8,
     pub(crate) num_input: usize,
 }
-deserialize_canonical_bytes!(FreezeProvingKey<'a>);
+deserialize_canonical_bytes!(FreezeProvingKey);
 
-impl<'a> FreezeProvingKey<'a> {
+impl FreezeProvingKey {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.num_input

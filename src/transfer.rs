@@ -133,13 +133,13 @@ impl TransferNote {
     /// Returns: (transfer note, signature key to bind a message to the transfer
     /// note proof, Record opening of fee change directed at first input
     /// address) tuple on successful generation.
-    pub fn generate_native<'a, R: CryptoRng + RngCore>(
+    pub fn generate_native<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput<'a>>,
+        inputs: Vec<TransferNoteInput>,
         outputs: &[RecordOpening],
         fee: Amount,
         valid_until: u64,
-        proving_key: &TransferProvingKey<'a>,
+        proving_key: &TransferProvingKey,
     ) -> Result<(Self, KeyPair, RecordOpening), TxnApiError>
     where
         R: CryptoRng + RngCore,
@@ -223,13 +223,13 @@ impl TransferNote {
     /// Returns: (transfer note, signature key to bind a message to the transfer
     /// note proof, fee change record opening) tuple on successful
     /// generation.
-    pub fn generate_non_native<'a, R: CryptoRng + RngCore>(
+    pub fn generate_non_native<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput<'a>>,
+        inputs: Vec<TransferNoteInput>,
         outputs: &[RecordOpening],
         fee: TxnFeeInfo,
         valid_until: u64,
-        proving_key: &TransferProvingKey<'a>,
+        proving_key: &TransferProvingKey,
         extra_proof_bound_data: Vec<u8>,
     ) -> Result<(Self, KeyPair), TxnApiError>
     where
@@ -262,11 +262,11 @@ impl TransferNote {
     ///  Receivers' memos
     ///  Signature over produced receivers' memos
     /// On error return TxnApIError
-    fn generate<'a, R: CryptoRng + RngCore>(
+    fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput<'a>>,
+        inputs: Vec<TransferNoteInput>,
         outputs: &[RecordOpening],
-        proving_key: &TransferProvingKey<'a>,
+        proving_key: &TransferProvingKey,
         valid_until: u64,
         extra_proof_bound_data: Vec<u8>,
     ) -> Result<(Self, KeyPair), TxnApiError> {
