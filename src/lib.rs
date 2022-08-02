@@ -595,7 +595,10 @@ pub mod preclude {
         freeze::*,
         keys::*,
         mint::*,
-        proof::universal_setup_for_staging,
+        proof::{
+            freeze::FreezePublicInput, mint::MintPublicInput, transfer::TransferPublicInput,
+            universal_setup_for_staging,
+        },
         structs::*,
         transfer::{AuxInfo as TransferNoteAuxInfo, TransferNote, TransferNoteInput},
         types::*,

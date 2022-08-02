@@ -184,18 +184,29 @@ impl<'a> MintWitness<'a> {
 
 #[derive(Debug, Clone)]
 /// Struct for the public input of a mint witness
-pub(crate) struct MintPublicInput {
-    pub(crate) merkle_root: NodeValue<BaseField>,
-    pub(crate) native_asset_code: AssetCode,
-    pub(crate) input_nullifier: Nullifier,
-    pub(crate) fee: Amount,
-    pub(crate) mint_rc: RecordCommitment,
-    pub(crate) chg_rc: RecordCommitment,
-    pub(crate) mint_amount: Amount,
-    pub(crate) mint_ac: AssetCode,
-    pub(crate) mint_internal_ac: InternalAssetCode,
-    pub(crate) mint_policy: AssetPolicy,
-    pub(crate) viewing_memo: ViewableMemo,
+pub struct MintPublicInput {
+    /// record merkle tree root
+    pub merkle_root: NodeValue<BaseField>,
+    /// native asset code
+    pub native_asset_code: AssetCode,
+    /// nullifier of the fee input record
+    pub input_nullifier: Nullifier,
+    /// amount of fee to pay
+    pub fee: Amount,
+    /// commitment of the minted record
+    pub mint_rc: RecordCommitment,
+    /// commitment of the fee change record
+    pub chg_rc: RecordCommitment,
+    /// minted amount
+    pub mint_amount: Amount,
+    /// minted asset code
+    pub mint_ac: AssetCode,
+    /// minted internal asset code
+    pub mint_internal_ac: InternalAssetCode,
+    /// minted asset policy
+    pub mint_policy: AssetPolicy,
+    /// memo for viewer
+    pub viewing_memo: ViewableMemo,
 }
 
 impl MintPublicInput {
