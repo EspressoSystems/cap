@@ -244,12 +244,17 @@ impl<'a> FreezeWitness<'a> {
 
 #[derive(Debug, Clone)]
 /// Struct for the public input of a freeze witness
-pub(crate) struct FreezePublicInput {
-    pub(crate) merkle_root: NodeValue,
-    pub(crate) native_asset_code: AssetCode,
-    pub(crate) fee: Amount,
-    pub(crate) input_nullifiers: Vec<Nullifier>,
-    pub(crate) output_commitments: Vec<RecordCommitment>,
+pub struct FreezePublicInput {
+    /// record merkle tree root
+    pub merkle_root: NodeValue,
+    /// native asset code
+    pub native_asset_code: AssetCode,
+    /// transaction fee to pay
+    pub fee: Amount,
+    /// nullifiers of input records
+    pub input_nullifiers: Vec<Nullifier>,
+    /// commitments of output records
+    pub output_commitments: Vec<RecordCommitment>,
 }
 
 impl FreezePublicInput {

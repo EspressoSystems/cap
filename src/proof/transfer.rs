@@ -317,14 +317,21 @@ pub(crate) struct InputSecret<'a> {
 /// Public inputs of a transfer transaction
 #[derive(Debug, Clone)]
 /// Struct for the public input of a transfer witness
-pub(crate) struct TransferPublicInput {
-    pub(crate) merkle_root: NodeValue<BaseField>,
-    pub(crate) native_asset_code: AssetCode,
-    pub(crate) valid_until: u64,
-    pub(crate) fee: Amount,
-    pub(crate) input_nullifiers: Vec<Nullifier>,
-    pub(crate) output_commitments: Vec<RecordCommitment>,
-    pub(crate) viewing_memo: ViewableMemo,
+pub struct TransferPublicInput {
+    /// record merkle tree root
+    pub merkle_root: NodeValue<BaseField>,
+    /// native asset code
+    pub native_asset_code: AssetCode,
+    /// expiry of credentials
+    pub valid_until: u64,
+    /// transaction fee to pay
+    pub fee: Amount,
+    /// nullifiers of input records
+    pub input_nullifiers: Vec<Nullifier>,
+    /// commitments of output commitments
+    pub output_commitments: Vec<RecordCommitment>,
+    /// memo for viewer
+    pub viewing_memo: ViewableMemo,
 }
 
 impl TransferPublicInput {
