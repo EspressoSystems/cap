@@ -85,11 +85,14 @@ impl TransferProvingKey {
 /// Verifying key of Transfer note and its attributes
 /// (n_inputs,n_outputs,tree_depth)
 pub struct TransferVerifyingKey {
-    /// key
-    pub(crate) verifying_key: VerifyingKey<PairingEngine>,
-    pub(crate) n_inputs: usize,
-    pub(crate) n_outputs: usize,
-    pub(crate) tree_depth: u8,
+    /// SNARK verification key
+    pub verifying_key: VerifyingKey<PairingEngine>,
+    /// num of inputs (incl. fee input)
+    pub n_inputs: usize,
+    /// num of outputs (incl. fee change output)
+    pub n_outputs: usize,
+    /// record merkle tree depth
+    pub tree_depth: u8,
 }
 deserialize_canonical_bytes!(TransferVerifyingKey);
 
