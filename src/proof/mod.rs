@@ -44,40 +44,36 @@ pub mod freeze;
 pub mod mint;
 pub mod transfer;
 
-use crate::{errors::TxnApiError, PairingEngine};
+use crate::{errors::TxnApiError, prelude::CapConfig};
 use ark_std::{
     rand::{CryptoRng, RngCore},
     string::ToString,
 };
 use jf_plonk::proof_system::{structs::UniversalSrs, UniversalSNARK};
 
-/// The universal parameters (Structured Reference String) for proving/verifying
-/// transaction validity of any type. Generate only once during a multi-party
-/// setup. For testing purpose, use `universal_setup()` for a one-time
-/// generation.
-pub type UniversalParam = UniversalSrs<PairingEngine>;
-
 /// One-time universal setup for parameters to be used in proving validity of
 /// all transactions, regardless of the transaction type.
 ///
 /// NOTE: this API is reserved for production usage. For now, in testing or
 /// staging environment, please use `universal_setup_for_test()` instead!
-pub fn universal_setup<R: RngCore + CryptoRng>(
+pub fn universal_setup<R: RngCore + CryptoRng, C: CapConfig>(
     max_degree: usize,
     rng: &mut R,
-) -> Result<UniversalParam, TxnApiError> {
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     use jf_plonk::proof_system::PlonkKzgSnark;
 
     // either pass degree upperbound as an input parameter
     // or directly access a fixed constant
-    PlonkKzgSnark::<PairingEngine>::universal_setup(max_degree, rng)
+    PlonkKzgSnark::<C::PairingCurve>::universal_setup(max_degree, rng)
         .map_err(|_| TxnApiError::FailedSnark("Failed to generate universal SRS".to_string()))
 }
 
 /// Use Common Reference String parameters from Aztec's MPC ceremony in proving
 /// validity of all transactions, regardless of the transaction type.
 #[cfg(feature = "bn254")]
-pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
+pub fn load_srs<C: CapConfig>(
+    max_degree: usize,
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     use hex_literal::hex;
     use sha2::{Digest, Sha256};
 
@@ -122,10 +118,10 @@ pub fn load_srs(max_degree: usize) -> Result<UniversalParam, TxnApiError> {
 ///   Ceremony.
 /// - otherwise: we generates fresh SRS on the spot (not secure for production
 ///   use! toxic waste not thrown away).
-pub fn universal_setup_for_staging<R: RngCore + CryptoRng>(
+pub fn universal_setup_for_staging<R: RngCore + CryptoRng, C: CapConfig>(
     max_degree: usize,
     _rng: &mut R,
-) -> Result<UniversalParam, TxnApiError> {
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     load_srs(max_degree)
 }
 
@@ -137,9 +133,9 @@ pub fn universal_setup_for_staging<R: RngCore + CryptoRng>(
 ///   Ceremony.
 /// - otherwise: we generates fresh SRS on the spot (not secure for production
 ///   use! toxic waste not thrown away).
-pub fn universal_setup_for_staging<R: RngCore + CryptoRng>(
+pub fn universal_setup_for_staging<R: RngCore + CryptoRng, C: CapConfig>(
     max_degree: usize,
     rng: &mut R,
-) -> Result<UniversalParam, TxnApiError> {
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     universal_setup(max_degree, rng)
 }

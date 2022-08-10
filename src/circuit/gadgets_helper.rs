@@ -9,7 +9,7 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{circuit::structs::UserAddressVar, BaseField, CurveParam};
+use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
 use ark_ec::{twisted_edwards_extended::GroupAffine, AffineCurve};
 use jf_plonk::{
     circuit::{
@@ -40,7 +40,7 @@ pub(crate) trait TransactionGadgetsHelper {
     ) -> Result<Variable, PlonkError>;
 }
 
-impl TransactionGadgetsHelper for PlonkCircuit<BaseField> {
+impl<C: CapConfig> TransactionGadgetsHelper for PlonkCircuit<C::ScalarField> {
     fn derive_internal_asset_code(
         &mut self,
         seed: Variable,
@@ -50,7 +50,7 @@ impl TransactionGadgetsHelper for PlonkCircuit<BaseField> {
     }
 
     fn derive_user_address(&mut self, secret_key: Variable) -> Result<UserAddressVar, PlonkError> {
-        let base = GroupAffine::<CurveParam>::prime_subgroup_generator();
+        let base = GroupAffine::<C::JubjubParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
     }
@@ -60,11 +60,11 @@ impl TransactionGadgetsHelper for PlonkCircuit<BaseField> {
         secret_key: Variable,
         public_key: &PointVariable,
     ) -> Result<Variable, PlonkError> {
-        let shared_key = self.variable_base_scalar_mul::<CurveParam>(secret_key, public_key)?;
+        let shared_key = self.variable_base_scalar_mul::<C::JubjubParam>(secret_key, public_key)?;
         let zero = self.zero();
         let derived_key =
             self.rescue_sponge_no_padding(&[shared_key.get_x(), shared_key.get_y(), zero], 1)?[0];
-        let bit = self.is_neutral_point::<CurveParam>(public_key)?;
+        let bit = self.is_neutral_point::<C::JubjubParam>(public_key)?;
         self.conditional_select(bit, derived_key, secret_key)
     }
 
@@ -83,8 +83,8 @@ mod tests {
     use crate::{
         circuit::gadgets_helper::TransactionGadgetsHelper,
         keys::{FreezerKeyPair, NullifierKey},
+        prelude::{CapConfig, Config},
         structs::{AssetCodeDigest, AssetCodeSeed, InternalAssetCode, RecordCommitment},
-        BaseField, CurveParam, ScalarField,
     };
     use ark_ec::ProjectiveCurve;
     use ark_ff::One;
@@ -94,6 +94,10 @@ mod tests {
         errors::PlonkError,
     };
     use jf_utils::fr_to_fq;
+
+    type F = <Config as CapConfig>::ScalarField;
+    type Fj = <Config as CapConfig>::JubjubScalarField;
+    type JubjubParam = <Config as CapConfig>::JubjubParam;
 
     #[test]
     fn test_internal_asset_code() -> Result<(), PlonkError> {
@@ -113,7 +117,7 @@ mod tests {
 
         // Check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(asset_code_var) = internal_asset_code.0 + BaseField::one();
+        *circuit.witness_mut(asset_code_var) = internal_asset_code.0 + F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
         Ok(())
     }
@@ -121,21 +125,21 @@ mod tests {
     #[test]
     fn test_user_address() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
-        let mut circuit = PlonkCircuit::<BaseField>::new_turbo_plonk();
+        let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let key_pair = crate::keys::UserKeyPair::generate(&mut prng);
 
-        let spend_key = fr_to_fq::<_, CurveParam>(key_pair.address_secret_ref());
+        let spend_key = fr_to_fq::<_, JubjubParam>(key_pair.address_secret_ref());
         let spend_key_var = circuit.create_variable(spend_key)?;
         let address_var = circuit.derive_user_address(spend_key_var)?;
 
         // Check address consistency
-        let (address_x, address_y): (BaseField, BaseField) = (&key_pair.address()).into();
+        let (address_x, address_y): (F, F) = (&key_pair.address()).into();
         assert_eq!(address_x, circuit.witness(address_var.0.get_x())?);
         assert_eq!(address_y, circuit.witness(address_var.0.get_y())?);
 
         // Check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(address_var.0.get_x()) = address_x + BaseField::one();
+        *circuit.witness_mut(address_var.0.get_x()) = address_x + F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
         Ok(())
     }
@@ -143,10 +147,10 @@ mod tests {
     #[test]
     fn test_nullifier_key() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
-        let mut circuit = PlonkCircuit::<BaseField>::new_turbo_plonk();
+        let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let user_key_pair = crate::keys::UserKeyPair::generate(&mut prng);
         let user_public_key = user_key_pair.pub_key();
-        let spend_key = fr_to_fq::<_, CurveParam>(user_key_pair.address_secret_ref());
+        let spend_key = fr_to_fq::<_, JubjubParam>(user_key_pair.address_secret_ref());
         let freezer_keypair = FreezerKeyPair::generate(&mut prng);
         let freezer_public_key = freezer_keypair.pub_key().0.into_affine();
 
@@ -161,13 +165,13 @@ mod tests {
 
         // Check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(nullifier_key_var) = nullifier_key.0 + BaseField::one();
+        *circuit.witness_mut(nullifier_key_var) = nullifier_key.0 + F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
         // Check derivation from user secret key
-        let mut circuit = PlonkCircuit::<BaseField>::new_turbo_plonk();
+        let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let freezer_key_var =
-            circuit.create_variable(fr_to_fq::<_, CurveParam>(&freezer_keypair.sec_key))?;
+            circuit.create_variable(fr_to_fq::<_, JubjubParam>(&freezer_keypair.sec_key))?;
         let user_pk_var = circuit.create_point_variable(Point::from(
             user_public_key.address_internal().into_affine(),
         ))?;
@@ -180,7 +184,7 @@ mod tests {
 
         // Check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(nullifier_key_var) = nullifier_key_2.0 + BaseField::one();
+        *circuit.witness_mut(nullifier_key_var) = nullifier_key_2.0 + F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
         Ok(())
     }
@@ -188,10 +192,10 @@ mod tests {
     #[test]
     fn test_nullifier() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
-        let nullifier_key = NullifierKey::from(&ScalarField::rand(&mut prng));
+        let nullifier_key = NullifierKey::from(&Fj::rand(&mut prng));
         let uid = 10u64;
-        let uid_scalar = BaseField::from(10u8);
-        let commitment = BaseField::from(1234u64);
+        let uid_scalar = F::from(10u8);
+        let commitment = F::from(1234u64);
 
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let key_var = circuit.create_variable(nullifier_key.0)?;
@@ -205,7 +209,7 @@ mod tests {
 
         // Check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(nullifier_var) = nullifier.0 + BaseField::one();
+        *circuit.witness_mut(nullifier_var) = nullifier.0 + F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
         Ok(())
     }

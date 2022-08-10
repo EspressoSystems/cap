@@ -13,6 +13,7 @@
 use crate::{
     errors::TxnApiError,
     keys::FreezerKeyPair,
+    prelude::CapConfig,
     proof::freeze::{
         self, FreezeProvingKey, FreezePublicInput, FreezeValidityProof, FreezeVerifyingKey,
         FreezeWitness,
@@ -27,6 +28,7 @@ use ark_std::{
     string::ToString,
     vec::Vec,
 };
+use jf_primitives::merkle_tree::AccMemberWitness;
 use serde::{Deserialize, Serialize};
 
 /// Freezing note structure
@@ -77,14 +79,14 @@ pub struct FreezeAuxInfo {
 /// All necessary information for each freezing input record in the `FreezeNote`
 /// generation.
 #[derive(Debug, Clone)]
-pub struct FreezeNoteInput<'fkp> {
+pub struct FreezeNoteInput<'fkp, C: CapConfig> {
     /// Record opening of the input record.
-    pub ro: RecordOpening,
+    pub ro: RecordOpening<C>,
     /// Accumulator membership proof (namely the Merkle proof) of the record
     /// commitment.
-    pub acc_member_witness: AccMemberWitness,
+    pub acc_member_witness: AccMemberWitness<C::ScalarField>,
     /// Reference of the freezer's freezing key pair.
-    pub keypair: &'fkp FreezerKeyPair,
+    pub keypair: &'fkp FreezerKeyPair<C>,
 }
 
 impl FreezeNote {

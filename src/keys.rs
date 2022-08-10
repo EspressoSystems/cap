@@ -18,6 +18,7 @@
 //! | Viewer | [ViewerKeyPair], [ViewerPubKey] |
 //! | Freezer | [FreezerKeyPair], [FreezerPubKey] |
 use crate::{
+    config::CapConfig,
     constants::VIEWABLE_DATA_LEN,
     errors::TxnApiError,
     mint::MintNote,
@@ -26,7 +27,6 @@ use crate::{
         ViewableMemo,
     },
     transfer::TransferNote,
-    BaseField, CurveParam, ScalarField,
 };
 use ark_ec::{group::Group, twisted_edwards_extended::GroupProjective, ProjectiveCurve};
 use ark_serialize::*;
@@ -53,17 +53,17 @@ use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
 
 /// Public address for a user to send assets to/from.
-pub type UserAddress = schnorr::VerKey<CurveParam>;
+pub type UserAddress<C: CapConfig> = schnorr::VerKey<C::JubjubParam>;
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
 #[derive(Clone, Default, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub struct UserPubKey {
-    pub(crate) address: UserAddress,
+pub struct UserPubKey<C: CapConfig> {
+    pub(crate) address: UserAddress<C>,
     enc_key: aead::EncKey,
 }
 
-impl UserPubKey {
+impl<C: CapConfig> UserPubKey<C> {
     /// Encrypt a message with authenticated label using AEAD.
     pub fn encrypt<R>(
         &self,
@@ -82,12 +82,12 @@ impl UserPubKey {
     }
 
     /// Get public key address field
-    pub fn address(&self) -> UserAddress {
+    pub fn address(&self) -> UserAddress<C> {
         self.address.clone()
     }
 
     /// Constructor
-    pub fn new(address: UserAddress, enc_key: aead::EncKey) -> Self {
+    pub fn new(address: UserAddress<C>, enc_key: aead::EncKey) -> Self {
         Self { address, enc_key }
     }
 
@@ -99,13 +99,17 @@ impl UserPubKey {
     }
 
     /// Verify a signature
-    pub fn verify_sig(&self, msg: &[u8], sig: &Signature<CurveParam>) -> Result<(), TxnApiError> {
-        let bls_scalars = hash_to_field::<_, BaseField>(msg);
+    pub fn verify_sig(
+        &self,
+        msg: &[u8],
+        sig: &Signature<C::JubjubParam>,
+    ) -> Result<(), TxnApiError> {
+        let bls_scalars = hash_to_field::<_, C::ScalarField>(msg);
         self.address
             .verify(
                 &[bls_scalars],
                 sig,
-                SchnorrSignatureScheme::<CurveParam>::CS_ID,
+                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
             )
             .map_err(|_| {
                 TxnApiError::FailedPrimitives(
@@ -116,8 +120,8 @@ impl UserPubKey {
 }
 
 // private or internal functions
-impl UserPubKey {
-    pub(crate) fn address_internal(&self) -> &GroupProjective<CurveParam> {
+impl<C: CapConfig> UserPubKey<C> {
+    pub(crate) fn address_internal(&self) -> &GroupProjective<C::JubjubParam> {
         self.address.internal()
     }
 }
@@ -125,12 +129,12 @@ impl UserPubKey {
 /// A key pair for the user who owns and can consume records (spend asset)
 #[tagged_blob("USERKEY")]
 #[derive(Debug, Default, Clone, CanonicalSerialize, CanonicalDeserialize)]
-pub struct UserKeyPair {
-    pub(crate) addr_keypair: schnorr::KeyPair<CurveParam>,
+pub struct UserKeyPair<C: CapConfig> {
+    pub(crate) addr_keypair: schnorr::KeyPair<C::JubjubParam>,
     pub(crate) enc_keypair: aead::KeyPair,
 }
 
-impl UserKeyPair {
+impl<C: CapConfig> UserKeyPair<C> {
     /// Generate a new user key pair
     pub fn generate<R>(rng: &mut R) -> Self
     where
@@ -143,7 +147,7 @@ impl UserKeyPair {
     }
 
     /// Getter for the user public key
-    pub fn pub_key(&self) -> UserPubKey {
+    pub fn pub_key(&self) -> UserPubKey<C> {
         UserPubKey {
             address: self.address(),
             enc_key: self.enc_keypair.enc_key(),
@@ -151,12 +155,12 @@ impl UserKeyPair {
     }
 
     /// Getter for public address
-    pub fn address(&self) -> UserAddress {
+    pub fn address(&self) -> UserAddress<C> {
         self.addr_keypair.ver_key()
     }
 
     /// Getter for the reference to the address secret key
-    pub(crate) fn address_secret_ref(&self) -> &ScalarField {
+    pub(crate) fn address_secret_ref(&self) -> &C::JubjubScalarField {
         self.addr_keypair.sign_key_internal()
     }
 
@@ -167,22 +171,27 @@ impl UserKeyPair {
     ///   freezer
     /// * `uid` - the unique id for the position of RC in the accumulator
     /// * `rc` - the asset record commitment from `RecordCommitment`
-    pub fn nullify(&self, fpk: &FreezerPubKey, uid: u64, rc: &RecordCommitment) -> Nullifier {
+    pub fn nullify(
+        &self,
+        fpk: &FreezerPubKey<C>,
+        uid: u64,
+        rc: &RecordCommitment<C>,
+    ) -> Nullifier<C> {
         self.derive_nullifier_key(fpk).nullify(uid, rc)
     }
 
     /// Sign an arbitrary message using the address spending key
-    pub fn sign(&self, msg: &[u8]) -> Signature<CurveParam> {
-        let scalars = hash_to_field::<_, BaseField>(msg);
+    pub fn sign(&self, msg: &[u8]) -> Signature<C::JubjubParam> {
+        let scalars = hash_to_field::<_, C::ScalarField>(msg);
         self.addr_keypair
-            .sign(&[scalars], SchnorrSignatureScheme::<CurveParam>::CS_ID)
+            .sign(&[scalars], SchnorrSignatureScheme::<C::JubjubParam>::CS_ID)
     }
 
     // Derive nullifying secret key.
     // Return user address secret key if freezer public key is neutral,
     // otherwise return the hash of the Diffie-Hellman shared key
-    pub(crate) fn derive_nullifier_key(&self, fpk: &FreezerPubKey) -> NullifierKey {
-        if fpk.0 == GroupProjective::<CurveParam>::default() {
+    pub(crate) fn derive_nullifier_key(&self, fpk: &FreezerPubKey<C>) -> NullifierKey<C> {
+        if fpk.0 == GroupProjective::<C::JubjubParam>::default() {
             NullifierKey::from(self.address_secret_ref())
         } else {
             compute_nullifier_key(&fpk.0, self.address_secret_ref())
@@ -193,13 +202,21 @@ impl UserKeyPair {
 /// Public key for the credential creator
 #[tagged_blob("CREDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct CredIssuerPubKey(pub(crate) schnorr::VerKey<CurveParam>);
+pub struct CredIssuerPubKey<C: CapConfig>(pub(crate) schnorr::VerKey<C::JubjubParam>);
 
-impl CredIssuerPubKey {
+impl<C: CapConfig> CredIssuerPubKey<C> {
     /// Verify a credential only for its signature correctness.
-    pub(crate) fn verify(&self, msg: &[BaseField], cred: &Credential) -> Result<(), TxnApiError> {
+    pub(crate) fn verify(
+        &self,
+        msg: &[C::ScalarField],
+        cred: &Credential<C>,
+    ) -> Result<(), TxnApiError> {
         self.0
-            .verify(msg, &cred.0, SchnorrSignatureScheme::<CurveParam>::CS_ID)
+            .verify(
+                msg,
+                &cred.0,
+                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
+            )
             .map_err(|_| {
                 TxnApiError::FailedCredentialVerification(
                     "wrong signature in credential".to_string(),
@@ -208,7 +225,7 @@ impl CredIssuerPubKey {
     }
 
     /// Transform to a pair of scalars
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let (x, y) = (&self.0).into();
         vec![x, y]
     }
@@ -217,9 +234,9 @@ impl CredIssuerPubKey {
 /// Key pair for the credential creator
 #[tagged_blob("CREDKEY")]
 #[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct CredIssuerKeyPair(pub(crate) schnorr::KeyPair<CurveParam>);
+pub struct CredIssuerKeyPair<C: CapConfig>(pub(crate) schnorr::KeyPair<C::JubjubParam>);
 
-impl CredIssuerKeyPair {
+impl<C: CapConfig> CredIssuerKeyPair<C> {
     /// Generate a new key pair
     pub fn generate<R>(rng: &mut R) -> Self
     where
@@ -229,15 +246,15 @@ impl CredIssuerKeyPair {
     }
 
     /// Getter for the public key
-    pub fn pub_key(&self) -> CredIssuerPubKey {
+    pub fn pub_key(&self) -> CredIssuerPubKey<C> {
         CredIssuerPubKey(self.0.ver_key())
     }
 
     /// Sign a message and create a credential.
-    pub(crate) fn sign(&self, msg: &[BaseField]) -> Credential {
+    pub(crate) fn sign(&self, msg: &[C::ScalarField]) -> Credential<C> {
         Credential(
             self.0
-                .sign(msg, SchnorrSignatureScheme::<CurveParam>::CS_ID),
+                .sign(msg, SchnorrSignatureScheme::<C::JubjubParam>::CS_ID),
         )
     }
 }
@@ -245,26 +262,26 @@ impl CredIssuerKeyPair {
 /// Public key for the viewer
 #[tagged_blob("AUDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct ViewerPubKey(pub(crate) elgamal::EncKey<CurveParam>);
+pub struct ViewerPubKey<C: CapConfig>(pub(crate) elgamal::EncKey<C::JubjubParam>);
 
-impl ViewerPubKey {
+impl<C: CapConfig> ViewerPubKey<C> {
     /// Generate a random viewer public key with unknown associated secret key
     pub(crate) fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
-        ViewerPubKey(EncKey::<CurveParam>::rand(rng))
+        ViewerPubKey(EncKey::<C::JubjubParam>::rand(rng))
     }
 
     /// Encrypt messages including information about a transaction that an
     /// viewer should know.
     pub(crate) fn encrypt(
         &self,
-        randomizer: ScalarField,
-        message: &[BaseField],
-    ) -> elgamal::Ciphertext<CurveParam> {
+        randomizer: C::JubjubScalarField,
+        message: &[C::ScalarField],
+    ) -> elgamal::Ciphertext<C::JubjubParam> {
         self.0.deterministic_encrypt(randomizer, message)
     }
 
     /// Transform to a pair of scalars
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let (x, y) = (&self.0).into();
         vec![x, y]
     }
@@ -272,9 +289,9 @@ impl ViewerPubKey {
 /// Key pair for the viewer
 #[tagged_blob("AUDKEY")]
 #[derive(Debug, Clone, CanonicalDeserialize, CanonicalSerialize)]
-pub struct ViewerKeyPair(pub(crate) elgamal::KeyPair<CurveParam>);
+pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::JubjubParam>);
 
-impl ViewerKeyPair {
+impl<C: CapConfig> ViewerKeyPair<C> {
     /// Generate a new key pair
     pub fn generate<R>(rng: &mut R) -> Self
     where
@@ -284,21 +301,21 @@ impl ViewerKeyPair {
     }
 
     /// Getter for the public key
-    pub fn pub_key(&self) -> ViewerPubKey {
+    pub fn pub_key(&self) -> ViewerPubKey<C> {
         ViewerPubKey(self.0.enc_key())
     }
 
     /// Decrypts ViewerMemo
-    pub(crate) fn decrypt(&self, memo: &ViewableMemo) -> Vec<BaseField> {
+    pub(crate) fn decrypt(&self, memo: &ViewableMemo<C>) -> Vec<C::ScalarField> {
         self.0.decrypt(&memo.0)
     }
 
     /// Open ViewableMemo into input and output vectors ofViewableData struct
     pub fn open_transfer_viewing_memo(
         &self,
-        asset_definition: &AssetDefinition,
+        asset_definition: &AssetDefinition<C>,
         transfer_note: &TransferNote,
-    ) -> Result<(Vec<ViewableData>, Vec<ViewableData>), TxnApiError> {
+    ) -> Result<(Vec<ViewableData<C>>, Vec<ViewableData<C>>), TxnApiError> {
         if self.pub_key() != asset_definition.policy.viewer_pk {
             return Err(TxnApiError::InvalidParameter(
                 "Viewer decrypt key do not match policy viewer public key".to_string(),
@@ -355,7 +372,7 @@ impl ViewerKeyPair {
     pub fn open_mint_viewing_memo(
         &self,
         mint_note: &MintNote,
-    ) -> Result<ViewableData, TxnApiError> {
+    ) -> Result<ViewableData<C>, TxnApiError> {
         let plaintext = self.decrypt(&mint_note.viewing_memo);
         let expected_len = 3; // (x,y) owner address and blinding factor
         if plaintext.len() != expected_len {
@@ -372,23 +389,23 @@ impl ViewerKeyPair {
 /// Public key for the freezer
 #[tagged_blob("FREEZEPUBKEY")]
 #[derive(Clone, Debug, Eq, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct FreezerPubKey(pub(crate) GroupProjective<CurveParam>);
+pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::JubjubParam>);
 
-impl FreezerPubKey {
+impl<C: CapConfig> FreezerPubKey<C> {
     /// Transform to a pair of scalars
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let affine_p = self.0.into_affine();
         vec![affine_p.x, affine_p.y]
     }
 }
 
-impl Hash for FreezerPubKey {
+impl<C: CapConfig> Hash for FreezerPubKey<C> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         Hash::hash(&self.0.into_affine(), state)
     }
 }
 
-impl PartialEq for FreezerPubKey {
+impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
     fn eq(&self, other: &Self) -> bool {
         self.0.into_affine().eq(&other.0.into_affine())
     }
@@ -397,27 +414,27 @@ impl PartialEq for FreezerPubKey {
 /// Key pair for the freezer
 #[tagged_blob("FREEZEKEY")]
 #[derive(Clone, Debug, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct FreezerKeyPair {
-    pub(crate) sec_key: ScalarField,
-    pub(crate) pub_key: GroupProjective<CurveParam>,
+pub struct FreezerKeyPair<C: CapConfig> {
+    pub(crate) sec_key: C::JubjubScalarField,
+    pub(crate) pub_key: GroupProjective<C::JubjubParam>,
 }
 
-impl FreezerKeyPair {
+impl<C: CapConfig> FreezerKeyPair<C> {
     /// Generate a new key pair
     pub fn generate<R>(rng: &mut R) -> Self
     where
         R: RngCore + CryptoRng,
     {
-        let sec_key = ScalarField::rand(rng);
+        let sec_key = C::JubjubScalarField::rand(rng);
         let pub_key = Group::mul(
-            &GroupProjective::<CurveParam>::prime_subgroup_generator(),
+            &GroupProjective::<C::JubjubParam>::prime_subgroup_generator(),
             &sec_key,
         );
         Self { sec_key, pub_key }
     }
 
     /// Getter for the public key
-    pub fn pub_key(&self) -> FreezerPubKey {
+    pub fn pub_key(&self) -> FreezerPubKey<C> {
         FreezerPubKey(self.pub_key)
     }
 
@@ -426,7 +443,12 @@ impl FreezerKeyPair {
     /// * `address` - User address, the owner of the asset record
     /// * `uid` - the unique id for the position of RC in the accumulator
     /// * `rc` - the asset record commitment from `RecordCommitment`
-    pub fn nullify(&self, address: &UserAddress, uid: u64, rc: &RecordCommitment) -> Nullifier {
+    pub fn nullify(
+        &self,
+        address: &UserAddress<C>,
+        uid: u64,
+        rc: &RecordCommitment<C>,
+    ) -> Nullifier<C> {
         self.derive_nullifier_key(address).nullify(uid, rc)
     }
 
@@ -437,34 +459,34 @@ impl FreezerKeyPair {
     // group element, since this public key is being retreived from existing
     // asset record and sanity check had been done during asset issuance to
     // avoid malformed user public key.
-    pub(crate) fn derive_nullifier_key(&self, address: &UserAddress) -> NullifierKey {
+    pub(crate) fn derive_nullifier_key(&self, address: &UserAddress<C>) -> NullifierKey<C> {
         compute_nullifier_key(address.internal(), &self.sec_key)
     }
 }
 
-impl Hash for FreezerKeyPair {
+impl<C: CapConfig> Hash for FreezerKeyPair<C> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         Hash::hash(&self.sec_key, state);
         Hash::hash(&self.pub_key.into_affine(), state);
     }
 }
 
-impl PartialEq for FreezerKeyPair {
+impl<C: CapConfig> PartialEq for FreezerKeyPair<C> {
     fn eq(&self, other: &Self) -> bool {
         self.sec_key == other.sec_key && self.pub_key.into_affine() == other.pub_key.into_affine()
     }
 }
 
 // Use DH to derive a shared key, then hash to get the nullifier key
-fn compute_nullifier_key(
-    pub_key_alice: &GroupProjective<CurveParam>,
-    sec_key_bob: &ScalarField,
-) -> NullifierKey {
+fn compute_nullifier_key<C: CapConfig>(
+    pub_key_alice: &GroupProjective<C::JubjubParam>,
+    sec_key_bob: &C::JubjubScalarField,
+) -> NullifierKey<C> {
     let shared_key_affine = Group::mul(pub_key_alice, sec_key_bob).into_affine();
     let nk = RescuePermutation::default().hash_3_to_1(&[
         shared_key_affine.x,
         shared_key_affine.y,
-        BaseField::from(0u32),
+        C::ScalarField::from(0u32),
     ]);
     NullifierKey(nk)
 }
@@ -473,31 +495,33 @@ fn compute_nullifier_key(
 /// owner (`UserKeyPair`) or the correct freezer (`FreezerKeyPair`)
 #[tagged_blob("NULKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub(crate) struct NullifierKey(pub(crate) BaseField);
+pub(crate) struct NullifierKey<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl NullifierKey {
+impl<C: CapConfig> NullifierKey<C> {
     // Nullify an asset record commitment (with its unique id in the
     // accumulator for security purposes)
     // nl := PRF(nk; uid || com) where uid is leaf index, com is the coin/ar
     // commitment
-    pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment) -> Nullifier {
+    pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment<C>) -> Self {
         let prf_key = PrfKey::from(self.0);
         Nullifier(
             PRF::new(2, 1)
-                .eval(&prf_key, &[BaseField::from(uid), com.0])
+                .eval(&prf_key, &[C::ScalarField::from(uid), com.0])
                 .unwrap()[0],
         )
     }
 }
 
-impl From<&ScalarField> for NullifierKey {
-    fn from(s: &ScalarField) -> Self {
-        NullifierKey(jf_utils::fr_to_fq::<_, CurveParam>(s))
+impl<C: CapConfig> From<&C::JubjubScalarField> for NullifierKey<C> {
+    fn from(s: &C::JubjubScalarField) -> Self {
+        NullifierKey(jf_utils::fr_to_fq::<_, C::JubjubParam>(s))
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::prelude::Config;
+
     use super::*;
 
     #[test]
@@ -537,7 +561,7 @@ mod test {
         let expected_nk = RescuePermutation::default().hash_3_to_1(&[
             expected_shared_key.x,
             expected_shared_key.y,
-            BaseField::from(0u32),
+            <Config as CapConfig>::ScalarField::from(0u32),
         ]);
         assert_eq!(nk1.0, expected_nk);
 
@@ -546,7 +570,9 @@ mod test {
         let nk3 = user_keypair.derive_nullifier_key(&empty_fzk);
         assert_eq!(
             nk3.0,
-            jf_utils::fr_to_fq::<_, CurveParam>(user_keypair.address_secret_ref())
+            jf_utils::fr_to_fq::<_, <Config as CapConfig>::JubjubParam>(
+                user_keypair.address_secret_ref()
+            )
         );
     }
 

@@ -12,12 +12,12 @@
 //! record-related data structures in transactions
 
 use crate::{
+    config::CapConfig,
     constants::*,
     errors::{DeserializationError, TxnApiError},
     keys::*,
     mint::MintNote,
     utils::*,
-    AccMemberWitness, BaseField, CurveParam, NodeValue, ScalarField, Signature, VerKey,
 };
 use ark_ec::twisted_edwards_extended::GroupAffine;
 use ark_ff::{BigInteger, BigInteger256, Field, PrimeField, UniformRand, Zero};
@@ -35,7 +35,9 @@ use jf_primitives::{
     aead,
     commitment::Commitment as RescueCommitment,
     elgamal,
+    merkle_tree::{AccMemberWitness, NodeValue},
     prf::{PrfKey, PRF},
+    signatures::schnorr::{self, Signature},
 };
 use jf_rescue::Permutation;
 use jf_utils::{deserialize_canonical_bytes, hash_to_field, tagged_blob, CanonicalBytes};
@@ -54,56 +56,56 @@ pub enum NoteType {
     Freeze,
 }
 
-/// A unique identifier/code for an asset type
-#[tagged_blob("INTERNAL_ASSET_CODE")]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
-)]
-pub struct InternalAssetCode(pub(crate) BaseField);
-
 /// The random seed used in AssetCode derivation
 #[tagged_blob("ASSET_SEED")]
 #[derive(Debug, Copy, Clone, Default, CanonicalSerialize, CanonicalDeserialize, PartialEq)]
-pub struct AssetCodeSeed(pub(crate) BaseField);
+pub struct AssetCodeSeed<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl AssetCodeSeed {
+impl<C: CapConfig> AssetCodeSeed<C> {
     /// sample a new seed for asset code generation
-    pub fn generate<R: CryptoRng + RngCore>(rng: &mut R) -> AssetCodeSeed {
-        AssetCodeSeed(BaseField::rand(rng))
+    pub fn generate<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
+        AssetCodeSeed(C::ScalarField::rand(rng))
     }
 }
 
 /// The digest of asset description
 #[derive(Debug, Copy, Clone, Default)]
-pub(crate) struct AssetCodeDigest(pub(crate) BaseField);
+pub(crate) struct AssetCodeDigest<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl AssetCodeDigest {
-    pub(crate) fn from_description(description: &[u8]) -> AssetCodeDigest {
-        let scalars = hash_to_field::<_, BaseField>(description);
+impl<C: CapConfig> AssetCodeDigest<C> {
+    pub(crate) fn from_description(description: &[u8]) -> Self {
+        let scalars = hash_to_field::<_, C::ScalarField>(description);
         let digest = Permutation::default().sponge_with_padding(&[scalars], 1)[0];
         AssetCodeDigest(digest)
     }
 }
 
-impl InternalAssetCode {
+/// A unique identifier/code for an asset type
+#[tagged_blob("INTERNAL_ASSET_CODE")]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
+)]
+pub struct InternalAssetCode<C: CapConfig>(pub(crate) C::ScalarField);
+
+impl<C: CapConfig> InternalAssetCode<C> {
     /// Derive an Asset code from its seed and digest
     /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
-    pub fn new(seed: AssetCodeSeed, description: &[u8]) -> Self {
+    pub fn new(seed: AssetCodeSeed<C>, description: &[u8]) -> Self {
         let digest = AssetCodeDigest::from_description(description);
         Self::new_internal(seed, digest)
     }
 
     // internal logic of deriving an asset code from seed and digest, both as scalar
-    pub(crate) fn new_internal(seed: AssetCodeSeed, digest: AssetCodeDigest) -> Self {
+    pub(crate) fn new_internal(seed: AssetCodeSeed<C>, digest: AssetCodeDigest<C>) -> Self {
         let prf_key = PrfKey::from(seed.0);
         let scalar = PRF::new(1, 1).eval(&prf_key, &[digest.0]).unwrap()[0];
         Self(scalar)
     }
 }
 
-impl From<&AssetCode> for BaseField {
-    fn from(ac: &AssetCode) -> Self {
+impl<C: CapConfig> From<&AssetCode<C>> for C::ScalarField {
+    fn from(ac: &AssetCode<C>) -> Self {
         ac.0
     }
 }
@@ -217,9 +219,9 @@ impl TryFrom<primitive_types::U256> for Amount {
     Hash,
     Eq,
 )]
-pub struct AssetCode(pub(crate) BaseField);
+pub struct AssetCode<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl AssetCode {
+impl<C: CapConfig> AssetCode<C> {
     /// Return the AssetCode assigned for the native asset
     pub const fn native() -> Self {
         NATIVE_ASSET_CODE
@@ -233,7 +235,7 @@ impl AssetCode {
     /// Generate a random asset code
     /// Returns the asset code together with the randomly sampled seed and
     /// digest used to derive it
-    pub fn random<R>(rng: &mut R) -> (Self, AssetCodeSeed)
+    pub fn random<R>(rng: &mut R) -> (Self, AssetCodeSeed<C>)
     where
         R: RngCore + CryptoRng,
     {
@@ -244,7 +246,7 @@ impl AssetCode {
     /// Derive a domestic cap Asset code from its seed and digest
     /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
-    pub fn new_domestic(seed: AssetCodeSeed, description: &[u8]) -> AssetCode {
+    pub fn new_domestic(seed: AssetCodeSeed<C>, description: &[u8]) -> Self {
         let internal = InternalAssetCode::new(seed, description);
         Self::new_domestic_from_internal(&internal)
     }
@@ -253,36 +255,39 @@ impl AssetCode {
     /// `seed`:  only known by the asset creator.
     /// `description`: asset code description
     pub(crate) fn new_domestic_from_digest(
-        seed: AssetCodeSeed,
-        digest: AssetCodeDigest,
-    ) -> AssetCode {
+        seed: AssetCodeSeed<C>,
+        digest: AssetCodeDigest<C>,
+    ) -> Self {
         let internal = InternalAssetCode::new_internal(seed, digest);
         Self::new_domestic_from_internal(&internal)
     }
 
     /// Derive a domestic cap asset code from its internal asset code value
-    pub(crate) fn new_domestic_from_internal(internal: &InternalAssetCode) -> AssetCode {
+    pub(crate) fn new_domestic_from_internal(internal: &InternalAssetCode<C>) -> Self {
         let bytes_internal = internal.0.into_repr().to_bytes_le();
         let bytes = [DOM_SEP_DOMESTIC_ASSET.to_vec(), bytes_internal].concat();
         let mut hasher = Keccak256::new();
         hasher.update(&bytes);
         let hash_value = hasher.finalize();
-        AssetCode(BaseField::from_le_bytes_mod_order(&hash_value))
+        AssetCode(C::ScalarField::from_le_bytes_mod_order(&hash_value))
     }
 
     /// Derive asset code from a foreign tokens (e.g. an Ethereum
     /// wrapped token)
-    pub fn new_foreign(description: &[u8]) -> AssetCode {
+    pub fn new_foreign(description: &[u8]) -> Self {
         let bytes = [DOM_SEP_FOREIGN_ASSET.to_vec(), description.to_vec()].concat();
         let mut hasher = Keccak256::new();
         hasher.update(&bytes);
         let hash_value = hasher.finalize();
-        AssetCode(BaseField::from_le_bytes_mod_order(&hash_value))
+        AssetCode(C::ScalarField::from_le_bytes_mod_order(&hash_value))
     }
 
     /// Verify that asset code is an app domestic asset that was derived from
     /// `internal` asset code
-    pub(crate) fn verify_domestic(&self, internal: &InternalAssetCode) -> Result<(), TxnApiError> {
+    pub(crate) fn verify_domestic(
+        &self,
+        internal: &InternalAssetCode<C>,
+    ) -> Result<(), TxnApiError> {
         let derived = Self::new_domestic_from_internal(internal);
         if derived == *self {
             return Ok(());
@@ -433,9 +438,9 @@ impl RevealMap {
     }
 }
 
-impl From<RevealMap> for BaseField {
+impl<C: CapConfig> From<RevealMap> for C::ScalarField {
     fn from(map: RevealMap) -> Self {
-        BaseField::from(
+        C::ScalarField::from(
             map.0
                 .iter()
                 .fold(0u64, |acc, &x| if x { acc * 2 + 1 } else { acc * 2 }),
@@ -448,7 +453,10 @@ impl RevealMap {
     /// vals).
     /// Noted that the 1st bit in reveal map on `upk` would require
     /// two Scalars: `(upk_x, upk_y)` thus vals.len() == REVEAL_MAP_LEN + 1
-    pub(crate) fn hadamard_product(&self, vals: &[BaseField]) -> Vec<BaseField> {
+    pub(crate) fn hadamard_product<C: CapConfig>(
+        &self,
+        vals: &[C::ScalarField],
+    ) -> Vec<C::ScalarField> {
         assert!(
             vals.len() <= VIEWABLE_DATA_LEN,
             "Internal Error: number of attributes larger than expected"
@@ -456,7 +464,7 @@ impl RevealMap {
         self.0
             .iter()
             .zip(vals.iter())
-            .map(|(&bit, &val)| if bit { val } else { BaseField::zero() })
+            .map(|(&bit, &val)| if bit { val } else { C::ScalarField::zero() })
             .collect()
     }
 }
@@ -479,28 +487,28 @@ impl RevealMap {
     Serialize,
     Deserialize,
 )]
-pub struct AssetPolicy {
-    pub(crate) viewer_pk: ViewerPubKey,
-    pub(crate) cred_pk: CredIssuerPubKey,
-    pub(crate) freezer_pk: FreezerPubKey,
+pub struct AssetPolicy<C: CapConfig> {
+    pub(crate) viewer_pk: ViewerPubKey<C>,
+    pub(crate) cred_pk: CredIssuerPubKey<C>,
+    pub(crate) freezer_pk: FreezerPubKey<C>,
     pub(crate) reveal_map: RevealMap,
     // the asset viewing is applied only when the transfer amount exceeds `reveal_threshold`.
     pub(crate) reveal_threshold: Amount,
 }
 
-impl AssetPolicy {
+impl<C: CapConfig> AssetPolicy<C> {
     /// Reference to viewer public key
-    pub fn viewer_pub_key(&self) -> &ViewerPubKey {
+    pub fn viewer_pub_key(&self) -> &ViewerPubKey<C> {
         &self.viewer_pk
     }
 
     /// Reference to credential creator public key
-    pub fn cred_creator_pub_key(&self) -> &CredIssuerPubKey {
+    pub fn cred_creator_pub_key(&self) -> &CredIssuerPubKey<C> {
         &self.cred_pk
     }
 
     /// Reference to freezer public key
-    pub fn freezer_pub_key(&self) -> &FreezerPubKey {
+    pub fn freezer_pub_key(&self) -> &FreezerPubKey<C> {
         &self.freezer_pk
     }
 
@@ -537,7 +545,7 @@ impl AssetPolicy {
     }
 
     /// Set the viewer public key
-    pub fn set_viewer_pub_key(mut self, viewer_pub_key: ViewerPubKey) -> Self {
+    pub fn set_viewer_pub_key(mut self, viewer_pub_key: ViewerPubKey<C>) -> Self {
         self.viewer_pk = viewer_pub_key;
         self
     }
@@ -548,7 +556,7 @@ impl AssetPolicy {
     }
 
     /// Set the credential creator public key
-    pub fn set_cred_creator_pub_key(mut self, cred_creator_pub_key: CredIssuerPubKey) -> Self {
+    pub fn set_cred_creator_pub_key(mut self, cred_creator_pub_key: CredIssuerPubKey<C>) -> Self {
         self.cred_pk = cred_creator_pub_key;
         self
     }
@@ -559,7 +567,7 @@ impl AssetPolicy {
     }
 
     /// Set the freezer public key
-    pub fn set_freezer_pub_key(mut self, freezer_pub_key: FreezerPubKey) -> Self {
+    pub fn set_freezer_pub_key(mut self, freezer_pub_key: FreezerPubKey<C>) -> Self {
         self.freezer_pk = freezer_pub_key;
         self
     }
@@ -688,12 +696,12 @@ impl AssetPolicy {
 
     /// Transform to a list of scalars
     /// The order: (reveal_map, viewer_pk, cred_pk, freezer_pk)
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let mut result = vec![self.reveal_map.into()];
         result.extend_from_slice(&self.viewer_pk.to_scalars());
         result.extend_from_slice(&self.cred_pk.to_scalars());
         result.extend_from_slice(&self.freezer_pk.to_scalars());
-        result.push(BaseField::from(self.reveal_threshold.0));
+        result.push(C::ScalarField::from(self.reveal_threshold.0));
         result
     }
 }
@@ -703,18 +711,18 @@ impl AssetPolicy {
 /// * `policy` -- asset policy attached
 #[tagged_blob("ASSET_DEF")]
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct AssetDefinition {
+pub struct AssetDefinition<C: CapConfig> {
     /// asset code as unique id code
-    pub code: AssetCode,
+    pub code: AssetCode<C>,
     /// asset policy attached
-    pub(crate) policy: AssetPolicy,
+    pub(crate) policy: AssetPolicy<C>,
 }
 
-impl AssetDefinition {
+impl<C: CapConfig> AssetDefinition<C> {
     /// Create a new `AssetDefinition` with specified asset code and asset
     /// policy
     /// Return Error is code AssetCode::native()
-    pub fn new(code: AssetCode, policy: AssetPolicy) -> Result<Self, TxnApiError> {
+    pub fn new(code: AssetCode<C>, policy: AssetPolicy<C>) -> Result<Self, TxnApiError> {
         if code == AssetCode::native() || code == AssetCode::dummy() {
             return Err(TxnApiError::InvalidParameter(
                 "Neither native or Dummy asset code can be used to create custom asset definition"
@@ -751,33 +759,30 @@ impl AssetDefinition {
     }
 
     /// Get reference to policy
-    pub fn policy_ref(&self) -> &AssetPolicy {
+    pub fn policy_ref(&self) -> &AssetPolicy<C> {
         &self.policy
     }
 }
-
-/// The value type of a commitment
-pub(crate) type CommitmentValue = BaseField;
 
 /// The blind factor used to produce a hiding commitment
 #[tagged_blob("BLIND")]
 #[derive(
     Copy, Clone, Debug, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize,
 )]
-pub struct BlindFactor(pub(crate) BaseField);
+pub struct BlindFactor<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl BlindFactor {
+impl<C: CapConfig> BlindFactor<C> {
     /// Generate a random blind factor
     pub fn rand<R>(rng: &mut R) -> Self
     where
         R: RngCore + CryptoRng,
     {
-        Self(BaseField::rand(rng))
+        Self(C::ScalarField::rand(rng))
     }
 }
 
-impl From<BaseField> for BlindFactor {
-    fn from(scalar: BaseField) -> Self {
+impl<C: CapConfig> From<C::ScalarField> for BlindFactor<C> {
+    fn from(scalar: C::ScalarField) -> Self {
         BlindFactor(scalar)
     }
 }
@@ -796,49 +801,49 @@ impl From<BaseField> for BlindFactor {
     CanonicalSerialize,
     CanonicalDeserialize,
 )]
-pub struct Nullifier(pub(crate) BaseField);
+pub struct Nullifier<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl Nullifier {
+impl<C: CapConfig> Nullifier<C> {
     /// Generate a random nullifier
     pub fn random_for_test<R>(rng: &mut R) -> Self
     where
         R: RngCore + CryptoRng,
     {
-        Self(BaseField::rand(rng))
+        Self(C::ScalarField::rand(rng))
     }
 }
 
 /// Asset record to be published
 #[tagged_blob("REC")]
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, CanonicalSerialize, CanonicalDeserialize)]
-pub struct RecordCommitment(pub(crate) CommitmentValue);
+pub struct RecordCommitment<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl From<&RecordOpening> for RecordCommitment {
-    fn from(ro: &RecordOpening) -> Self {
+impl<C: CapConfig> From<&RecordOpening<C>> for RecordCommitment<C> {
+    fn from(ro: &RecordOpening<C>) -> Self {
         ro.derive_record_commitment()
     }
 }
 
-impl RecordCommitment {
+impl<C: CapConfig> RecordCommitment<C> {
     /// converting the record commitment to a field element
-    pub fn to_field_element(self) -> BaseField {
+    pub fn to_field_element(self) -> C::ScalarField {
         self.0
     }
 
     /// converting the record commitment to a field element
-    pub fn from_field_element(f: BaseField) -> Self {
+    pub fn from_field_element(f: C::ScalarField) -> Self {
         Self(f)
     }
 }
 
-impl From<RecordCommitment> for NodeValue {
-    fn from(rc: RecordCommitment) -> Self {
+impl<C: CapConfig> From<RecordCommitment<C>> for NodeValue<C::ScalarField> {
+    fn from(rc: RecordCommitment<C>) -> Self {
         NodeValue::from_scalar(rc.0)
     }
 }
 
-impl From<RecordCommitment> for BaseField {
-    fn from(input: RecordCommitment) -> BaseField {
+impl<C: CapConfig> From<RecordCommitment<C>> for C::ScalarField {
+    fn from(input: RecordCommitment<C>) -> C::ScalarField {
         input.0
     }
 }
@@ -927,26 +932,26 @@ impl CanonicalDeserialize for FreezeFlag {
     Serialize,
     Deserialize,
 )]
-pub struct RecordOpening {
+pub struct RecordOpening<C: CapConfig> {
     /// value
     pub amount: Amount,
     /// asset definition
-    pub asset_def: AssetDefinition,
+    pub asset_def: AssetDefinition<C>,
     /// owner public key
-    pub pub_key: UserPubKey,
+    pub pub_key: UserPubKey<C>,
     /// flag indicating if the record is frozen (true) or not (false)
     pub freeze_flag: FreezeFlag,
     /// record commitment blinding factor
-    pub blind: BlindFactor,
+    pub blind: BlindFactor<C>,
 }
 
-impl RecordOpening {
+impl<C: CapConfig> RecordOpening<C> {
     /// Create a new RecordOpening with a random blind factor
     pub fn new<R>(
         rng: &mut R,
         amount: Amount,
-        asset_def: AssetDefinition,
-        pub_key: UserPubKey,
+        asset_def: AssetDefinition<C>,
+        pub_key: UserPubKey<C>,
         freeze_flag: FreezeFlag,
     ) -> Self
     where
@@ -964,7 +969,7 @@ impl RecordOpening {
 
     /// Create a new dummy record.
     /// Returns record's "spending" key
-    pub fn dummy<R>(rng: &mut R, freeze_flag: FreezeFlag) -> (Self, UserKeyPair)
+    pub fn dummy<R>(rng: &mut R, freeze_flag: FreezeFlag) -> (Self, UserKeyPair<C>)
     where
         R: CryptoRng + RngCore,
     {
@@ -993,7 +998,7 @@ impl RecordOpening {
     /// computes record's commitment `c = comm(v, at, upk, policy, freeze_flag;
     /// r)` where v is amount/value, at is asset code, upk is user public
     /// key, policy is asset policy, and r is blind factor
-    pub(crate) fn derive_record_commitment(&self) -> RecordCommitment {
+    pub(crate) fn derive_record_commitment(&self) -> RecordCommitment<C> {
         let (user_pubkey_x, user_pubkey_y) = (&self.pub_key.address).into();
         let (viewer_pubkey_x, viewer_pubkey_y) = (&self.asset_def.policy.viewer_pk.0).into();
         let (cred_pubkey_x, cred_pubkey_y) = (&self.asset_def.policy.cred_pk.0).into();
@@ -1002,16 +1007,17 @@ impl RecordOpening {
         // To minimize the number of Rescue calls, combine `reveal_map` and
         // `freeze_flag` to a single scalar `reveal_map << 1 + freeze_flag`
         let freeze_flag: u8 = self.freeze_flag.into();
-        let reveal_map_and_freeze_flag = BaseField::from(self.asset_def.policy.reveal_map).double()
-            + BaseField::from(freeze_flag);
+        let reveal_map_and_freeze_flag = C::ScalarField::from(self.asset_def.policy.reveal_map)
+            .double()
+            + C::ScalarField::from(freeze_flag);
 
-        let reveal_threshold = BaseField::from(self.asset_def.policy.reveal_threshold.0);
+        let reveal_threshold = C::ScalarField::from(self.asset_def.policy.reveal_threshold.0);
 
         let comm = RescueCommitment::new(12)
             .commit(
                 &[
-                    BaseField::from(self.amount.0),
-                    BaseField::from(&self.asset_def.code),
+                    C::ScalarField::from(self.amount.0),
+                    C::ScalarField::from(&self.asset_def.code),
                     user_pubkey_x,
                     user_pubkey_y,
                     viewer_pubkey_x,
@@ -1033,15 +1039,15 @@ impl RecordOpening {
 // The actual credential which is basically a Schnorr signature over attributes
 #[tagged_blob("CRED")]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub(crate) struct Credential(pub(crate) Signature);
+pub(crate) struct Credential<C: CapConfig>(pub(crate) Signature<C::JubjubParam>);
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
 /// created by an identity creator.
 #[tagged_blob("ID")]
 #[derive(Debug, Clone, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub struct IdentityAttribute(pub(crate) BaseField);
+pub struct IdentityAttribute<C: CapConfig>(pub(crate) C::ScalarField);
 
-impl IdentityAttribute {
+impl<C: CapConfig> IdentityAttribute<C> {
     /// Create a new `IdentityAttribute` from its value in bytes.
     pub fn new(attr_value: &[u8]) -> Result<Self, TxnApiError> {
         if attr_value.len() > PER_ATTR_BYTE_CAPACITY || attr_value.is_empty() {
@@ -1058,7 +1064,7 @@ impl IdentityAttribute {
         // this ensures the leading bytes is 0
         // so that from_le_bytes_mod_order is always done without mod
         padded.resize((BLS_SCALAR_REPR_BYTE_LEN - 1) as usize, pad_val as u8);
-        Ok(Self(BaseField::from_le_bytes_mod_order(&padded)))
+        Ok(Self(C::ScalarField::from_le_bytes_mod_order(&padded)))
     }
 
     /// Getter for the attribute value in bytes.
@@ -1085,7 +1091,7 @@ impl IdentityAttribute {
     where
         R: RngCore + CryptoRng,
     {
-        Self(BaseField::rand(rng))
+        Self(C::ScalarField::rand(rng))
     }
 
     /// Randomly create a list of `ATTR_LEN` id attributes
@@ -1121,15 +1127,15 @@ impl IdentityAttribute {
     Serialize,
     Deserialize,
 )]
-pub struct ExpirableCredential {
-    pub(crate) user_addr: UserAddress,
-    pub(crate) attrs: Vec<IdentityAttribute>,
+pub struct ExpirableCredential<C: CapConfig> {
+    pub(crate) user_addr: UserAddress<C>,
+    pub(crate) attrs: Vec<IdentityAttribute<C>>,
     pub(crate) expiry: u64,
-    pub(crate) cred: Credential,
-    pub(crate) creator_pk: CredIssuerPubKey,
+    pub(crate) cred: Credential<C>,
+    pub(crate) creator_pk: CredIssuerPubKey<C>,
 }
 
-impl ExpirableCredential {
+impl<C: CapConfig> ExpirableCredential<C> {
     /// Issue an credential for a list of attributes with an expiry time
     ///
     /// * `user_addr` - User address that this credential is issuing to
@@ -1141,10 +1147,10 @@ impl ExpirableCredential {
     /// attribute bytes go beyond 32 bytes, then will return error.
     /// Otherwise an `ExpirableCredential` will be returned
     pub fn create(
-        user_addr: UserAddress,
-        attrs: Vec<IdentityAttribute>,
+        user_addr: UserAddress<C>,
+        attrs: Vec<IdentityAttribute<C>>,
         expiry: u64,
-        minter_keypair: &CredIssuerKeyPair,
+        minter_keypair: &CredIssuerKeyPair<C>,
     ) -> Result<Self, TxnApiError> {
         if attrs.len() != ATTRS_LEN {
             return Err(TxnApiError::FailedCredentialCreation(format!(
@@ -1155,10 +1161,10 @@ impl ExpirableCredential {
         }
         // msg := (expiry || upk || attrs)
         let msg = {
-            let attrs: Vec<BaseField> = attrs.iter().map(|attr| attr.0).collect();
+            let attrs: Vec<C::ScalarField> = attrs.iter().map(|attr| attr.0).collect();
             let (upk_x, upk_y) = (&user_addr).into();
 
-            [vec![BaseField::from(expiry), upk_x, upk_y], attrs].concat()
+            [vec![C::ScalarField::from(expiry), upk_x, upk_y], attrs].concat()
         };
         let cred = minter_keypair.sign(&msg);
 
@@ -1188,9 +1194,9 @@ impl ExpirableCredential {
         }
 
         let msg = {
-            let attrs: Vec<BaseField> = self.attrs.iter().map(|attr| attr.0).collect();
+            let attrs: Vec<C::ScalarField> = self.attrs.iter().map(|attr| attr.0).collect();
             let (upk_x, upk_y) = (&self.user_addr).into();
-            [vec![BaseField::from(self.expiry), upk_x, upk_y], attrs].concat()
+            [vec![C::ScalarField::from(self.expiry), upk_x, upk_y], attrs].concat()
         };
         self.creator_pk.verify(&msg, &self.cred)?;
         Ok(())
@@ -1222,27 +1228,30 @@ impl ExpirableCredential {
 /// transaction, enabling asset viewing and identity viewing.
 #[tagged_blob("AUDMEMO")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub struct ViewableMemo(pub(crate) elgamal::Ciphertext<CurveParam>);
+pub struct ViewableMemo<C: CapConfig>(pub(crate) elgamal::Ciphertext<C::JubjubParam>);
 
-impl ViewableMemo {
+impl<C: CapConfig> ViewableMemo<C> {
     /// Construct a viewing memo directly from internal ciphertext.
     /// **USE WITH CAUTION**: this method is only used during reconstruction
     /// from internal ciphertext of an existing `ViewableMemo`, you should never
     /// pass in an arbitrary ciphertext and deem this memo as valid.
-    pub fn new(ciphertext: elgamal::Ciphertext<CurveParam>) -> Self {
+    pub fn new(ciphertext: elgamal::Ciphertext<C::JubjubParam>) -> Self {
         Self(ciphertext)
     }
 
     /// Getter for internal ciphertext
-    pub fn internal(&self) -> &elgamal::Ciphertext<CurveParam> {
+    pub fn internal(&self) -> &elgamal::Ciphertext<C::JubjubParam> {
         &self.0
     }
 
     /// Create an `ViewableMemo` used in minting transactions
-    pub(crate) fn new_for_mint_note(ro_mint: &RecordOpening, randomizer: ScalarField) -> Self {
+    pub(crate) fn new_for_mint_note(
+        ro_mint: &RecordOpening<C>,
+        randomizer: C::JubjubScalarField,
+    ) -> Self {
         let viewer_pk = &ro_mint.asset_def.policy.viewer_pk;
         let message = if *viewer_pk == ViewerPubKey::default() {
-            vec![BaseField::zero(); 3]
+            vec![C::ScalarField::zero(); 3]
         } else {
             let (addr_x, addr_y) = (&ro_mint.pub_key.address).into();
             vec![addr_x, addr_y, ro_mint.blind.0]
@@ -1252,11 +1261,11 @@ impl ViewableMemo {
 
     /// Create an `ViewableMemo` used in anonymous transfer transactions
     pub(crate) fn new_for_transfer_note(
-        input_ros: &[RecordOpening],
-        output_ros: &[RecordOpening],
-        input_creds: &[ExpirableCredential],
-        randomizer: ScalarField,
-    ) -> Result<ViewableMemo, TxnApiError> {
+        input_ros: &[RecordOpening<C>],
+        output_ros: &[RecordOpening<C>],
+        input_creds: &[ExpirableCredential<C>],
+        randomizer: C::JubjubScalarField,
+    ) -> Result<ViewableMemo<C>, TxnApiError> {
         let asset_def = get_asset_def_in_transfer_txn(input_ros)?;
         if asset_def.is_dummy() {
             return Err(TxnApiError::InternalError(
@@ -1279,18 +1288,18 @@ impl ViewableMemo {
         {
             // 1. prepare message by concatenating all fields to be revealed (details in
             // formal spec)
-            let mut message: Vec<BaseField> = vec![asset_def.code.0];
+            let mut message: Vec<C::ScalarField> = vec![asset_def.code.0];
             // 1.1 extend message to include input records info
             for (input_ro, input_cred) in input_ros.iter().zip(input_creds.iter()).skip(1) {
                 let (pk_x, pk_y) = (&input_ro.pub_key.address).into();
-                let mut vals = [BaseField::zero(); VIEWABLE_DATA_LEN];
+                let mut vals = [C::ScalarField::zero(); VIEWABLE_DATA_LEN];
                 {
                     let (asset_fields, id_fields) = vals.split_at_mut(ASSET_TRACING_MAP_LEN);
                     // asset viewing fields
                     asset_fields.copy_from_slice(&[
                         pk_x,
                         pk_y,
-                        BaseField::from(input_ro.amount.0),
+                        C::ScalarField::from(input_ro.amount.0),
                         input_ro.blind.0,
                     ]);
                     // id viewing fields
@@ -1323,7 +1332,7 @@ impl ViewableMemo {
                     vals.extend_from_slice(&[
                         pk_x,
                         pk_y,
-                        BaseField::from(output_ro.amount.0),
+                        C::ScalarField::from(output_ro.amount.0),
                         output_ro.blind.0,
                     ]);
                 }
@@ -1351,8 +1360,8 @@ impl ViewableMemo {
     pub(crate) fn dummy_for_transfer_note(
         input_ros_len: usize,
         output_ros_len: usize,
-        randomizer: ScalarField,
-    ) -> ViewableMemo {
+        randomizer: C::JubjubScalarField,
+    ) -> ViewableMemo<C> {
         // message size starts with the second input and output, (first is always
         // non-viewing native asset code); and for inputs, both asset
         // viewing and id viewing would require VIEWING_VECTOR_LEN = REVEAL_MAP_LEN + 1
@@ -1365,23 +1374,23 @@ impl ViewableMemo {
         let mut rng = rand_chacha::ChaChaRng::from_seed(seed);
         let random_viewer_pk = ViewerPubKey::random(&mut rng);
         let msg_size = (input_ros_len - 1) * (VIEWABLE_DATA_LEN) + (output_ros_len - 1) * 4 + 1;
-        ViewableMemo(random_viewer_pk.encrypt(randomizer, &vec![BaseField::zero(); msg_size]))
+        ViewableMemo(random_viewer_pk.encrypt(randomizer, &vec![C::ScalarField::zero(); msg_size]))
     }
 }
 
 /// Transfer ViewableMemo decrypted
 #[derive(Clone, Debug, PartialEq)]
-pub struct ViewableData {
+pub struct ViewableData<C: CapConfig> {
     /// asset code of the associated policy
-    pub asset_code: AssetCode,
+    pub asset_code: AssetCode<C>,
     /// visible user address
-    pub user_address: Option<UserAddress>,
+    pub user_address: Option<UserAddress<C>>,
     /// tracked amount
     pub amount: Option<Amount>,
     /// tracked blinding factor
-    pub blinding_factor: Option<BlindFactor>,
+    pub blinding_factor: Option<BlindFactor<C>>,
     /// visible attributes
-    pub attributes: Vec<Option<IdentityAttribute>>,
+    pub attributes: Vec<Option<IdentityAttribute<C>>>,
 }
 
 pub(crate) enum InOrOut {
@@ -1389,13 +1398,13 @@ pub(crate) enum InOrOut {
     Out,
 }
 
-impl ViewableData {
+impl<C: CapConfig> ViewableData<C> {
     fn fetch_address(
-        x: &BaseField,
-        y: &BaseField,
-        asset_definition: &AssetDefinition,
-    ) -> Result<Option<VerKey>, TxnApiError> {
-        let point_affine = GroupAffine::<CurveParam>::new(*x, *y);
+        x: &C::ScalarField,
+        y: &C::ScalarField,
+        asset_definition: &AssetDefinition<C>,
+    ) -> Result<Option<schnorr::VerKey<C::JubjubParam>>, TxnApiError> {
+        let point_affine = GroupAffine::<C::JubjubParam>::new(*x, *y);
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
             if asset_definition
                 .policy
@@ -1410,8 +1419,10 @@ impl ViewableData {
             }
         }
 
-        let ver_key = VerKey::from(point_affine);
-        if asset_definition.policy.is_user_address_revealed() || ver_key == VerKey::default() {
+        let ver_key = schnorr::VerKey::from(point_affine);
+        if asset_definition.policy.is_user_address_revealed()
+            || ver_key == schnorr::VerKey::default()
+        {
             Ok(Some(ver_key))
         } else {
             Ok(None)
@@ -1419,9 +1430,9 @@ impl ViewableData {
     }
 
     fn fetch_blind_factor(
-        v: &BaseField,
-        asset_definition: &AssetDefinition,
-    ) -> Option<BlindFactor> {
+        v: &C::ScalarField,
+        asset_definition: &AssetDefinition<C>,
+    ) -> Option<BlindFactor<C>> {
         if asset_definition
             .policy_ref()
             .reveal_map
@@ -1434,9 +1445,9 @@ impl ViewableData {
     }
 
     pub(crate) fn from_mint_note(
-        visible_data: &[BaseField],
+        visible_data: &[C::ScalarField],
         mint_note: &MintNote,
-    ) -> Result<ViewableData, TxnApiError> {
+    ) -> Result<Self, TxnApiError> {
         if visible_data.len() != 3 {
             return Err(TxnApiError::FailedViewableMemoDecryption(
                 "Invalidviewing data len for mint note".to_ascii_lowercase(),
@@ -1460,10 +1471,10 @@ impl ViewableData {
         })
     }
     pub(crate) fn from_xfr_data_and_asset(
-        asset_definition: &AssetDefinition,
-        data: &[BaseField],
+        asset_definition: &AssetDefinition<C>,
+        data: &[C::ScalarField],
         in_or_out: InOrOut,
-    ) -> Result<ViewableData, TxnApiError> {
+    ) -> Result<Self, TxnApiError> {
         match in_or_out {
             InOrOut::In => {
                 if data.len() != VIEWABLE_DATA_LEN {
@@ -1544,9 +1555,9 @@ impl ReceiverMemo {
     /// * `ro` - an ooening of an asset record
     /// * `label` - optional, arbitrary label as authenticated associated data
     ///   to the ciphertext
-    pub fn from_ro<R: CryptoRng + RngCore>(
+    pub fn from_ro<R: CryptoRng + RngCore, C: CapConfig>(
         rng: &mut R,
-        ro: &RecordOpening,
+        ro: &RecordOpening<C>,
         label: &[u8],
     ) -> Result<Self, TxnApiError> {
         let ro_bytes = bincode::serialize(&ro).map_err(|_| {
@@ -1563,12 +1574,12 @@ impl ReceiverMemo {
     /// * `rc` - expected asset record commitment to check against
     /// * `label` - optional, arbitrary label as authenticated associated data
     /// Return Error if memo info does not match RC or public key
-    pub fn decrypt(
+    pub fn decrypt<C: CapConfig>(
         &self,
-        keypair: &UserKeyPair,
-        rc: &RecordCommitment,
+        keypair: &UserKeyPair<C>,
+        rc: &RecordCommitment<C>,
         label: &[u8],
-    ) -> Result<RecordOpening, TxnApiError> {
+    ) -> Result<RecordOpening<C>, TxnApiError> {
         let ro_bytes = keypair.enc_keypair.decrypt(&self.0, label).map_err(|_| {
             TxnApiError::FailedPrimitives(
                 "Failed decryption, probably wrong keypair for the receiver memo".to_string(),
@@ -1598,34 +1609,34 @@ impl ReceiverMemo {
 /// All necessary information for the input record that is meant to pay
 /// transaction fee in all different transactions.
 #[derive(Debug, Clone)]
-pub struct FeeInput<'kp> {
+pub struct FeeInput<'kp, C: CapConfig> {
     /// Record opening
-    pub ro: RecordOpening,
+    pub ro: RecordOpening<C>,
     /// Accumulator membership proof (i.e. Merkle Proof) of the record
     /// commitment
-    pub acc_member_witness: AccMemberWitness,
+    pub acc_member_witness: AccMemberWitness<C::ScalarField>,
     /// Reference of owner's key pair
-    pub owner_keypair: &'kp UserKeyPair,
+    pub owner_keypair: &'kp UserKeyPair<C>,
 }
 
 /// Fee structure containing fee input spending info, fee to pay and change
 /// record opening
-pub struct TxnFeeInfo<'kp> {
+pub struct TxnFeeInfo<'kp, C: CapConfig> {
     /// Fee input spending info
-    pub fee_input: FeeInput<'kp>,
+    pub fee_input: FeeInput<'kp, C>,
     /// Fee to pay
     pub fee_amount: Amount,
     /// Fee change record opening
-    pub fee_chg_ro: RecordOpening,
+    pub fee_chg_ro: RecordOpening<C>,
 }
 
-impl<'kp> TxnFeeInfo<'kp> {
+impl<'kp, C: CapConfig> TxnFeeInfo<'kp, C> {
     /// Create a new Fee struct from fee input and fee to pay
     pub fn new<R: CryptoRng + RngCore>(
         rng: &mut R,
-        fee_input: FeeInput<'kp>,
+        fee_input: FeeInput<'kp, C>,
         fee: Amount,
-    ) -> Result<(Self, RecordOpening), TxnApiError> {
+    ) -> Result<(Self, RecordOpening<C>), TxnApiError> {
         if fee_input.ro.amount < fee {
             return Err(TxnApiError::InvalidParameter(
                 "not enough funds in fee input to pay for fees".to_string(),
@@ -1652,9 +1663,13 @@ impl<'kp> TxnFeeInfo<'kp> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::prelude::Config;
     use ark_std::{convert::TryInto, test_rng};
 
+    type F = <Config as CapConfig>::ScalarField;
+
     mod reveal_map {
+
         use super::*;
 
         #[test]
@@ -1682,8 +1697,8 @@ mod test {
         fn bitmap_to_scalar_conv() {
             let mut reveal_map = RevealMap::default();
             assert_eq!(
-                BaseField::from(reveal_map), // (00)0,000,000,000 = 0
-                BaseField::zero()
+                F::from(reveal_map), // (00)0,000,000,000 = 0
+                F::zero()
             );
             reveal_map.reveal_record_opening();
             reveal_map.reveal_ith_id_attribute(1).unwrap();
@@ -1692,26 +1707,26 @@ mod test {
             reveal_map.reveal_ith_id_attribute(5).unwrap();
             reveal_map.reveal_ith_id_attribute(6).unwrap();
             assert_eq!(
-                BaseField::from(reveal_map), // (11)1,101,101,110 = 3950
-                BaseField::from(3950u32)
+                F::from(reveal_map), // (11)1,101,101,110 = 3950
+                F::from(3950u32)
             );
             reveal_map.reveal_all_id_attributes();
             assert_eq!(
-                BaseField::from(reveal_map), // (11)1,111,111,111 = 4095
-                BaseField::from(4095u32)
+                F::from(reveal_map), // (11)1,111,111,111 = 4095
+                F::from(4095u32)
             );
         }
 
         #[test]
         fn test_hadamard_product() {
-            let zero = BaseField::zero();
+            let zero = F::zero();
             let mut reveal_map = RevealMap::default();
             reveal_map.reveal_all();
             let mut rng = test_rng();
             let mut attrs = [zero; VIEWABLE_DATA_LEN];
             for i in 0..VIEWABLE_DATA_LEN {
                 let rand_u64 = rng.next_u64();
-                attrs[i] = BaseField::from(rand_u64);
+                attrs[i] = F::from(rand_u64);
             }
             assert_eq!(reveal_map.hadamard_product(&attrs), attrs);
             assert_eq!(
@@ -1771,7 +1786,7 @@ mod test {
             let (note, ..) = builder.build_mint_note(rng, &proving_key)?;
             let receiver_address = receiver_keypair.address();
             let (x, y) = (&receiver_address).into();
-            let blinding_factor = BaseField::rand(rng);
+            let blinding_factor = F::rand(rng);
             let raw_visible_data = vec![x, y, blinding_factor];
             let visible_data = ViewableData::from_mint_note(&raw_visible_data, &note);
             assert!(visible_data.is_ok());
@@ -1781,12 +1796,11 @@ mod test {
             assert_eq!(visible_data.amount, None);
 
             // Wrong number of elements
-            let wrong_raw_visible_data = vec![x, y, blinding_factor, BaseField::zero()];
+            let wrong_raw_visible_data = vec![x, y, blinding_factor, F::zero()];
             assert!(ViewableData::from_mint_note(&wrong_raw_visible_data, &note).is_err());
 
             // Wrong address
-            let wrong_raw_visible_data =
-                vec![BaseField::zero(), BaseField::zero(), blinding_factor];
+            let wrong_raw_visible_data = vec![F::zero(), F::zero(), blinding_factor];
             assert!(ViewableData::from_mint_note(&wrong_raw_visible_data, &note).is_err());
 
             Ok(())
@@ -1811,20 +1825,20 @@ mod test {
 
             // Wrong length for In
             const WRONG_LEN_IN: usize = VIEWABLE_DATA_LEN + 1;
-            let data = &[BaseField::from(0_u64); WRONG_LEN_IN];
+            let data = &[F::from(0_u64); WRONG_LEN_IN];
             let transfer_data =
                 ViewableData::from_xfr_data_and_asset(&asset_def, data, InOrOut::In);
             assert!(transfer_data.is_err());
 
             // Wrong length for Out
             const WRONG_LEN_OUT: usize = VIEWABLE_DATA_LEN + 1;
-            let data = &[BaseField::from(0_u64); WRONG_LEN_OUT];
+            let data = &[F::from(0_u64); WRONG_LEN_OUT];
             let transfer_data =
                 ViewableData::from_xfr_data_and_asset(&asset_def, data, InOrOut::Out);
             assert!(transfer_data.is_err());
 
             // Wrong user address
-            let wrong_data_user_address = &[BaseField::from(0_u64); VIEWABLE_DATA_LEN];
+            let wrong_data_user_address = &[F::from(0_u64); VIEWABLE_DATA_LEN];
             let transfer_data = ViewableData::from_xfr_data_and_asset(
                 &asset_def,
                 wrong_data_user_address,
@@ -1836,16 +1850,16 @@ mod test {
             let (x, y) = (&user_address).into();
 
             // Wrong amount
-            let wrong_amount = BaseField::from(u128::MAX) + BaseField::from(1_u128);
+            let wrong_amount = F::from(u128::MAX) + F::from(1_u128);
             let mut data = vec![x, y, wrong_amount];
-            data.extend_from_slice(&[BaseField::from(1_u128); VIEWABLE_DATA_LEN - 3]);
+            data.extend_from_slice(&[F::from(1_u128); VIEWABLE_DATA_LEN - 3]);
             let transfer_data =
                 ViewableData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
             assert!(transfer_data.is_ok());
 
             // Good parameters
             let mut data = vec![x, y];
-            data.extend_from_slice(&[BaseField::from(1_u64); VIEWABLE_DATA_LEN - 2]);
+            data.extend_from_slice(&[F::from(1_u64); VIEWABLE_DATA_LEN - 2]);
             let transfer_data =
                 ViewableData::from_xfr_data_and_asset(&asset_def, &data, InOrOut::In);
             assert!(transfer_data.is_ok());
@@ -1925,7 +1939,7 @@ mod test {
         let internal_asset_code = InternalAssetCode::new(seed, cap_token_description);
         let asset_code = AssetCode::new_domestic_from_internal(&internal_asset_code);
         assert!(asset_code.verify_domestic(&internal_asset_code).is_ok());
-        let bad_internal = InternalAssetCode(BaseField::zero());
+        let bad_internal = InternalAssetCode(F::zero());
         assert!(asset_code.verify_domestic(&bad_internal).is_err());
 
         let external_description = b"ERC20 token";
@@ -2101,7 +2115,7 @@ mod test {
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
             );
-            let randomizer = ScalarField::rand(&mut rng);
+            let randomizer = <Config as CapConfig>::JubjubScalarField::rand(&mut rng);
             ViewableMemo::new_for_transfer_note(&[ro.clone()], &[ro], &[cred.clone()], randomizer)
                 .unwrap()
         };

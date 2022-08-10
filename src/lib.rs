@@ -151,16 +151,18 @@ extern crate derive_more;
 
 pub mod bench_utils;
 pub(crate) mod circuit;
+pub mod config;
 pub mod constants;
 pub mod errors;
 pub mod freeze;
 pub mod keys;
 pub mod mint;
 pub mod parameters;
+pub mod prelude;
 pub mod proof;
 pub mod structs;
 pub mod transfer;
-mod types;
+// mod types;
 pub mod utils;
 
 #[cfg(feature = "test_apis")]
@@ -189,9 +191,6 @@ use mint::MintNote;
 use proof::{freeze::FreezeVerifyingKey, mint::MintVerifyingKey};
 use serde::{Deserialize, Serialize};
 use transfer::TransferNote;
-
-// Re-export the types with associated parameters
-pub use types::*;
 
 /// A transaction note contains a note of possibly various transaction types,
 /// including transfer, mint and freeze.

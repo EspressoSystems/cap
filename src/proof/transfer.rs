@@ -14,18 +14,17 @@
 //! * Computing a Transfer proof
 //! * Verifying a Transfer proof
 
-use super::UniversalParam;
 use crate::{
     circuit::transfer::TransferCircuit,
     errors::TxnApiError,
     keys::{CredIssuerPubKey, UserKeyPair},
+    prelude::CapConfig,
     structs::{
         Amount, AssetCode, AssetDefinition, ExpirableCredential, Nullifier, RecordCommitment,
         RecordOpening, ViewableMemo,
     },
     transfer::TransferNoteInput,
     utils::safe_sum_amount,
-    BaseField, CurveParam, PairingEngine, ScalarField,
 };
 use ark_serialize::*;
 use ark_std::{
@@ -40,7 +39,7 @@ use ark_std::{
 use jf_plonk::{
     circuit::Circuit,
     proof_system::{
-        structs::{Proof, ProvingKey, VerifyingKey},
+        structs::{Proof, ProvingKey, UniversalSrs, VerifyingKey},
         PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
@@ -57,15 +56,15 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct TransferProvingKey {
-    pub(crate) proving_key: ProvingKey<PairingEngine>,
+pub struct TransferProvingKey<C: CapConfig> {
+    pub(crate) proving_key: ProvingKey<C::PairingCurve>,
     pub(crate) n_inputs: usize,
     pub(crate) n_outputs: usize,
     pub(crate) tree_depth: u8,
 }
-deserialize_canonical_bytes!(TransferProvingKey);
+deserialize_canonical_bytes!(TransferProvingKey<C: CapConfig>);
 
-impl TransferProvingKey {
+impl<C: CapConfig> TransferProvingKey<C> {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.n_inputs
@@ -84,9 +83,9 @@ impl TransferProvingKey {
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
 /// Verifying key of Transfer note and its attributes
 /// (n_inputs,n_outputs,tree_depth)
-pub struct TransferVerifyingKey {
+pub struct TransferVerifyingKey<C: CapConfig> {
     /// SNARK verification key
-    pub verifying_key: VerifyingKey<PairingEngine>,
+    pub verifying_key: VerifyingKey<C::PairingCurve>,
     /// num of inputs (incl. fee input)
     pub n_inputs: usize,
     /// num of outputs (incl. fee change output)
@@ -94,9 +93,9 @@ pub struct TransferVerifyingKey {
     /// record merkle tree depth
     pub tree_depth: u8,
 }
-deserialize_canonical_bytes!(TransferVerifyingKey);
+deserialize_canonical_bytes!(TransferVerifyingKey<C: CapConfig>);
 
-impl TransferVerifyingKey {
+impl<C: CapConfig> TransferVerifyingKey<C> {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.n_inputs
@@ -108,8 +107,8 @@ impl TransferVerifyingKey {
     }
 }
 
-impl From<&TransferProvingKey> for TransferVerifyingKey {
-    fn from(pk: &TransferProvingKey) -> Self {
+impl<C: CapConfig> From<&TransferProvingKey<C>> for TransferVerifyingKey<C> {
+    fn from(pk: &TransferProvingKey<C>) -> Self {
         Self {
             verifying_key: pk.proving_key.vk.clone(),
             n_inputs: pk.n_inputs,
@@ -120,21 +119,21 @@ impl From<&TransferProvingKey> for TransferVerifyingKey {
 }
 
 /// Proof associated to a Transfer note
-pub type TransferValidityProof = Proof<PairingEngine>;
+pub type TransferValidityProof<C: CapConfig> = Proof<C::PairingCurve>;
 
 /// One-time preprocess of the Transfer transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// transfer transaction.
-pub fn preprocess(
-    srs: &UniversalParam,
+pub fn preprocess<C: CapConfig>(
+    srs: &UniversalSrs<C::PairingCurve>,
     n_inputs: usize,
     n_outputs: usize,
     tree_depth: u8,
-) -> Result<(TransferProvingKey, TransferVerifyingKey, usize), TxnApiError> {
+) -> Result<(TransferProvingKey<C>, TransferVerifyingKey<C>, usize), TxnApiError> {
     let (dummy_circuit, n_constraints) =
         TransferCircuit::build_for_preprocessing(n_inputs, n_outputs, tree_depth)?;
     let (proving_key, verifying_key) =
-        PlonkKzgSnark::<PairingEngine>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
+        PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
             TxnApiError::FailedSnark(format!(
                 "Preprocessing Transfer circuit of {}-in-{}-out-{}-depth failed: {:?}",
                 n_inputs, n_outputs, tree_depth, e
@@ -160,14 +159,14 @@ pub fn preprocess(
 
 /// Generate a transaction validity proof (a zk-SNARK proof) given the witness
 /// , public inputs, and the proving key.
-pub(crate) fn prove<R: RngCore + CryptoRng>(
+pub(crate) fn prove<R: RngCore + CryptoRng, C: CapConfig>(
     rng: &mut R,
-    transfer_proving_key: &TransferProvingKey,
-    witness: &TransferWitness,
-    public_inputs: &TransferPublicInput,
-    txn_memo_ver_key: &schnorr::VerKey<CurveParam>,
+    transfer_proving_key: &TransferProvingKey<C>,
+    witness: &TransferWitness<C>,
+    public_inputs: &TransferPublicInput<C>,
+    txn_memo_ver_key: &schnorr::VerKey<C::JubjubParam>,
     extra_proof_bound_data: &[u8],
-) -> Result<TransferValidityProof, TxnApiError> {
+) -> Result<TransferValidityProof<C>, TxnApiError> {
     let (circuit, _) = TransferCircuit::build(witness, public_inputs)
         .map_err(|e| TxnApiError::FailedSnark(format!("{:?}", e)))?;
     circuit
@@ -182,7 +181,7 @@ pub(crate) fn prove<R: RngCore + CryptoRng>(
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(txn_memo_ver_key, &mut ext_msg)?;
     ext_msg.extend_from_slice(extra_proof_bound_data);
-    PlonkKzgSnark::<PairingEngine>::prove::<_, _, SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::prove::<_, _, SolidityTranscript>(
         rng,
         &circuit.0,
         &transfer_proving_key.proving_key,
@@ -193,17 +192,17 @@ pub(crate) fn prove<R: RngCore + CryptoRng>(
 
 /// Verify a transaction validity proof given the public inputs and verifying
 /// key.
-pub(crate) fn verify(
-    transfer_verifying_key: &TransferVerifyingKey,
-    public_inputs: &TransferPublicInput,
-    proof: &TransferValidityProof,
-    recv_memos_ver_key: &schnorr::VerKey<CurveParam>,
+pub(crate) fn verify<C: CapConfig>(
+    transfer_verifying_key: &TransferVerifyingKey<C>,
+    public_inputs: &TransferPublicInput<C>,
+    proof: &TransferValidityProof<C>,
+    recv_memos_ver_key: &schnorr::VerKey<C::JubjubParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;
     ext_msg.extend_from_slice(extra_proof_bound_data);
-    PlonkKzgSnark::<PairingEngine>::verify::<SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::verify::<SolidityTranscript>(
         &transfer_verifying_key.verifying_key,
         &public_inputs.to_scalars(),
         proof,
@@ -217,19 +216,19 @@ pub(crate) fn verify(
 
 /// Secret witness required to construct a SNARK proof for transfer transaction
 #[derive(Debug, Clone)]
-pub(crate) struct TransferWitness<'a> {
-    pub(crate) asset_def: AssetDefinition,
-    pub(crate) input_secrets: Vec<InputSecret<'a>>,
-    pub(crate) output_record_openings: Vec<RecordOpening>,
-    pub(crate) viewing_memo_enc_rand: ScalarField,
+pub(crate) struct TransferWitness<'a, C: CapConfig> {
+    pub(crate) asset_def: AssetDefinition<C>,
+    pub(crate) input_secrets: Vec<InputSecret<'a, C>>,
+    pub(crate) output_record_openings: Vec<RecordOpening<C>>,
+    pub(crate) viewing_memo_enc_rand: C::JubjubScalarField,
 }
 
-impl<'a> TransferWitness<'a> {
+impl<'a, C: CapConfig> TransferWitness<'a, C> {
     pub(crate) fn dummy(
         num_input: usize,
         num_output: usize,
         tree_depth: u8,
-        user_keypair: &'a UserKeyPair,
+        user_keypair: &'a UserKeyPair<C>,
     ) -> Self {
         let asset_def = AssetDefinition::native();
         let input_secret = {
@@ -256,7 +255,7 @@ impl<'a> TransferWitness<'a> {
         };
         let output_ro = RecordOpening::default();
 
-        let viewing_memo_enc_rand = ScalarField::default();
+        let viewing_memo_enc_rand = C::JubjubScalarField::default();
         Self {
             asset_def,
             input_secrets: vec![input_secret; num_input],
@@ -273,7 +272,7 @@ impl<'a> TransferWitness<'a> {
     pub(crate) fn new_unchecked<R: RngCore + CryptoRng>(
         rng: &mut R,
         inputs: Vec<TransferNoteInput<'a>>,
-        output_ros: &[RecordOpening],
+        output_ros: &[RecordOpening<C>],
     ) -> Result<Self, TxnApiError> {
         let mut asset_def = AssetDefinition::native();
         for input in inputs.iter() {
@@ -298,7 +297,7 @@ impl<'a> TransferWitness<'a> {
             )
         }).collect::<Result<Vec<_>, TxnApiError>>()?;
         let output_record_openings = output_ros.to_owned();
-        let viewing_memo_enc_rand = ScalarField::rand(rng);
+        let viewing_memo_enc_rand = C::JubjubScalarField::rand(rng);
 
         Ok(Self {
             asset_def,
@@ -310,37 +309,37 @@ impl<'a> TransferWitness<'a> {
 }
 /// Secret witness of an input asset record
 #[derive(Debug, Clone)]
-pub(crate) struct InputSecret<'a> {
-    pub(crate) owner_keypair: &'a UserKeyPair,
-    pub(crate) ro: RecordOpening,
-    pub(crate) acc_member_witness: AccMemberWitness<BaseField>,
-    pub(crate) cred: ExpirableCredential,
+pub(crate) struct InputSecret<'a, C: CapConfig> {
+    pub(crate) owner_keypair: &'a UserKeyPair<C>,
+    pub(crate) ro: RecordOpening<C>,
+    pub(crate) acc_member_witness: AccMemberWitness<C::ScalarField>,
+    pub(crate) cred: ExpirableCredential<C>,
 }
 
 /// Public inputs of a transfer transaction
 #[derive(Debug, Clone)]
 /// Struct for the public input of a transfer witness
-pub struct TransferPublicInput {
+pub struct TransferPublicInput<C: CapConfig> {
     /// record merkle tree root
-    pub merkle_root: NodeValue<BaseField>,
+    pub merkle_root: NodeValue<C::ScalarField>,
     /// native asset code
-    pub native_asset_code: AssetCode,
+    pub native_asset_code: AssetCode<C>,
     /// expiry of credentials
     pub valid_until: u64,
     /// transaction fee to pay
     pub fee: Amount,
     /// nullifiers of input records
-    pub input_nullifiers: Vec<Nullifier>,
+    pub input_nullifiers: Vec<Nullifier<C>>,
     /// commitments of output commitments
-    pub output_commitments: Vec<RecordCommitment>,
+    pub output_commitments: Vec<RecordCommitment<C>>,
     /// memo for viewer
-    pub viewing_memo: ViewableMemo,
+    pub viewing_memo: ViewableMemo<C>,
 }
 
-impl TransferPublicInput {
+impl<C: CapConfig> TransferPublicInput<C> {
     /// Compute the public input from witness and ledger info
     pub(crate) fn from_witness(
-        witness: &TransferWitness,
+        witness: &TransferWitness<C>,
         valid_until: u64,
     ) -> Result<Self, TxnApiError> {
         let merkle_root = witness
@@ -444,12 +443,12 @@ impl TransferPublicInput {
 
     /// Flatten out all pubic input fields into a vector of BaseFields.
     /// Note that the order matters.
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let mut result = vec![
             self.merkle_root.to_scalar(),
             self.native_asset_code.0,
-            BaseField::from(self.valid_until),
-            BaseField::from(self.fee.0),
+            C::ScalarField::from(self.valid_until),
+            C::ScalarField::from(self.fee.0),
         ];
         for nullifier in &self.input_nullifiers {
             result.push(nullifier.0);
@@ -469,6 +468,7 @@ mod test {
         constants::MAX_TIMESTAMP_LEN,
         errors::TxnApiError,
         keys::{CredIssuerPubKey, UserAddress, UserKeyPair},
+        prelude::CapConfig,
         proof::universal_setup_for_staging,
         structs::{Amount, AssetDefinition, ExpirableCredential},
         utils::params_builder::TransferParamsBuilder,
@@ -476,7 +476,7 @@ mod test {
     use ark_std::vec;
     use jf_primitives::signatures::schnorr;
 
-    impl ExpirableCredential {
+    impl<C: CapConfig> ExpirableCredential<C> {
         /// Return a bit indicating whether the credential is a dummy, unexpired
         /// one. This function only used in test.
         pub(crate) fn is_dummy_unexpired(&self) -> bool {

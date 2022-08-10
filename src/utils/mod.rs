@@ -17,8 +17,8 @@ use crate::{
     circuit::{freeze::FreezeCircuit, mint::MintCircuit, transfer::TransferCircuit},
     errors::TxnApiError,
     keys::FreezerPubKey,
+    prelude::CapConfig,
     structs::{Amount, AssetDefinition, NoteType, RecordOpening},
-    BaseField,
 };
 use ark_ec::ProjectiveCurve;
 use ark_std::{format, string::ToString};
@@ -33,9 +33,9 @@ impl From<&FreezerPubKey> for (BaseField, BaseField) {
 }
 
 /// Compute the asset definition being transferred given the input ROs
-pub(crate) fn get_asset_def_in_transfer_txn(
-    input_ros: &[RecordOpening],
-) -> Result<&AssetDefinition, TxnApiError> {
+pub(crate) fn get_asset_def_in_transfer_txn<C: CapConfig>(
+    input_ros: &[RecordOpening<C>],
+) -> Result<&AssetDefinition<C>, TxnApiError> {
     if input_ros.is_empty() {
         return Err(TxnApiError::InternalError("Empty ROs!".to_string()));
     }

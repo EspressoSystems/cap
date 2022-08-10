@@ -11,8 +11,8 @@
 
 use crate::{
     constants::{ATTRS_LEN, DUMMY_ASSET_CODE, MAX_TIMESTAMP_LEN},
+    prelude::CapConfig,
     structs::{AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo},
-    BaseField, CurveParam,
 };
 use ark_ec::ProjectiveCurve;
 use ark_ff::{One, PrimeField, Zero};
@@ -33,11 +33,11 @@ use jf_primitives::circuit::{
 #[derive(Debug)]
 pub(crate) struct ViewableMemoVar(pub(crate) ElGamalHybridCtxtVars);
 
-impl ViewableMemoVar {
+impl<C: CapConfig> ViewableMemoVar {
     /// Create a variable for viewing memo
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        viewing_memo: &ViewableMemo,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        viewing_memo: &ViewableMemo<C>,
     ) -> Result<Self, PlonkError> {
         let ctxts = circuit.create_ciphertext_variable(&viewing_memo.0)?;
         Ok(Self(ctxts))
@@ -46,7 +46,7 @@ impl ViewableMemoVar {
     /// Set ViewableMemoVar public
     pub(crate) fn set_public(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
         circuit.set_variable_public(self.0.ephemeral.get_x())?;
         circuit.set_variable_public(self.0.ephemeral.get_y())?;
@@ -60,7 +60,7 @@ impl ViewableMemoVar {
     /// memo `viewing_memo`.
     pub(crate) fn check_equal(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemoVar,
     ) -> Result<Variable, PlonkError> {
         if viewing_memo.0.symm_ctxts.len() != self.0.symm_ctxts.len() {
@@ -84,13 +84,13 @@ impl ViewableMemoVar {
 
     /// Derive viewing memoby encrypting the content with viewer public key
     pub(crate) fn derive(
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         viewer_pk: &EncKeyVars,
         data: &[Variable],
         enc_rand: Variable,
     ) -> Result<Self, PlonkError> {
         Ok(Self(
-            ElGamalEncryptionGadget::<_, CurveParam>::elgamal_encrypt(
+            ElGamalEncryptionGadget::<_, C::JubjubParam>::elgamal_encrypt(
                 circuit, viewer_pk, data, enc_rand,
             )?,
         ))
@@ -116,13 +116,13 @@ pub(crate) struct RecordOpeningVar {
     pub(crate) blind: Variable,
 }
 
-impl RecordOpeningVar {
+impl<C: CapConfig> RecordOpeningVar {
     /// Create a variable for the opening of an asset record.
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        ro: &RecordOpening,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        ro: &RecordOpening<C>,
     ) -> Result<Self, PlonkError> {
-        let amount = circuit.create_variable(BaseField::from(ro.amount.0))?;
+        let amount = circuit.create_variable(C::ScalarField::from(ro.amount.0))?;
         let asset_code = circuit.create_variable(ro.asset_def.code.0)?;
         let owner_addr = UserAddressVar(
             circuit
@@ -145,7 +145,7 @@ impl RecordOpeningVar {
     /// opening.
     pub(crate) fn compute_record_commitment(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
         // To minimize the number of Rescue calls, combine `reveal_map` and
         // `freeze_flag` to a single variable `reveal_and_freeze := reveal_map << 1 +
@@ -154,10 +154,10 @@ impl RecordOpeningVar {
         let reveal_and_freeze = circuit.lc(
             &[self.policy.reveal_map, self.freeze_flag, zero_var, zero_var],
             &[
-                BaseField::from(2u32),
-                BaseField::one(),
-                BaseField::zero(),
-                BaseField::zero(),
+                C::ScalarField::from(2u32),
+                C::ScalarField::one(),
+                C::ScalarField::zero(),
+                C::ScalarField::zero(),
             ],
         )?;
 
@@ -181,7 +181,7 @@ impl RecordOpeningVar {
     /// Return boolean indicating whether the record's asset code is dummy
     pub(crate) fn check_asset_code_dummy(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
         let zero_if_dummy = circuit.add_constant(self.asset_code, &DUMMY_ASSET_CODE.0.neg())?;
         circuit.check_is_zero(zero_if_dummy)
@@ -197,19 +197,19 @@ pub(crate) struct AssetPolicyVar {
     pub(crate) reveal_threshold: Variable,
 }
 
-impl AssetPolicyVar {
+impl<C: CapConfig> AssetPolicyVar {
     /// Create a variable for an asset policy.
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        policy: &AssetPolicy,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        policy: &AssetPolicy<C>,
     ) -> Result<Self, PlonkError> {
-        let reveal_map = circuit.create_variable(BaseField::from(policy.reveal_map))?;
+        let reveal_map = circuit.create_variable(C::ScalarField::from(policy.reveal_map))?;
         let viewer_pk = circuit.create_enc_key_variable(&policy.viewer_pk.0)?;
         let cred_pk = circuit.create_signature_vk_variable(&policy.cred_pk.0)?;
         let freezer_pk =
             circuit.create_point_variable(Point::from(policy.freezer_pk.0.into_affine()))?;
         let reveal_threshold =
-            circuit.create_variable(BaseField::from(policy.reveal_threshold.0))?;
+            circuit.create_variable(C::ScalarField::from(policy.reveal_threshold.0))?;
         Ok(Self {
             viewer_pk,
             cred_pk,
@@ -224,7 +224,7 @@ impl AssetPolicyVar {
     /// reveal_threshold)
     pub(crate) fn set_public(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
         circuit.set_variable_public(self.reveal_map)?;
         circuit.set_variable_public(self.viewer_pk.0.get_x())?;
@@ -240,21 +240,21 @@ impl AssetPolicyVar {
     /// Constrain self to be a dummy policy.
     pub(crate) fn enforce_dummy_policy(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
         let neutral_point = circuit.neutral_point_variable();
         circuit.point_equal_gate(&self.viewer_pk.0, &neutral_point)?;
         circuit.point_equal_gate(&self.cred_pk.0, &neutral_point)?;
         circuit.point_equal_gate(&self.freezer_pk, &neutral_point)?;
-        circuit.constant_gate(self.reveal_map, BaseField::zero())?;
-        circuit.constant_gate(self.reveal_threshold, BaseField::zero())?;
+        circuit.constant_gate(self.reveal_map, C::ScalarField::zero())?;
+        circuit.constant_gate(self.reveal_threshold, C::ScalarField::zero())?;
         Ok(())
     }
 
     /// Obtain a bool variable indicating whether `self` is dummy policy.
     pub(crate) fn is_dummy_policy(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
         let dummy_viewer = self.is_dummy_viewing_pk(circuit)?;
         let dummy_cred_pk = self.is_dummy_cred_pk(circuit)?;
@@ -277,7 +277,7 @@ impl AssetPolicyVar {
     /// Constrain `self` to equal to another policy (in terms of values).
     pub(crate) fn enforce_equal_policy(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
     ) -> Result<(), PlonkError> {
         circuit.equal_gate(self.reveal_map, policy.reveal_map)?;
@@ -292,7 +292,7 @@ impl AssetPolicyVar {
     /// policy (in terms of values).
     pub(crate) fn check_equal_policy(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
     ) -> Result<Variable, PlonkError> {
         let a_eq = circuit.check_equal(self.reveal_map, policy.reveal_map)?;
@@ -308,27 +308,27 @@ impl AssetPolicyVar {
     /// creator public key is dummy.
     pub(crate) fn is_dummy_cred_pk(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<CurveParam>(&self.cred_pk.0)
+        circuit.is_neutral_point::<C::JubjubParam>(&self.cred_pk.0)
     }
 
     /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
     pub(crate) fn is_dummy_viewing_pk(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<CurveParam>(&self.viewer_pk.0)
+        circuit.is_neutral_point::<C::JubjubParam>(&self.viewer_pk.0)
     }
 
     /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
     pub(crate) fn is_dummy_freezer_pk(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<CurveParam>(&self.freezer_pk)
+        circuit.is_neutral_point::<C::JubjubParam>(&self.freezer_pk)
     }
 }
 
@@ -336,11 +336,11 @@ impl AssetPolicyVar {
 #[derive(Debug)]
 pub(crate) struct IdAttrVar(pub(crate) Variable);
 
-impl IdAttrVar {
+impl<C: CapConfig> IdAttrVar {
     /// Create a variable for an identity attribute.
     fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        id_attr: &IdentityAttribute,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        id_attr: &IdentityAttribute<C>,
     ) -> Result<Self, PlonkError> {
         let attr = circuit.create_variable(id_attr.0)?;
         Ok(Self(attr))
@@ -356,13 +356,13 @@ pub(crate) struct ExpirableCredVar {
     pub creator_pk: VerKeyVar,
 }
 
-impl ExpirableCredVar {
+impl<C: CapConfig> ExpirableCredVar {
     /// Create a variable for an expirable credential.
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        expirable_cred: &ExpirableCredential,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        expirable_cred: &ExpirableCredential<C>,
     ) -> Result<Self, PlonkError> {
-        let expiry = circuit.create_variable(BaseField::from(expirable_cred.expiry))?;
+        let expiry = circuit.create_variable(C::ScalarField::from(expirable_cred.expiry))?;
         let cred = circuit.create_signature_variable(&expirable_cred.cred.0)?;
         let user_addr = UserAddressVar(circuit.create_point_variable(Point::from(
             expirable_cred.user_addr.internal().into_affine(),
@@ -394,7 +394,7 @@ impl ExpirableCredVar {
     ///   is valid.
     pub(crate) fn verify(
         &self,
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         valid_until: Variable,
     ) -> Result<Variable, PlonkError> {
         if self.attrs.len() != ATTRS_LEN {
@@ -419,7 +419,7 @@ impl ExpirableCredVar {
             attrs,
         ]
         .concat();
-        SignatureGadget::<_, CurveParam>::check_signature_validity(
+        SignatureGadget::<_, C::JubjubParam>::check_signature_validity(
             circuit,
             &self.creator_pk,
             &msg,
@@ -433,10 +433,10 @@ mod tests {
     use crate::{
         circuit::structs::{AssetPolicyVar, ExpirableCredVar, RecordOpeningVar, ViewableMemoVar},
         keys::{CredIssuerKeyPair, UserKeyPair, ViewerKeyPair},
+        prelude::{CapConfig, Config},
         structs::{
             AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo,
         },
-        BaseField, ScalarField,
     };
     use ark_ff::{One, Zero};
     use ark_std::{test_rng, vec::Vec};
@@ -445,14 +445,17 @@ mod tests {
         errors::PlonkError,
     };
 
+    type F = <Config as CapConfig>::ScalarField;
+    type Fj = <Config as CapConfig>::JubjubScalarField;
+
     ////////////////////////////////////////////////////////////
     // Credential related tests ////////////////////////////////
     ////////////////////////////////////////////////////////////
 
     fn build_verify_cred_circuit(
-        valid_until: BaseField,
-        expirable_cred: &ExpirableCredential,
-    ) -> Result<(Variable, ExpirableCredVar, PlonkCircuit<BaseField>), PlonkError> {
+        valid_until: F,
+        expirable_cred: &ExpirableCredential<Config>,
+    ) -> Result<(Variable, ExpirableCredVar, PlonkCircuit<F>), PlonkError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let valid_until = circuit.create_variable(valid_until)?;
         let expirable_cred = ExpirableCredVar::new(&mut circuit, expirable_cred)?;
@@ -471,17 +474,17 @@ mod tests {
             ExpirableCredential::create(user.address(), attrs, expiry, &minter_keypair).unwrap();
 
         // Happy path
-        let valid_until = BaseField::from(expiry - 100u64);
+        let valid_until = F::from(expiry - 100u64);
         let (b, cred_var, mut circuit) = build_verify_cred_circuit(valid_until, &expirable_cred)?;
-        assert_eq!(circuit.witness(b)?, BaseField::one());
+        assert_eq!(circuit.witness(b)?, F::one());
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
 
         // Wrong credential (prover response in Schnorr) should fail.
-        *circuit.witness_mut(cred_var.cred.s) = BaseField::one();
+        *circuit.witness_mut(cred_var.cred.s) = F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
         // Expired credential should fail
-        let valid_until = BaseField::from(expiry + 3u64);
+        let valid_until = F::from(expiry + 3u64);
         let (_, _, circuit) = build_verify_cred_circuit(valid_until, &expirable_cred)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
@@ -505,7 +508,7 @@ mod tests {
         assert_eq!(record_comm.0, circuit.witness(rc_var)?);
         // check constraints
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
-        *circuit.witness_mut(rc_var) = BaseField::one();
+        *circuit.witness_mut(rc_var) = F::one();
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
         Ok(())
@@ -566,13 +569,13 @@ mod tests {
     #[test]
     fn test_check_equal_viewing_memo() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
-        let data: Vec<BaseField> = (0..10).map(|i| BaseField::from(i as u32)).collect();
+        let data: Vec<F> = (0..10).map(|i| F::from(i as u32)).collect();
         let mut data2 = data.clone();
-        data2[0] = BaseField::from(1u32);
+        data2[0] = F::from(1u32);
         let pk = ViewerKeyPair::generate(rng).pub_key();
         let pk2 = ViewerKeyPair::generate(rng).pub_key();
-        let enc_rand = ScalarField::from(324u32);
-        let enc_rand_2 = ScalarField::from(23432u32);
+        let enc_rand = Fj::from(324u32);
+        let enc_rand_2 = Fj::from(23432u32);
 
         let viewing_memo_1 = ViewableMemo(pk.encrypt(enc_rand, &data));
         // different pub_key
@@ -582,27 +585,24 @@ mod tests {
         // different enc_rand
         let viewing_memo_4 = ViewableMemo(pk.encrypt(enc_rand_2, &data));
 
-        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_1, BaseField::one())?;
-        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_2, BaseField::zero())?;
-        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_3, BaseField::zero())?;
-        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_4, BaseField::zero())?;
+        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_1, F::one())?;
+        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_2, F::zero())?;
+        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_3, F::zero())?;
+        check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_4, F::zero())?;
 
         // should return error when compared to an viewing memowith different format
         let viewing_memo_5 = ViewableMemo(pk.encrypt(enc_rand, &[]));
-        assert!(check_check_equal_viewing_memo(
-            &viewing_memo_1,
-            &viewing_memo_5,
-            BaseField::zero()
-        )
-        .is_err());
+        assert!(
+            check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_5, F::zero()).is_err()
+        );
 
         Ok(())
     }
 
     fn check_check_equal_viewing_memo(
-        viewing_memo_1: &ViewableMemo,
-        viewing_memo_2: &ViewableMemo,
-        expect_equal: BaseField,
+        viewing_memo_1: &ViewableMemo<Config>,
+        viewing_memo_2: &ViewableMemo<Config>,
+        expect_equal: F,
     ) -> Result<(), PlonkError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let viewing_memo_1 = ViewableMemoVar::new(&mut circuit, viewing_memo_1)?;

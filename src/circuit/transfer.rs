@@ -19,8 +19,8 @@ use crate::{
     constants::{AMOUNT_LEN, ASSET_TRACING_MAP_LEN, VIEWABLE_DATA_LEN},
     errors::TxnApiError,
     keys::UserKeyPair,
+    prelude::CapConfig,
     proof::transfer::{InputSecret, TransferPublicInput, TransferWitness},
-    BaseField, CurveParam,
 };
 use ark_ff::Zero;
 use ark_std::{format, string::ToString, vec, vec::Vec};
@@ -31,9 +31,9 @@ use jf_plonk::{
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
 use jf_utils::fr_to_fq;
 
-pub(crate) struct TransferCircuit(pub(crate) PlonkCircuit<BaseField>);
+pub(crate) struct TransferCircuit<C: CapConfig>(pub(crate) PlonkCircuit<C::ScalarField>);
 
-impl TransferCircuit {
+impl<C: CapConfig> TransferCircuit<C> {
     /// Build a circuit during preprocessing for derivation of proving key and
     /// verifying key.
     pub(crate) fn build_for_preprocessing(
@@ -54,8 +54,8 @@ impl TransferCircuit {
     /// Build the circuit given a satisfiable assignment of
     /// secret witness and public inputs.
     pub(crate) fn build(
-        witness: &TransferWitness,
-        pub_input: &TransferPublicInput,
+        witness: &TransferWitness<C>,
+        pub_input: &TransferPublicInput<C>,
     ) -> Result<(Self, usize), PlonkError> {
         if witness.input_secrets.is_empty() {
             return Err(PlonkError::CircuitError(InternalError(
@@ -79,7 +79,7 @@ impl TransferCircuit {
             .enumerate()
         {
             // The input is not frozen.
-            circuit.constant_gate(input.ro.freeze_flag, BaseField::zero())?;
+            circuit.constant_gate(input.ro.freeze_flag, C::ScalarField::zero())?;
             // check if record is dummy
             let is_dummy_record = input.ro.check_asset_code_dummy(&mut circuit)?;
             let is_zero_amount = circuit.check_is_zero(input.ro.amount)?;
@@ -131,7 +131,7 @@ impl TransferCircuit {
             .enumerate()
         {
             // The output is not frozen.
-            circuit.constant_gate(output_ro.freeze_flag, BaseField::zero())?;
+            circuit.constant_gate(output_ro.freeze_flag, C::ScalarField::zero())?;
             // The first output is with native asset code and is for txn fees
             if i == 0 {
                 circuit.equal_gate(output_ro.asset_code, pub_input.native_asset_code)?;
@@ -194,7 +194,7 @@ impl TransferCircuit {
     /// Check whether a transfer viewing memo has encrypted the correct data,
     /// returns "one" variable if valid, "zero" otherwise
     fn is_correct_viewing_memo(
-        circuit: &mut PlonkCircuit<BaseField>,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &TransferWitnessVar,
         pub_input: &TransferPubInputVar,
     ) -> Result<Variable, PlonkError> {
@@ -280,11 +280,11 @@ pub(crate) struct TransferWitnessVar {
     pub(crate) viewing_memo_enc_rand: Variable,
 }
 
-impl TransferWitnessVar {
+impl<C: CapConfig> TransferWitnessVar {
     /// Create a variable for a transfer witness
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        witness: &TransferWitness,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        witness: &TransferWitness<C>,
     ) -> Result<Self, PlonkError> {
         let asset_code = circuit.create_variable(witness.asset_def.code.0)?;
         let policy = AssetPolicyVar::new(circuit, &witness.asset_def.policy)?;
@@ -298,8 +298,9 @@ impl TransferWitnessVar {
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let viewing_memo_enc_rand =
-            circuit.create_variable(fr_to_fq::<_, CurveParam>(&witness.viewing_memo_enc_rand))?;
+        let viewing_memo_enc_rand = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
+            &witness.viewing_memo_enc_rand,
+        ))?;
         Ok(Self {
             asset_code,
             policy,
@@ -321,16 +322,17 @@ pub(crate) struct TransferPubInputVar {
     pub(crate) viewing_memo: ViewableMemoVar,
 }
 
-impl TransferPubInputVar {
+impl<C: CapConfig> TransferPubInputVar {
     /// Create a transfer public input variable.
     pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        pub_input: &TransferPublicInput,
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        pub_input: &TransferPublicInput<C>,
     ) -> Result<Self, PlonkError> {
         let root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
-        let valid_until = circuit.create_public_variable(BaseField::from(pub_input.valid_until))?;
-        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee.0))?;
+        let valid_until =
+            circuit.create_public_variable(C::ScalarField::from(pub_input.valid_until))?;
+        let fee = circuit.create_public_variable(C::ScalarField::from(pub_input.fee.0))?;
         let input_nullifiers = pub_input
             .input_nullifiers
             .iter()
@@ -365,17 +367,19 @@ pub(crate) struct InputSecretVar {
 
 impl InputSecretVar {
     /// Create a variable for a transfer input secret.
-    pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        input_secret: &InputSecret,
+    pub(crate) fn new<C: CapConfig>(
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        input_secret: &InputSecret<C>,
     ) -> Result<Self, PlonkError> {
-        let addr_secret = circuit.create_variable(fr_to_fq::<_, CurveParam>(
+        let addr_secret = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
             input_secret.owner_keypair.address_secret_ref(),
         ))?;
         let ro = RecordOpeningVar::new(circuit, &input_secret.ro)?;
         let cred = ExpirableCredVar::new(circuit, &input_secret.cred)?;
-        let acc_member_witness =
-            AccMemberWitnessVar::new::<_, CurveParam>(circuit, &input_secret.acc_member_witness)?;
+        let acc_member_witness = AccMemberWitnessVar::new::<_, C::JubjubParam>(
+            circuit,
+            &input_secret.acc_member_witness,
+        )?;
         Ok(Self {
             addr_secret,
             ro,
@@ -390,12 +394,12 @@ mod tests {
     use super::{TransferCircuit, TransferPubInputVar, TransferPublicInput, TransferWitness};
     use crate::{
         keys::UserKeyPair,
+        prelude::{CapConfig, Config},
         structs::{
             Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, ExpirableCredential,
             FreezeFlag, Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
         },
         utils::params_builder::TransferParamsBuilder,
-        BaseField, ScalarField,
     };
     use ark_ff::Zero;
     use ark_std::{vec, vec::Vec, UniformRand};
@@ -405,6 +409,9 @@ mod tests {
     };
     use jf_primitives::merkle_tree::{MerklePathNode, NodeValue};
 
+    type F = <Config as CapConfig>::ScalarField;
+    type Fj = <Config as CapConfig>::JubjubScalarField;
+
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
         let rng = &mut ark_std::test_rng();
@@ -412,13 +419,13 @@ mod tests {
         input_ros[0].asset_def = AssetDefinition::native();
         let output_ros = vec![RecordOpening::rand_for_test(rng); 4];
         let input_creds = vec![ExpirableCredential::dummy_unexpired().unwrap(); 5];
-        let randomizer = ScalarField::rand(rng);
+        let randomizer = Fj::rand(rng);
         let pub_input = TransferPublicInput {
-            merkle_root: NodeValue::from_scalar(BaseField::from(10u8)),
+            merkle_root: NodeValue::from_scalar(F::from(10u8)),
             native_asset_code: AssetCode::native(),
             valid_until: 123u64,
             fee: Amount::from(8u64),
-            input_nullifiers: vec![Nullifier(BaseField::from(2u8)); 5],
+            input_nullifiers: vec![Nullifier(F::from(2u8)); 5],
             output_commitments: vec![RecordCommitment::from(&output_ros[0]); 4],
             viewing_memo: ViewableMemo::new_for_transfer_note(
                 &input_ros,
@@ -617,7 +624,7 @@ mod tests {
 
         // bad path: wrong output commitment
         let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
-        pub_input.output_commitments[0] = RecordCommitment(BaseField::zero());
+        pub_input.output_commitments[0] = RecordCommitment(F::zero());
         check_transfer_circuit(&witness, &pub_input, false)?;
 
         // bad path: wrong merkle root
@@ -627,7 +634,7 @@ mod tests {
 
         // bad path: wrong input nullifier
         let (witness, mut pub_input) = create_witness_and_pub_input(&builder);
-        pub_input.input_nullifiers[0].0 = BaseField::zero();
+        pub_input.input_nullifiers[0].0 = F::zero();
         check_transfer_circuit(&witness, &pub_input, false)?;
 
         // bad path: wrong txn fee
@@ -654,13 +661,9 @@ mod tests {
             .map(|secret| secret.cred.clone())
             .collect();
         // replace with an viewing memo encrypted with a wrong randomizer
-        pub_input.viewing_memo = ViewableMemo::new_for_transfer_note(
-            &input_ros,
-            &output_ros,
-            &input_creds,
-            ScalarField::zero(),
-        )
-        .unwrap(); // safe unwrap
+        pub_input.viewing_memo =
+            ViewableMemo::new_for_transfer_note(&input_ros, &output_ros, &input_creds, Fj::zero())
+                .unwrap(); // safe unwrap
         check_transfer_circuit(&witness, &pub_input, false)?;
 
         Ok(())
@@ -747,7 +750,7 @@ mod tests {
 
     fn create_witness_and_pub_input<'a>(
         builder: &'a TransferParamsBuilder,
-    ) -> (TransferWitness<'a>, TransferPublicInput) {
+    ) -> (TransferWitness<'a, Config>, TransferPublicInput<Config>) {
         let rng = &mut ark_std::test_rng();
         let witness = builder.build_witness(rng);
         let valid_until = 1234u64;
@@ -756,8 +759,8 @@ mod tests {
     }
 
     fn check_transfer_circuit(
-        witness: &TransferWitness,
-        pub_input: &TransferPublicInput,
+        witness: &TransferWitness<Config>,
+        pub_input: &TransferPublicInput<Config>,
         witness_is_valid: bool,
     ) -> Result<(), PlonkError> {
         let pub_input_vec = pub_input.to_scalars();

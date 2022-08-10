@@ -18,8 +18,8 @@ use crate::{
     },
     errors::TxnApiError,
     keys::{FreezerKeyPair, UserKeyPair},
+    prelude::CapConfig,
     proof::freeze::{FreezePublicInput, FreezeWitness},
-    BaseField, CurveParam,
 };
 use ark_ff::Zero;
 use ark_std::{format, rand::SeedableRng, string::ToString, vec::Vec};
@@ -30,9 +30,9 @@ use jf_plonk::{
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
 use jf_utils::fr_to_fq;
 
-pub(crate) struct FreezeCircuit(pub(crate) PlonkCircuit<BaseField>);
+pub(crate) struct FreezeCircuit<C: CapConfig>(pub(crate) PlonkCircuit<C::ScalarField>);
 
-impl FreezeCircuit {
+impl<C: CapConfig> FreezeCircuit<C> {
     /// Build a circuit during preprocessing for derivation of proving key and
     /// verifying key.
     pub(crate) fn build_for_preprocessing(
@@ -52,8 +52,8 @@ impl FreezeCircuit {
     /// Build the circuit given a satisfiable assignment of
     /// secret witness.
     pub(crate) fn build(
-        witness: &FreezeWitness,
-        pub_input: &FreezePublicInput,
+        witness: &FreezeWitness<C>,
+        pub_input: &FreezePublicInput<C>,
     ) -> Result<(Self, usize), TxnApiError> {
         // We didn't put this check inside `FreezePublicInput::from_witness` for ease of
         // testing.
@@ -75,8 +75,8 @@ impl FreezeCircuit {
 
     /// This is only used for testing or called internally by `Self::build()`
     fn build_unchecked(
-        witness: &FreezeWitness,
-        pub_input: &FreezePublicInput,
+        witness: &FreezeWitness<C>,
+        pub_input: &FreezePublicInput<C>,
     ) -> Result<(Self, usize), PlonkError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let witness = FreezeWitnessVar::new(&mut circuit, witness)?;
@@ -91,7 +91,7 @@ impl FreezeCircuit {
         circuit.equal_gate(first_output.asset_code, pub_input.native_asset_code)?;
         first_output.policy.enforce_dummy_policy(&mut circuit)?;
         // The first input/output are not frozen
-        let unfrozen = BaseField::zero();
+        let unfrozen = C::ScalarField::zero();
         circuit.constant_gate(first_input.freeze_flag, unfrozen)?;
         circuit.constant_gate(first_output.freeze_flag, unfrozen)?;
         // Fee balance
@@ -180,9 +180,9 @@ pub(crate) struct FreezeWitnessVar {
 
 impl FreezeWitnessVar {
     /// Create a variable for a minting witness
-    pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        witness: &FreezeWitness,
+    pub(crate) fn new<C: CapConfig>(
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        witness: &FreezeWitness<C>,
     ) -> Result<Self, PlonkError> {
         let input_ros = witness
             .input_ros
@@ -192,20 +192,22 @@ impl FreezeWitnessVar {
         let input_acc_member_witnesses = witness
             .input_acc_member_witnesses
             .iter()
-            .map(|acc_wit| AccMemberWitnessVar::new::<_, CurveParam>(circuit, acc_wit))
+            .map(|acc_wit| AccMemberWitnessVar::new::<_, C::JubjubParam>(circuit, acc_wit))
             .collect::<Result<Vec<_>, PlonkError>>()?;
         let output_ros = witness
             .output_ros
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let fee_sk = circuit.create_variable(fr_to_fq::<_, CurveParam>(
+        let fee_sk = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
             witness.fee_keypair.address_secret_ref(),
         ))?;
         let freezing_sks = witness
             .freezing_keypairs
             .iter()
-            .map(|&keypair| circuit.create_variable(fr_to_fq::<_, CurveParam>(&keypair.sec_key)))
+            .map(|&keypair| {
+                circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(&keypair.sec_key))
+            })
             .collect::<Result<Vec<_>, PlonkError>>()?;
         Ok(Self {
             input_ros,
@@ -228,13 +230,13 @@ pub(crate) struct FreezePubInputVar {
 
 impl FreezePubInputVar {
     /// Create a freezing public input variable.
-    pub(crate) fn new(
-        circuit: &mut PlonkCircuit<BaseField>,
-        pub_input: &FreezePublicInput,
+    pub(crate) fn new<C: CapConfig>(
+        circuit: &mut PlonkCircuit<C::ScalarField>,
+        pub_input: &FreezePublicInput<C>,
     ) -> Result<Self, PlonkError> {
         let merkle_root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
-        let fee = circuit.create_public_variable(BaseField::from(pub_input.fee.0))?;
+        let fee = circuit.create_public_variable(C::ScalarField::from(pub_input.fee.0))?;
         let input_nullifiers = pub_input
             .input_nullifiers
             .iter()
@@ -260,29 +262,32 @@ mod tests {
     use super::{FreezeCircuit, FreezePubInputVar, FreezePublicInput, FreezeWitness};
     use crate::{
         keys::{FreezerKeyPair, UserKeyPair, UserPubKey},
+        prelude::{CapConfig, Config},
         structs::{
             Amount, AssetCode, AssetDefinition, AssetPolicy, FreezeFlag, Nullifier,
             RecordCommitment,
         },
         utils::params_builder::FreezeParamsBuilder,
-        BaseField, NodeValue,
     };
     use ark_std::{vec, vec::Vec};
     use jf_plonk::{
         circuit::{Circuit, PlonkCircuit},
         errors::PlonkError,
     };
+    use jf_primitives::merkle_tree::NodeValue;
+
+    type F = <Config as CapConfig>::ScalarField;
+    type Fj = <Config as CapConfig>::JubjubScalarField;
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
-        let input_nullifiers: Vec<Nullifier> = (0..5)
-            .map(|i| Nullifier(BaseField::from(i as u8)))
-            .collect();
+        let input_nullifiers: Vec<Nullifier> =
+            (0..5).map(|i| Nullifier(F::from(i as u8))).collect();
         let output_commitments: Vec<RecordCommitment> = (6..10)
-            .map(|i| RecordCommitment(BaseField::from(i as u8)))
+            .map(|i| RecordCommitment(F::from(i as u8)))
             .collect();
         let pub_input = FreezePublicInput {
-            merkle_root: NodeValue::from_scalar(BaseField::from(20u8)),
+            merkle_root: NodeValue::from_scalar(F::from(20u8)),
             native_asset_code: AssetCode::native(),
             fee: Amount::from(30u128),
             input_nullifiers,
@@ -301,8 +306,8 @@ mod tests {
     }
 
     fn check_freezing_circuit(
-        witness: &FreezeWitness,
-        pub_input: &FreezePublicInput,
+        witness: &FreezeWitness<Config>,
+        pub_input: &FreezePublicInput<Config>,
         witness_is_valid: bool,
     ) -> Result<(), PlonkError> {
         let pub_input_vec = pub_input.to_scalars();
@@ -353,7 +358,7 @@ mod tests {
         // wrong output commitment
         {
             let mut bad_pub_input = pub_input.clone();
-            bad_pub_input.output_commitments[0] = RecordCommitment(BaseField::from(10u8));
+            bad_pub_input.output_commitments[0] = RecordCommitment(F::from(10u8));
             check_freezing_circuit(&witness, &bad_pub_input, false)?;
         }
 
