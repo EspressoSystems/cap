@@ -260,7 +260,7 @@ impl<C: CapConfig> TxnsParams<C> {
     pub(crate) fn update_recv_memos_ver_key(
         mut self,
         idx: usize,
-        recv_memos_ver_key: schnorr::VerKey<C::JubjubParam>,
+        recv_memos_ver_key: schnorr::VerKey<C::EmbeddedCurveParam>,
     ) -> Self {
         assert!(idx < self.txns.len());
         match &mut self.txns[idx] {
@@ -762,7 +762,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         (
             TransferNote<C>,
             Vec<ReceiverMemo>,
-            schnorr::Signature<C::JubjubParam>,
+            schnorr::Signature<C::EmbeddedCurveParam>,
         ),
         TxnApiError,
     > {
@@ -786,7 +786,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         (
             TransferNote<C>,
             Vec<ReceiverMemo>,
-            schnorr::Signature<C::JubjubParam>,
+            schnorr::Signature<C::EmbeddedCurveParam>,
         ),
         TxnApiError,
     > {
@@ -830,7 +830,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         (
             TransferNote<C>,
             Vec<ReceiverMemo>,
-            schnorr::Signature<C::JubjubParam>,
+            schnorr::Signature<C::EmbeddedCurveParam>,
         ),
         TxnApiError,
     > {
@@ -1044,7 +1044,7 @@ impl<'a, C: CapConfig> MintParamsBuilder<'a, C> {
             chg_ro,
             ac_seed: self.ac_seed,
             ac_digest,
-            viewing_memo_enc_rand: C::JubjubScalarField::rand(rng),
+            viewing_memo_enc_rand: C::EmbeddedCurveScalarField::rand(rng),
         }
     }
 
@@ -1099,7 +1099,7 @@ impl<'a, C: CapConfig> MintParamsBuilder<'a, C> {
     ) -> Result<
         (
             MintNote<C>,
-            schnorr::KeyPair<C::JubjubParam>,
+            schnorr::KeyPair<C::EmbeddedCurveParam>,
             RecordOpening<C>,
         ),
         TxnApiError,
@@ -1370,7 +1370,7 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
     ) -> Result<
         (
             FreezeNote<C>,
-            schnorr::KeyPair<C::JubjubParam>,
+            schnorr::KeyPair<C::EmbeddedCurveParam>,
             RecordOpening<C>,
             Vec<RecordOpening<C>>,
         ),

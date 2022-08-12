@@ -82,7 +82,7 @@ pub struct MintAuxInfo<C: CapConfig> {
     pub fee: Amount,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
-    pub txn_memo_ver_key: schnorr::VerKey<C::JubjubParam>,
+    pub txn_memo_ver_key: schnorr::VerKey<C::EmbeddedCurveParam>,
 }
 
 impl<C: CapConfig> MintNote<C> {
@@ -101,7 +101,7 @@ impl<C: CapConfig> MintNote<C> {
         ac_description: &[u8],
         txn_fee_info: TxnFeeInfo<C>,
         proving_key: &MintProvingKey<C>,
-    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>), TxnApiError>
+    ) -> Result<(Self, schnorr::KeyPair<C::EmbeddedCurveParam>), TxnApiError>
     where
         R: RngCore + CryptoRng,
     {
@@ -119,7 +119,7 @@ impl<C: CapConfig> MintNote<C> {
 
         // build public input and snark proof
         let signing_keypair = schnorr::KeyPair::generate(rng);
-        let viewing_memo_enc_rand = C::JubjubScalarField::rand(rng);
+        let viewing_memo_enc_rand = C::EmbeddedCurveScalarField::rand(rng);
         let witness = MintWitness {
             minter_keypair,
             acc_member_witness: txn_fee_info.fee_input.acc_member_witness,

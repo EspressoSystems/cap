@@ -130,7 +130,7 @@ pub(crate) fn prove<R, C: CapConfig>(
     proving_key: &FreezeProvingKey<C>,
     witness: &FreezeWitness<C>,
     pub_input: &FreezePublicInput<C>,
-    txn_memo_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<FreezeValidityProof<C>, TxnApiError>
 where
     R: RngCore + CryptoRng,
@@ -166,7 +166,7 @@ pub(crate) fn verify<C: CapConfig>(
     verifying_key: &FreezeVerifyingKey<C>,
     public_inputs: &FreezePublicInput<C>,
     proof: &FreezeValidityProof<C>,
-    recv_memos_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;

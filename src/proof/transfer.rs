@@ -164,7 +164,7 @@ pub(crate) fn prove<R: RngCore + CryptoRng, C: CapConfig>(
     transfer_proving_key: &TransferProvingKey<C>,
     witness: &TransferWitness<C>,
     public_inputs: &TransferPublicInput<C>,
-    txn_memo_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<TransferValidityProof<C>, TxnApiError> {
     let (circuit, _) = TransferCircuit::build(witness, public_inputs)
@@ -196,7 +196,7 @@ pub(crate) fn verify<C: CapConfig>(
     transfer_verifying_key: &TransferVerifyingKey<C>,
     public_inputs: &TransferPublicInput<C>,
     proof: &TransferValidityProof<C>,
-    recv_memos_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
@@ -220,7 +220,7 @@ pub(crate) struct TransferWitness<'a, C: CapConfig> {
     pub(crate) asset_def: AssetDefinition<C>,
     pub(crate) input_secrets: Vec<InputSecret<'a, C>>,
     pub(crate) output_record_openings: Vec<RecordOpening<C>>,
-    pub(crate) viewing_memo_enc_rand: C::JubjubScalarField,
+    pub(crate) viewing_memo_enc_rand: C::EmbeddedCurveScalarField,
 }
 
 impl<'a, C: CapConfig> TransferWitness<'a, C> {
@@ -255,7 +255,7 @@ impl<'a, C: CapConfig> TransferWitness<'a, C> {
         };
         let output_ro = RecordOpening::default();
 
-        let viewing_memo_enc_rand = C::JubjubScalarField::default();
+        let viewing_memo_enc_rand = C::EmbeddedCurveScalarField::default();
         Self {
             asset_def,
             input_secrets: vec![input_secret; num_input],
@@ -297,7 +297,7 @@ impl<'a, C: CapConfig> TransferWitness<'a, C> {
             )
         }).collect::<Result<Vec<_>, TxnApiError>>()?;
         let output_record_openings = output_ros.to_owned();
-        let viewing_memo_enc_rand = C::JubjubScalarField::rand(rng);
+        let viewing_memo_enc_rand = C::EmbeddedCurveScalarField::rand(rng);
 
         Ok(Self {
             asset_def,

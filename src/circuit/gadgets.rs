@@ -211,7 +211,7 @@ mod tests {
     use jf_utils::fr_to_fq;
 
     type F = <Config as CapConfig>::ScalarField;
-    type JubjubParam = <Config as CapConfig>::JubjubParam;
+    type EmbeddedCurveParam = <Config as CapConfig>::EmbeddedCurveParam;
 
     fn build_preserve_balance_circuit(
         native_asset: F,
@@ -324,7 +324,7 @@ mod tests {
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let ro_var = RecordOpeningVar::new(&mut circuit, ro)?;
         let acc_wit_var =
-            AccMemberWitnessVar::new::<_, JubjubParam>(&mut circuit, &acc_member_witness)?;
+            AccMemberWitnessVar::new::<_, EmbeddedCurveParam>(&mut circuit, &acc_member_witness)?;
 
         let sk_var = circuit.create_variable(sk)?;
         let (nullifier, root) = circuit.prove_spend(&ro_var, &acc_wit_var, sk_var, spender)?;
@@ -356,7 +356,7 @@ mod tests {
         let expected_nl = freezer_keypair.nullify(&user_keypair.address(), uid, &ro_comm);
         let (acc_wit, expected_root) = gen_merkle_path_for_test(uid, ro_comm.0);
         // Check user spending
-        let usk = fr_to_fq::<_, JubjubParam>(user_keypair.address_secret_ref());
+        let usk = fr_to_fq::<_, EmbeddedCurveParam>(user_keypair.address_secret_ref());
         check_prove_spend_circuit(
             &ro,
             &acc_wit,
@@ -366,7 +366,7 @@ mod tests {
             expected_root,
         )?;
         // Check freezer spending
-        let fsk = fr_to_fq::<_, JubjubParam>(&freezer_keypair.sec_key);
+        let fsk = fr_to_fq::<_, EmbeddedCurveParam>(&freezer_keypair.sec_key);
         check_prove_spend_circuit(
             &ro,
             &acc_wit,

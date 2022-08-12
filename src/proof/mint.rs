@@ -102,7 +102,7 @@ pub(crate) fn prove<R, C: CapConfig>(
     proving_key: &MintProvingKey<C>,
     witness: &MintWitness<C>,
     public_inputs: &MintPublicInput<C>,
-    txn_memo_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<MintValidityProof<C>, TxnApiError>
 where
     R: RngCore + CryptoRng,
@@ -128,7 +128,7 @@ pub(crate) fn verify<C: CapConfig>(
     verifying_key: &MintVerifyingKey<C>,
     public_inputs: &MintPublicInput<C>,
     proof: &MintValidityProof<C>,
-    recv_memos_ver_key: &schnorr::VerKey<C::JubjubParam>,
+    recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;
@@ -151,7 +151,7 @@ pub(crate) struct MintWitness<'a, C: CapConfig> {
     pub(crate) chg_ro: RecordOpening<C>,
     pub(crate) ac_seed: AssetCodeSeed<C>,
     pub(crate) ac_digest: AssetCodeDigest<C>,
-    pub(crate) viewing_memo_enc_rand: C::JubjubScalarField,
+    pub(crate) viewing_memo_enc_rand: C::EmbeddedCurveScalarField,
 }
 
 impl<'a, C: CapConfig> MintWitness<'a, C> {
@@ -176,7 +176,7 @@ impl<'a, C: CapConfig> MintWitness<'a, C> {
             chg_ro,
             ac_seed: AssetCodeSeed::default(),
             ac_digest: AssetCodeDigest::default(),
-            viewing_memo_enc_rand: C::JubjubScalarField::default(),
+            viewing_memo_enc_rand: C::EmbeddedCurveScalarField::default(),
         }
     }
 }

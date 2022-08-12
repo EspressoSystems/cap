@@ -192,21 +192,21 @@ impl FreezeWitnessVar {
         let input_acc_member_witnesses = witness
             .input_acc_member_witnesses
             .iter()
-            .map(|acc_wit| AccMemberWitnessVar::new::<_, C::JubjubParam>(circuit, acc_wit))
+            .map(|acc_wit| AccMemberWitnessVar::new::<_, C::EmbeddedCurveParam>(circuit, acc_wit))
             .collect::<Result<Vec<_>, PlonkError>>()?;
         let output_ros = witness
             .output_ros
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let fee_sk = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
+        let fee_sk = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             witness.fee_keypair.address_secret_ref(),
         ))?;
         let freezing_sks = witness
             .freezing_keypairs
             .iter()
             .map(|&keypair| {
-                circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(&keypair.sec_key))
+                circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(&keypair.sec_key))
             })
             .collect::<Result<Vec<_>, PlonkError>>()?;
         Ok(Self {
@@ -277,7 +277,7 @@ mod tests {
     use jf_primitives::merkle_tree::NodeValue;
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::JubjubScalarField;
+    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {

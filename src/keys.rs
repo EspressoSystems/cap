@@ -53,7 +53,7 @@ use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
 
 /// Public address for a user to send assets to/from.
-pub type UserAddress<C: CapConfig> = schnorr::VerKey<C::JubjubParam>;
+pub type UserAddress<C: CapConfig> = schnorr::VerKey<C::EmbeddedCurveParam>;
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
@@ -102,14 +102,14 @@ impl<C: CapConfig> UserPubKey<C> {
     pub fn verify_sig(
         &self,
         msg: &[u8],
-        sig: &Signature<C::JubjubParam>,
+        sig: &Signature<C::EmbeddedCurveParam>,
     ) -> Result<(), TxnApiError> {
         let bls_scalars = hash_to_field::<_, C::ScalarField>(msg);
         self.address
             .verify(
                 &[bls_scalars],
                 sig,
-                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
+                SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
             )
             .map_err(|_| {
                 TxnApiError::FailedPrimitives(
@@ -121,7 +121,7 @@ impl<C: CapConfig> UserPubKey<C> {
 
 // private or internal functions
 impl<C: CapConfig> UserPubKey<C> {
-    pub(crate) fn address_internal(&self) -> &GroupProjective<C::JubjubParam> {
+    pub(crate) fn address_internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
         self.address.internal()
     }
 }
@@ -130,7 +130,7 @@ impl<C: CapConfig> UserPubKey<C> {
 #[tagged_blob("USERKEY")]
 #[derive(Debug, Default, Clone, CanonicalSerialize, CanonicalDeserialize)]
 pub struct UserKeyPair<C: CapConfig> {
-    pub(crate) addr_keypair: schnorr::KeyPair<C::JubjubParam>,
+    pub(crate) addr_keypair: schnorr::KeyPair<C::EmbeddedCurveParam>,
     pub(crate) enc_keypair: aead::KeyPair,
 }
 
@@ -160,7 +160,7 @@ impl<C: CapConfig> UserKeyPair<C> {
     }
 
     /// Getter for the reference to the address secret key
-    pub(crate) fn address_secret_ref(&self) -> &C::JubjubScalarField {
+    pub(crate) fn address_secret_ref(&self) -> &C::EmbeddedCurveScalarField {
         self.addr_keypair.sign_key_internal()
     }
 
@@ -181,17 +181,19 @@ impl<C: CapConfig> UserKeyPair<C> {
     }
 
     /// Sign an arbitrary message using the address spending key
-    pub fn sign(&self, msg: &[u8]) -> Signature<C::JubjubParam> {
+    pub fn sign(&self, msg: &[u8]) -> Signature<C::EmbeddedCurveParam> {
         let scalars = hash_to_field::<_, C::ScalarField>(msg);
-        self.addr_keypair
-            .sign(&[scalars], SchnorrSignatureScheme::<C::JubjubParam>::CS_ID)
+        self.addr_keypair.sign(
+            &[scalars],
+            SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
+        )
     }
 
     // Derive nullifying secret key.
     // Return user address secret key if freezer public key is neutral,
     // otherwise return the hash of the Diffie-Hellman shared key
     pub(crate) fn derive_nullifier_key(&self, fpk: &FreezerPubKey<C>) -> NullifierKey<C> {
-        if fpk.0 == GroupProjective::<C::JubjubParam>::default() {
+        if fpk.0 == GroupProjective::<C::EmbeddedCurveParam>::default() {
             NullifierKey::from(self.address_secret_ref())
         } else {
             compute_nullifier_key(&fpk.0, self.address_secret_ref())
@@ -202,7 +204,7 @@ impl<C: CapConfig> UserKeyPair<C> {
 /// Public key for the credential creator
 #[tagged_blob("CREDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct CredIssuerPubKey<C: CapConfig>(pub(crate) schnorr::VerKey<C::JubjubParam>);
+pub struct CredIssuerPubKey<C: CapConfig>(pub(crate) schnorr::VerKey<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> CredIssuerPubKey<C> {
     /// Verify a credential only for its signature correctness.
@@ -215,7 +217,7 @@ impl<C: CapConfig> CredIssuerPubKey<C> {
             .verify(
                 msg,
                 &cred.0,
-                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
+                SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
             )
             .map_err(|_| {
                 TxnApiError::FailedCredentialVerification(
@@ -234,7 +236,7 @@ impl<C: CapConfig> CredIssuerPubKey<C> {
 /// Key pair for the credential creator
 #[tagged_blob("CREDKEY")]
 #[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct CredIssuerKeyPair<C: CapConfig>(pub(crate) schnorr::KeyPair<C::JubjubParam>);
+pub struct CredIssuerKeyPair<C: CapConfig>(pub(crate) schnorr::KeyPair<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> CredIssuerKeyPair<C> {
     /// Generate a new key pair
@@ -254,7 +256,7 @@ impl<C: CapConfig> CredIssuerKeyPair<C> {
     pub(crate) fn sign(&self, msg: &[C::ScalarField]) -> Credential<C> {
         Credential(
             self.0
-                .sign(msg, SchnorrSignatureScheme::<C::JubjubParam>::CS_ID),
+                .sign(msg, SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID),
         )
     }
 }
@@ -262,21 +264,21 @@ impl<C: CapConfig> CredIssuerKeyPair<C> {
 /// Public key for the viewer
 #[tagged_blob("AUDPUBKEY")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
-pub struct ViewerPubKey<C: CapConfig>(pub(crate) elgamal::EncKey<C::JubjubParam>);
+pub struct ViewerPubKey<C: CapConfig>(pub(crate) elgamal::EncKey<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewerPubKey<C> {
     /// Generate a random viewer public key with unknown associated secret key
     pub(crate) fn random<R: CryptoRng + RngCore>(rng: &mut R) -> Self {
-        ViewerPubKey(EncKey::<C::JubjubParam>::rand(rng))
+        ViewerPubKey(EncKey::<C::EmbeddedCurveParam>::rand(rng))
     }
 
     /// Encrypt messages including information about a transaction that an
     /// viewer should know.
     pub(crate) fn encrypt(
         &self,
-        randomizer: C::JubjubScalarField,
+        randomizer: C::EmbeddedCurveScalarField,
         message: &[C::ScalarField],
-    ) -> elgamal::Ciphertext<C::JubjubParam> {
+    ) -> elgamal::Ciphertext<C::EmbeddedCurveParam> {
         self.0.deterministic_encrypt(randomizer, message)
     }
 
@@ -289,7 +291,7 @@ impl<C: CapConfig> ViewerPubKey<C> {
 /// Key pair for the viewer
 #[tagged_blob("AUDKEY")]
 #[derive(Debug, Clone, CanonicalDeserialize, CanonicalSerialize)]
-pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::JubjubParam>);
+pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewerKeyPair<C> {
     /// Generate a new key pair
@@ -389,7 +391,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
 /// Public key for the freezer
 #[tagged_blob("FREEZEPUBKEY")]
 #[derive(Clone, Debug, Eq, Default, CanonicalSerialize, CanonicalDeserialize)]
-pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::JubjubParam>);
+pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> FreezerPubKey<C> {
     /// Transform to a pair of scalars
@@ -415,8 +417,8 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 #[tagged_blob("FREEZEKEY")]
 #[derive(Clone, Debug, Default, CanonicalSerialize, CanonicalDeserialize)]
 pub struct FreezerKeyPair<C: CapConfig> {
-    pub(crate) sec_key: C::JubjubScalarField,
-    pub(crate) pub_key: GroupProjective<C::JubjubParam>,
+    pub(crate) sec_key: C::EmbeddedCurveScalarField,
+    pub(crate) pub_key: GroupProjective<C::EmbeddedCurveParam>,
 }
 
 impl<C: CapConfig> FreezerKeyPair<C> {
@@ -425,9 +427,9 @@ impl<C: CapConfig> FreezerKeyPair<C> {
     where
         R: RngCore + CryptoRng,
     {
-        let sec_key = C::JubjubScalarField::rand(rng);
+        let sec_key = C::EmbeddedCurveScalarField::rand(rng);
         let pub_key = Group::mul(
-            &GroupProjective::<C::JubjubParam>::prime_subgroup_generator(),
+            &GroupProjective::<C::EmbeddedCurveParam>::prime_subgroup_generator(),
             &sec_key,
         );
         Self { sec_key, pub_key }
@@ -479,8 +481,8 @@ impl<C: CapConfig> PartialEq for FreezerKeyPair<C> {
 
 // Use DH to derive a shared key, then hash to get the nullifier key
 fn compute_nullifier_key<C: CapConfig>(
-    pub_key_alice: &GroupProjective<C::JubjubParam>,
-    sec_key_bob: &C::JubjubScalarField,
+    pub_key_alice: &GroupProjective<C::EmbeddedCurveParam>,
+    sec_key_bob: &C::EmbeddedCurveScalarField,
 ) -> NullifierKey<C> {
     let shared_key_affine = Group::mul(pub_key_alice, sec_key_bob).into_affine();
     let nk = RescuePermutation::default().hash_3_to_1(&[
@@ -512,9 +514,9 @@ impl<C: CapConfig> NullifierKey<C> {
     }
 }
 
-impl<C: CapConfig> From<&C::JubjubScalarField> for NullifierKey<C> {
-    fn from(s: &C::JubjubScalarField) -> Self {
-        NullifierKey(jf_utils::fr_to_fq::<_, C::JubjubParam>(s))
+impl<C: CapConfig> From<&C::EmbeddedCurveScalarField> for NullifierKey<C> {
+    fn from(s: &C::EmbeddedCurveScalarField) -> Self {
+        NullifierKey(jf_utils::fr_to_fq::<_, C::EmbeddedCurveParam>(s))
     }
 }
 
@@ -570,7 +572,7 @@ mod test {
         let nk3 = user_keypair.derive_nullifier_key(&empty_fzk);
         assert_eq!(
             nk3.0,
-            jf_utils::fr_to_fq::<_, <Config as CapConfig>::JubjubParam>(
+            jf_utils::fr_to_fq::<_, <Config as CapConfig>::EmbeddedCurveParam>(
                 user_keypair.address_secret_ref()
             )
         );

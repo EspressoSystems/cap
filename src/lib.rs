@@ -317,14 +317,14 @@ impl<C: CapConfig> TransactionNote<C> {
     pub fn verify_receiver_memos_signature(
         &self,
         recv_memos: &[ReceiverMemo],
-        sig: &schnorr::Signature<C::JubjubParam>,
+        sig: &schnorr::Signature<C::EmbeddedCurveParam>,
     ) -> Result<(), TxnApiError> {
         let digest = get_receiver_memos_digest(recv_memos)?;
         self.txn_memo_ver_key()
             .verify(
                 &[digest],
                 sig,
-                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
+                SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
             )
             .map_err(TxnApiError::FailedReceiverMemoSignature)
     }
@@ -344,7 +344,7 @@ impl<C: CapConfig> TransactionNote<C> {
     /// Retrieve reference to verification key used by user to sign messages
     /// bound to the note E.g. to verify receiver memos associated with the
     /// transaction outputs on the note
-    fn txn_memo_ver_key(&self) -> &schnorr::VerKey<C::JubjubParam> {
+    fn txn_memo_ver_key(&self) -> &schnorr::VerKey<C::EmbeddedCurveParam> {
         match self {
             TransactionNote::Transfer(note) => &note.aux_info.txn_memo_ver_key,
             TransactionNote::Mint(note) => &note.aux_info.txn_memo_ver_key,
@@ -504,7 +504,7 @@ pub fn txn_batch_verify<C: CapConfig>(
             TransactionNote::Mint(note) => note.aux_info.txn_memo_ver_key.clone(),
             TransactionNote::Freeze(note) => note.aux_info.txn_memo_ver_key.clone(),
         })
-        .collect::<Vec<schnorr::VerKey<C::JubjubParam>>>();
+        .collect::<Vec<schnorr::VerKey<C::EmbeddedCurveParam>>>();
     let mut extra_msgs = Vec::new();
     for (key, txn) in keys.iter().zip(txns.iter()) {
         let mut buf = Vec::new();
@@ -589,11 +589,14 @@ pub fn calculate_fee<C: CapConfig>(txns: &[TransactionNote<C>]) -> Result<Amount
 
 /// Compute signature over a list of receiver memos
 pub fn sign_receiver_memos<C: CapConfig>(
-    keypair: &schnorr::KeyPair<C::JubjubParam>,
+    keypair: &schnorr::KeyPair<C::EmbeddedCurveParam>,
     recv_memos: &[ReceiverMemo],
-) -> Result<schnorr::Signature<C::JubjubParam>, TxnApiError> {
+) -> Result<schnorr::Signature<C::EmbeddedCurveParam>, TxnApiError> {
     let digest = get_receiver_memos_digest(recv_memos)?;
-    Ok(keypair.sign(&[digest], SchnorrSignatureScheme::<C::JubjubParam>::CS_ID))
+    Ok(keypair.sign(
+        &[digest],
+        SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
+    ))
 }
 
 /// crate prelude consisting important traits and structs

@@ -1021,7 +1021,7 @@ impl<C: CapConfig> RecordOpening<C> {
 // The actual credential which is basically a Schnorr signature over attributes
 #[tagged_blob("CRED")]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub(crate) struct Credential<C: CapConfig>(pub(crate) Signature<C::JubjubParam>);
+pub(crate) struct Credential<C: CapConfig>(pub(crate) Signature<C::EmbeddedCurveParam>);
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
 /// created by an identity creator.
@@ -1210,26 +1210,26 @@ impl<C: CapConfig> ExpirableCredential<C> {
 /// transaction, enabling asset viewing and identity viewing.
 #[tagged_blob("AUDMEMO")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
-pub struct ViewableMemo<C: CapConfig>(pub(crate) elgamal::Ciphertext<C::JubjubParam>);
+pub struct ViewableMemo<C: CapConfig>(pub(crate) elgamal::Ciphertext<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewableMemo<C> {
     /// Construct a viewing memo directly from internal ciphertext.
     /// **USE WITH CAUTION**: this method is only used during reconstruction
     /// from internal ciphertext of an existing `ViewableMemo`, you should never
     /// pass in an arbitrary ciphertext and deem this memo as valid.
-    pub fn new(ciphertext: elgamal::Ciphertext<C::JubjubParam>) -> Self {
+    pub fn new(ciphertext: elgamal::Ciphertext<C::EmbeddedCurveParam>) -> Self {
         Self(ciphertext)
     }
 
     /// Getter for internal ciphertext
-    pub fn internal(&self) -> &elgamal::Ciphertext<C::JubjubParam> {
+    pub fn internal(&self) -> &elgamal::Ciphertext<C::EmbeddedCurveParam> {
         &self.0
     }
 
     /// Create an `ViewableMemo` used in minting transactions
     pub(crate) fn new_for_mint_note(
         ro_mint: &RecordOpening<C>,
-        randomizer: C::JubjubScalarField,
+        randomizer: C::EmbeddedCurveScalarField,
     ) -> Self {
         let viewer_pk = &ro_mint.asset_def.policy.viewer_pk;
         let message = if *viewer_pk == ViewerPubKey::default() {
@@ -1246,7 +1246,7 @@ impl<C: CapConfig> ViewableMemo<C> {
         input_ros: &[RecordOpening<C>],
         output_ros: &[RecordOpening<C>],
         input_creds: &[ExpirableCredential<C>],
-        randomizer: C::JubjubScalarField,
+        randomizer: C::EmbeddedCurveScalarField,
     ) -> Result<ViewableMemo<C>, TxnApiError> {
         let asset_def = get_asset_def_in_transfer_txn(input_ros)?;
         if asset_def.is_dummy() {
@@ -1342,7 +1342,7 @@ impl<C: CapConfig> ViewableMemo<C> {
     pub(crate) fn dummy_for_transfer_note(
         input_ros_len: usize,
         output_ros_len: usize,
-        randomizer: C::JubjubScalarField,
+        randomizer: C::EmbeddedCurveScalarField,
     ) -> ViewableMemo<C> {
         // message size starts with the second input and output, (first is always
         // non-viewing native asset code); and for inputs, both asset
@@ -1385,8 +1385,8 @@ impl<C: CapConfig> ViewableData<C> {
         x: &C::ScalarField,
         y: &C::ScalarField,
         asset_definition: &AssetDefinition<C>,
-    ) -> Result<Option<schnorr::VerKey<C::JubjubParam>>, TxnApiError> {
-        let point_affine = GroupAffine::<C::JubjubParam>::new(*x, *y);
+    ) -> Result<Option<schnorr::VerKey<C::EmbeddedCurveParam>>, TxnApiError> {
+        let point_affine = GroupAffine::<C::EmbeddedCurveParam>::new(*x, *y);
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
             if asset_definition
                 .policy
@@ -2097,7 +2097,7 @@ mod test {
                 user_keypair.pub_key(),
                 FreezeFlag::Unfrozen,
             );
-            let randomizer = <Config as CapConfig>::JubjubScalarField::rand(&mut rng);
+            let randomizer = <Config as CapConfig>::EmbeddedCurveScalarField::rand(&mut rng);
             ViewableMemo::new_for_transfer_note(&[ro.clone()], &[ro], &[cred.clone()], randomizer)
                 .unwrap()
         };

@@ -90,7 +90,7 @@ impl ViewableMemoVar {
         enc_rand: Variable,
     ) -> Result<Self, PlonkError> {
         Ok(Self(
-            ElGamalEncryptionGadget::<_, C::JubjubParam>::elgamal_encrypt(
+            ElGamalEncryptionGadget::<_, C::EmbeddedCurveParam>::elgamal_encrypt(
                 circuit, viewer_pk, data, enc_rand,
             )?,
         ))
@@ -310,7 +310,7 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<C::JubjubParam>(&self.cred_pk.0)
+        circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.cred_pk.0)
     }
 
     /// Obtain a bool variable indicating whether the policy's viewer public
@@ -319,7 +319,7 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<C::JubjubParam>(&self.viewer_pk.0)
+        circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.viewer_pk.0)
     }
 
     /// Obtain a bool variable indicating whether the policy's viewer public
@@ -328,7 +328,7 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        circuit.is_neutral_point::<C::JubjubParam>(&self.freezer_pk)
+        circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.freezer_pk)
     }
 }
 
@@ -419,7 +419,7 @@ impl ExpirableCredVar {
             attrs,
         ]
         .concat();
-        SignatureGadget::<_, C::JubjubParam>::check_signature_validity(
+        SignatureGadget::<_, C::EmbeddedCurveParam>::check_signature_validity(
             circuit,
             &self.creator_pk,
             &msg,
@@ -446,7 +446,7 @@ mod tests {
     };
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::JubjubScalarField;
+    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
 
     ////////////////////////////////////////////////////////////
     // Credential related tests ////////////////////////////////

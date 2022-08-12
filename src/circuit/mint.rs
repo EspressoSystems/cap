@@ -165,18 +165,20 @@ impl MintWitnessVar {
         witness: &MintWitness<C>,
     ) -> Result<Self, PlonkError> {
         let mint_ro = RecordOpeningVar::new(circuit, &witness.mint_ro)?;
-        let creator_sk = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
+        let creator_sk = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             witness.minter_keypair.address_secret_ref(),
         ))?;
         let fee_ro = RecordOpeningVar::new(circuit, &witness.fee_ro)?;
-        let acc_member_witness =
-            AccMemberWitnessVar::new::<_, C::JubjubParam>(circuit, &witness.acc_member_witness)?;
+        let acc_member_witness = AccMemberWitnessVar::new::<_, C::EmbeddedCurveParam>(
+            circuit,
+            &witness.acc_member_witness,
+        )?;
         let chg_ro = RecordOpeningVar::new(circuit, &witness.chg_ro)?;
         let ac_seed = circuit.create_variable(witness.ac_seed.0)?;
         let ac_digest = circuit.create_variable(witness.ac_digest.0)?;
-        let viewing_memo_enc_rand = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
-            &witness.viewing_memo_enc_rand,
-        ))?;
+        let viewing_memo_enc_rand = circuit.create_variable(
+            fr_to_fq::<_, C::EmbeddedCurveParam>(&witness.viewing_memo_enc_rand),
+        )?;
         Ok(Self {
             mint_ro,
             creator_sk,
@@ -262,7 +264,7 @@ mod tests {
     use jf_primitives::merkle_tree::NodeValue;
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::JubjubScalarField;
+    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {

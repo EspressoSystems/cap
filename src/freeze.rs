@@ -73,7 +73,7 @@ pub struct FreezeAuxInfo<C: CapConfig> {
     pub fee: Amount,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
-    pub txn_memo_ver_key: schnorr::VerKey<C::JubjubParam>,
+    pub txn_memo_ver_key: schnorr::VerKey<C::EmbeddedCurveParam>,
 }
 
 /// All necessary information for each freezing input record in the `FreezeNote`
@@ -109,7 +109,7 @@ impl<C: CapConfig> FreezeNote<C> {
     ) -> Result<
         (
             Self,
-            schnorr::KeyPair<C::JubjubParam>,
+            schnorr::KeyPair<C::EmbeddedCurveParam>,
             Vec<RecordOpening<C>>,
         ),
         TxnApiError,

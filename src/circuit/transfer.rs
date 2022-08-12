@@ -298,9 +298,9 @@ impl TransferWitnessVar {
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let viewing_memo_enc_rand = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
-            &witness.viewing_memo_enc_rand,
-        ))?;
+        let viewing_memo_enc_rand = circuit.create_variable(
+            fr_to_fq::<_, C::EmbeddedCurveParam>(&witness.viewing_memo_enc_rand),
+        )?;
         Ok(Self {
             asset_code,
             policy,
@@ -371,12 +371,12 @@ impl InputSecretVar {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         input_secret: &InputSecret<C>,
     ) -> Result<Self, PlonkError> {
-        let addr_secret = circuit.create_variable(fr_to_fq::<_, C::JubjubParam>(
+        let addr_secret = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             input_secret.owner_keypair.address_secret_ref(),
         ))?;
         let ro = RecordOpeningVar::new(circuit, &input_secret.ro)?;
         let cred = ExpirableCredVar::new(circuit, &input_secret.cred)?;
-        let acc_member_witness = AccMemberWitnessVar::new::<_, C::JubjubParam>(
+        let acc_member_witness = AccMemberWitnessVar::new::<_, C::EmbeddedCurveParam>(
             circuit,
             &input_secret.acc_member_witness,
         )?;
@@ -410,7 +410,7 @@ mod tests {
     use jf_primitives::merkle_tree::{MerklePathNode, NodeValue};
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::JubjubScalarField;
+    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {

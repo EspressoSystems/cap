@@ -55,7 +55,7 @@ impl<F: RescueParameter> TransactionGadgetsHelper for PlonkCircuit<F> {
         &mut self,
         secret_key: Variable,
     ) -> Result<UserAddressVar, PlonkError> {
-        let base = GroupAffine::<C::JubjubParam>::prime_subgroup_generator();
+        let base = GroupAffine::<C::EmbeddedCurveParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
     }
@@ -65,11 +65,12 @@ impl<F: RescueParameter> TransactionGadgetsHelper for PlonkCircuit<F> {
         secret_key: Variable,
         public_key: &PointVariable,
     ) -> Result<Variable, PlonkError> {
-        let shared_key = self.variable_base_scalar_mul::<C::JubjubParam>(secret_key, public_key)?;
+        let shared_key =
+            self.variable_base_scalar_mul::<C::EmbeddedCurveParam>(secret_key, public_key)?;
         let zero = self.zero();
         let derived_key =
             self.rescue_sponge_no_padding(&[shared_key.get_x(), shared_key.get_y(), zero], 1)?[0];
-        let bit = self.is_neutral_point::<C::JubjubParam>(public_key)?;
+        let bit = self.is_neutral_point::<C::EmbeddedCurveParam>(public_key)?;
         self.conditional_select(bit, derived_key, secret_key)
     }
 
@@ -101,8 +102,8 @@ mod tests {
     use jf_utils::fr_to_fq;
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::JubjubScalarField;
-    type JubjubParam = <Config as CapConfig>::JubjubParam;
+    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
+    type EmbeddedCurveParam = <Config as CapConfig>::EmbeddedCurveParam;
 
     #[test]
     fn test_internal_asset_code() -> Result<(), PlonkError> {
@@ -133,7 +134,7 @@ mod tests {
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
 
-        let spend_key = fr_to_fq::<_, JubjubParam>(key_pair.address_secret_ref());
+        let spend_key = fr_to_fq::<_, EmbeddedCurveParam>(key_pair.address_secret_ref());
         let spend_key_var = circuit.create_variable(spend_key)?;
         let address_var = circuit.derive_user_address(spend_key_var)?;
 
@@ -155,7 +156,7 @@ mod tests {
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let user_key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
         let user_public_key = user_key_pair.pub_key();
-        let spend_key = fr_to_fq::<_, JubjubParam>(user_key_pair.address_secret_ref());
+        let spend_key = fr_to_fq::<_, EmbeddedCurveParam>(user_key_pair.address_secret_ref());
         let freezer_keypair = FreezerKeyPair::generate(&mut prng);
         let freezer_public_key = freezer_keypair.pub_key().0.into_affine();
 
@@ -176,7 +177,7 @@ mod tests {
         // Check derivation from user secret key
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let freezer_key_var =
-            circuit.create_variable(fr_to_fq::<_, JubjubParam>(&freezer_keypair.sec_key))?;
+            circuit.create_variable(fr_to_fq::<_, EmbeddedCurveParam>(&freezer_keypair.sec_key))?;
         let user_pk_var = circuit.create_point_variable(Point::from(
             user_public_key.address_internal().into_affine(),
         ))?;

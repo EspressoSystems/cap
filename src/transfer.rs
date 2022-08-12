@@ -91,7 +91,7 @@ pub struct AuxInfo<C: CapConfig> {
     pub valid_until: u64,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
-    pub txn_memo_ver_key: schnorr::VerKey<C::JubjubParam>,
+    pub txn_memo_ver_key: schnorr::VerKey<C::EmbeddedCurveParam>,
     /// Additional data bound to `TransferValidityProof`
     pub extra_proof_bound_data: Vec<u8>,
 }
@@ -144,7 +144,14 @@ impl<C: CapConfig> TransferNote<C> {
         fee: Amount,
         valid_until: u64,
         proving_key: &TransferProvingKey<C>,
-    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>, RecordOpening<C>), TxnApiError>
+    ) -> Result<
+        (
+            Self,
+            schnorr::KeyPair<C::EmbeddedCurveParam>,
+            RecordOpening<C>,
+        ),
+        TxnApiError,
+    >
     where
         R: CryptoRng + RngCore,
     {
@@ -235,7 +242,7 @@ impl<C: CapConfig> TransferNote<C> {
         valid_until: u64,
         proving_key: &TransferProvingKey<C>,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>), TxnApiError>
+    ) -> Result<(Self, schnorr::KeyPair<C::EmbeddedCurveParam>), TxnApiError>
     where
         R: CryptoRng + RngCore,
     {
@@ -273,7 +280,7 @@ impl<C: CapConfig> TransferNote<C> {
         proving_key: &TransferProvingKey<C>,
         valid_until: u64,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>), TxnApiError> {
+    ) -> Result<(Self, schnorr::KeyPair<C::EmbeddedCurveParam>), TxnApiError> {
         // 1. check input correctness
         if inputs.is_empty() || outputs.is_empty() {
             return Err(TxnApiError::InvalidParameter(
