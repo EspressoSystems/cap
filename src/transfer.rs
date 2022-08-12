@@ -13,6 +13,7 @@
 use crate::{
     errors::TxnApiError,
     keys::UserKeyPair,
+    prelude::CapConfig,
     proof::transfer::{
         TransferProvingKey, TransferPublicInput, TransferValidityProof, TransferVerifyingKey,
         TransferWitness,
@@ -25,7 +26,6 @@ use crate::{
         safe_sum_amount,
         txn_helpers::{transfer::*, *},
     },
-    AccMemberWitness, KeyPair, NodeValue, VerKey,
 };
 use ark_serialize::*;
 use ark_std::{
@@ -34,6 +34,10 @@ use ark_std::{
     string::ToString,
     vec,
     vec::Vec,
+};
+use jf_primitives::{
+    merkle_tree::{AccMemberWitness, NodeValue},
+    signatures::schnorr,
 };
 use serde::{Deserialize, Serialize};
 
@@ -50,18 +54,18 @@ use serde::{Deserialize, Serialize};
     Serialize,
     Deserialize,
 )]
-pub struct TransferNote {
+pub struct TransferNote<C: CapConfig> {
     /// nullifier for inputs
-    pub inputs_nullifiers: Vec<Nullifier>,
+    pub inputs_nullifiers: Vec<Nullifier<C>>,
     /// generated output commitments
-    pub output_commitments: Vec<RecordCommitment>,
+    pub output_commitments: Vec<RecordCommitment<C>>,
     /// proof of spending and policy compliance
-    pub proof: TransferValidityProof,
+    pub proof: TransferValidityProof<C>,
     /// Memo generated for policy compliance
-    pub viewing_memo: ViewableMemo,
+    pub viewing_memo: ViewableMemo<C>,
     /// Auxiliary information (merkle root, native asset, fee, valid max time,
     /// receiver memos verification key)
-    pub aux_info: AuxInfo,
+    pub aux_info: AuxInfo<C>,
 }
 
 /// Auxiliary info of TransferNote: includes merkle root, native asset, fee,
@@ -77,9 +81,9 @@ pub struct TransferNote {
     Serialize,
     Deserialize,
 )]
-pub struct AuxInfo {
+pub struct AuxInfo<C: CapConfig> {
     /// Accumulator state
-    pub merkle_root: NodeValue,
+    pub merkle_root: NodeValue<C::ScalarField>,
     /// proposed fee in native asset type for the transfer
     pub fee: Amount,
     /// A projected future timestamp that the snark proof should be valid until,
@@ -87,7 +91,7 @@ pub struct AuxInfo {
     pub valid_until: u64,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
-    pub txn_memo_ver_key: VerKey,
+    pub txn_memo_ver_key: schnorr::VerKey<C::JubjubParam>,
     /// Additional data bound to `TransferValidityProof`
     pub extra_proof_bound_data: Vec<u8>,
 }
@@ -95,21 +99,21 @@ pub struct AuxInfo {
 /// All necessary information for each input record in the `TransferNote`
 /// generation.
 #[derive(Debug, Clone)]
-pub struct TransferNoteInput<'kp> {
+pub struct TransferNoteInput<'kp, C: CapConfig> {
     /// Record opening of the input record.
-    pub ro: RecordOpening,
+    pub ro: RecordOpening<C>,
     /// Accumulator membership proof (namely the Merkle proof) of the record
     /// commitment.
-    pub acc_member_witness: AccMemberWitness,
+    pub acc_member_witness: AccMemberWitness<C::ScalarField>,
     /// Reference of the record owner's key pair.
-    pub owner_keypair: &'kp UserKeyPair,
+    pub owner_keypair: &'kp UserKeyPair<C>,
     /// The identity credential of the user. Optional, only needed if asset
     /// policy has a non-empty `ViewerPubKey`.
-    pub cred: Option<ExpirableCredential>,
+    pub cred: Option<ExpirableCredential<C>>,
 }
 
-impl<'kp> From<FeeInput<'kp>> for TransferNoteInput<'kp> {
-    fn from(input: FeeInput<'kp>) -> Self {
+impl<'kp, C: CapConfig> From<FeeInput<'kp, C>> for TransferNoteInput<'kp, C> {
+    fn from(input: FeeInput<'kp, C>) -> Self {
         Self {
             ro: input.ro,
             acc_member_witness: input.acc_member_witness,
@@ -119,7 +123,7 @@ impl<'kp> From<FeeInput<'kp>> for TransferNoteInput<'kp> {
     }
 }
 
-impl TransferNote {
+impl<C: CapConfig> TransferNote<C> {
     /// Generate a note for transfering native asset
     ///
     /// * `inputs` - list of input records and associated witness to spend them,
@@ -135,12 +139,12 @@ impl TransferNote {
     /// address) tuple on successful generation.
     pub fn generate_native<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput>,
-        outputs: &[RecordOpening],
+        inputs: Vec<TransferNoteInput<C>>,
+        outputs: &[RecordOpening<C>],
         fee: Amount,
         valid_until: u64,
-        proving_key: &TransferProvingKey,
-    ) -> Result<(Self, KeyPair, RecordOpening), TxnApiError>
+        proving_key: &TransferProvingKey<C>,
+    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>, RecordOpening<C>), TxnApiError>
     where
         R: CryptoRng + RngCore,
     {
@@ -225,13 +229,13 @@ impl TransferNote {
     /// generation.
     pub fn generate_non_native<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput>,
-        outputs: &[RecordOpening],
-        fee: TxnFeeInfo,
+        inputs: Vec<TransferNoteInput<C>>,
+        outputs: &[RecordOpening<C>],
+        fee: TxnFeeInfo<C>,
         valid_until: u64,
-        proving_key: &TransferProvingKey,
+        proving_key: &TransferProvingKey<C>,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(Self, KeyPair), TxnApiError>
+    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>), TxnApiError>
     where
         R: CryptoRng + RngCore,
     {
@@ -264,12 +268,12 @@ impl TransferNote {
     /// On error return TxnApIError
     fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput>,
-        outputs: &[RecordOpening],
-        proving_key: &TransferProvingKey,
+        inputs: Vec<TransferNoteInput<C>>,
+        outputs: &[RecordOpening<C>],
+        proving_key: &TransferProvingKey<C>,
         valid_until: u64,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(Self, KeyPair), TxnApiError> {
+    ) -> Result<(Self, schnorr::KeyPair<C::JubjubParam>), TxnApiError> {
         // 1. check input correctness
         if inputs.is_empty() || outputs.is_empty() {
             return Err(TxnApiError::InvalidParameter(
@@ -288,7 +292,7 @@ impl TransferNote {
         check_creds(&inputs, valid_until)?;
 
         // 2. build public input and snark proof
-        let signing_keypair = KeyPair::generate(rng);
+        let signing_keypair = schnorr::KeyPair::generate(rng);
         let witness = TransferWitness::new_unchecked(rng, inputs, outputs)?;
         let pub_inputs = TransferPublicInput::from_witness(&witness, valid_until)?;
         check_distinct_input_nullifiers(&pub_inputs.input_nullifiers)?;
@@ -326,8 +330,8 @@ impl TransferNote {
     /// * `timestamp` - current timestamp
     pub fn verify(
         &self,
-        verifying_key: &TransferVerifyingKey,
-        merkle_root: NodeValue,
+        verifying_key: &TransferVerifyingKey<C>,
+        merkle_root: NodeValue<C::ScalarField>,
         timestamp: u64,
     ) -> Result<(), TxnApiError> {
         // build public inputs
@@ -351,9 +355,9 @@ impl TransferNote {
     /// * `timestamp` - current timestamp
     pub(crate) fn check_instance_and_get_public_input_internal(
         &self,
-        merkle_root: NodeValue,
+        merkle_root: NodeValue<C::ScalarField>,
         timestamp: u64,
-    ) -> Result<TransferPublicInput, TxnApiError> {
+    ) -> Result<TransferPublicInput<C>, TxnApiError> {
         // check root consistency
         if merkle_root != self.aux_info.merkle_root {
             return Err(TxnApiError::FailedTransactionVerification(
@@ -388,6 +392,7 @@ mod tests {
         constants::ATTRS_LEN,
         errors::TxnApiError,
         keys::UserKeyPair,
+        prelude::{CapConfig, Config},
         proof::{
             transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
             universal_setup_for_staging,
@@ -398,10 +403,13 @@ mod tests {
             compute_universal_param_size,
             params_builder::{PolicyRevealAttr, TransferParamsBuilder},
         },
-        BaseField, KeyPair, NodeValue, TransactionNote,
+        TransactionNote,
     };
     use ark_ff::UniformRand;
     use ark_std::{boxed::Box, vec};
+    use jf_primitives::{merkle_tree::NodeValue, signatures::schnorr};
+
+    type F = <Config as CapConfig>::ScalarField;
 
     #[test]
     fn test_anon_xfr_2in_6out() {
@@ -623,15 +631,15 @@ mod tests {
     fn test_anon_xfr_helper<'a>(
         input_amounts: &[Amount],
         output_amounts: &[Amount],
-        keypair1: &'a UserKeyPair,
-        keypair2: &'a UserKeyPair,
+        keypair1: &'a UserKeyPair<Config>,
+        keypair2: &'a UserKeyPair<Config>,
         depth: u8,
-        prover_key: &TransferProvingKey,
-        verifier_key: &TransferVerifyingKey,
+        prover_key: &TransferProvingKey<Config>,
+        verifier_key: &TransferVerifyingKey<Config>,
         valid_until: u64,
         cred_expiry: u64,
         extra_proof_bound_data: &[u8],
-    ) -> Result<TransferParamsBuilder<'a>, TxnApiError> {
+    ) -> Result<TransferParamsBuilder<'a, Config>, TxnApiError> {
         let mut prng = &mut ark_std::test_rng();
 
         let builder = TransferParamsBuilder::new_non_native(
@@ -694,7 +702,7 @@ mod tests {
             .is_err());
         // note with wrong recv_memos_ver_key should fail
         let mut wrong_note = note.clone();
-        wrong_note.aux_info.txn_memo_ver_key = KeyPair::generate(&mut prng).ver_key();
+        wrong_note.aux_info.txn_memo_ver_key = schnorr::KeyPair::generate(&mut prng).ver_key();
         assert!(wrong_note
             .verify(&verifier_key, builder.root, valid_until - 1)
             .is_err());
@@ -759,8 +767,8 @@ mod tests {
             .nodes
             .iter_mut()
         {
-            node.sibling1 = NodeValue::from_scalar(BaseField::rand(&mut prng));
-            node.sibling2 = NodeValue::from_scalar(BaseField::rand(&mut prng));
+            node.sibling1 = NodeValue::from_scalar(F::rand(&mut prng));
+            node.sibling2 = NodeValue::from_scalar(F::rand(&mut prng));
         }
 
         let (note, _recv_memos, _sig) = builder

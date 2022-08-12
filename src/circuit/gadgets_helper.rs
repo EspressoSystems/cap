@@ -11,6 +11,7 @@
 
 use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
 use ark_ec::{twisted_edwards_extended::GroupAffine, AffineCurve};
+use ark_ff::PrimeField;
 use jf_plonk::{
     circuit::{
         customized::{ecc::PointVariable, rescue::RescueGadget},
@@ -19,6 +20,7 @@ use jf_plonk::{
     errors::PlonkError,
 };
 use jf_primitives::circuit::prf::PrfGadget;
+use jf_rescue::RescueParameter;
 
 pub(crate) trait TransactionGadgetsHelper {
     fn derive_internal_asset_code(
@@ -40,7 +42,7 @@ pub(crate) trait TransactionGadgetsHelper {
     ) -> Result<Variable, PlonkError>;
 }
 
-impl<C: CapConfig> TransactionGadgetsHelper for PlonkCircuit<C::ScalarField> {
+impl<F: RescueParameter> TransactionGadgetsHelper for PlonkCircuit<F> {
     fn derive_internal_asset_code(
         &mut self,
         seed: Variable,
@@ -49,13 +51,16 @@ impl<C: CapConfig> TransactionGadgetsHelper for PlonkCircuit<C::ScalarField> {
         self.eval_prf(seed, &[aux])
     }
 
-    fn derive_user_address(&mut self, secret_key: Variable) -> Result<UserAddressVar, PlonkError> {
+    fn derive_user_address<C: CapConfig<ScalarField = F>>(
+        &mut self,
+        secret_key: Variable,
+    ) -> Result<UserAddressVar, PlonkError> {
         let base = GroupAffine::<C::JubjubParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
     }
 
-    fn derive_nullifier_key(
+    fn derive_nullifier_key<C: CapConfig<ScalarField = F>>(
         &mut self,
         secret_key: Variable,
         public_key: &PointVariable,
@@ -102,9 +107,9 @@ mod tests {
     #[test]
     fn test_internal_asset_code() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
-        let mut circuit = PlonkCircuit::new_turbo_plonk();
+        let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
 
-        let asset_code_seed = AssetCodeSeed::generate(&mut prng);
+        let asset_code_seed = AssetCodeSeed::<Config>::generate(&mut prng);
         let aux = AssetCodeDigest::from_description(b"some description");
         let internal_asset_code = InternalAssetCode::new_internal(asset_code_seed, aux);
 
@@ -126,7 +131,7 @@ mod tests {
     fn test_user_address() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
-        let key_pair = crate::keys::UserKeyPair::generate(&mut prng);
+        let key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
 
         let spend_key = fr_to_fq::<_, JubjubParam>(key_pair.address_secret_ref());
         let spend_key_var = circuit.create_variable(spend_key)?;
@@ -148,7 +153,7 @@ mod tests {
     fn test_nullifier_key() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
-        let user_key_pair = crate::keys::UserKeyPair::generate(&mut prng);
+        let user_key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
         let user_public_key = user_key_pair.pub_key();
         let spend_key = fr_to_fq::<_, JubjubParam>(user_key_pair.address_secret_ref());
         let freezer_keypair = FreezerKeyPair::generate(&mut prng);
@@ -192,7 +197,7 @@ mod tests {
     #[test]
     fn test_nullifier() -> Result<(), PlonkError> {
         let mut prng = ark_std::test_rng();
-        let nullifier_key = NullifierKey::from(&Fj::rand(&mut prng));
+        let nullifier_key = NullifierKey::<Config>::from(&Fj::rand(&mut prng));
         let uid = 10u64;
         let uid_scalar = F::from(10u8);
         let commitment = F::from(1234u64);

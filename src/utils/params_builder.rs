@@ -21,6 +21,7 @@ use crate::{
         CredIssuerKeyPair, CredIssuerPubKey, FreezerKeyPair, UserKeyPair, UserPubKey, ViewerKeyPair,
     },
     mint::MintNote,
+    prelude::CapConfig,
     proof::{
         self, freeze,
         freeze::{FreezeProvingKey, FreezePublicInput, FreezeWitness},
@@ -36,26 +37,29 @@ use crate::{
     },
     transfer::{TransferNote, TransferNoteInput},
     utils::{compute_universal_param_size, next_power_of_three},
-    AccMemberWitness, KeyPair, MerkleTree, NodeValue, ScalarField, Signature, TransactionNote,
-    TransactionVerifyingKey, VerKey,
+    TransactionNote, TransactionVerifyingKey,
 };
 use ark_std::{boxed::Box, rand::prelude::*, rc::Rc, vec, vec::Vec, UniformRand};
+use jf_primitives::{
+    merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
+    signatures::schnorr,
+};
 use rayon::prelude::*;
 
 #[derive(Debug, Clone)]
 /// Parameters **for testing only**!
-pub struct TxnsParams {
+pub struct TxnsParams<C: CapConfig> {
     /// transaction notes generated
-    pub txns: Vec<TransactionNote>,
+    pub txns: Vec<TransactionNote<C>>,
     /// verifying keys for transaction validity proofs
-    pub verifying_keys: Vec<Rc<TransactionVerifyingKey>>,
+    pub verifying_keys: Vec<Rc<TransactionVerifyingKey<C>>>,
     /// these txns are valid until `valid_until`
     pub valid_until: u64,
     /// these txns are prove against this `merkle_root`
-    pub merkle_root: NodeValue,
+    pub merkle_root: NodeValue<C::ScalarField>,
 }
 
-impl TxnsParams {
+impl<C: CapConfig> TxnsParams<C> {
     /// Randomly generate a list of transaction of different types
     pub fn generate_txns<R>(
         rng: &mut R,
@@ -237,7 +241,7 @@ impl TxnsParams {
         }
     }
 
-    pub(crate) fn get_verifying_keys(&self) -> Vec<Rc<TransactionVerifyingKey>> {
+    pub(crate) fn get_verifying_keys(&self) -> Vec<Rc<TransactionVerifyingKey<C>>> {
         let mut keys = vec![];
         for txn in &self.txns {
             match txn {
@@ -249,14 +253,14 @@ impl TxnsParams {
         keys
     }
 
-    pub(crate) fn get_merkle_roots(&self) -> Vec<NodeValue> {
+    pub(crate) fn get_merkle_roots(&self) -> Vec<NodeValue<C::ScalarField>> {
         vec![self.merkle_root; self.txns.len()]
     }
 
     pub(crate) fn update_recv_memos_ver_key(
         mut self,
         idx: usize,
-        recv_memos_ver_key: VerKey,
+        recv_memos_ver_key: schnorr::VerKey<C::JubjubParam>,
     ) -> Self {
         assert!(idx < self.txns.len());
         match &mut self.txns[idx] {
@@ -282,33 +286,33 @@ pub(crate) enum PolicyRevealAttr {
 }
 
 /// Struct that allows to build Transfer notes parameters
-pub struct TransferParamsBuilder<'a> {
+pub struct TransferParamsBuilder<'a, C: CapConfig> {
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
-    pub(crate) transfer_asset_def: Option<NonNativeAssetDefinition>,
+    pub(crate) transfer_asset_def: Option<NonNativeAssetDefinition<C>>,
     /// Input records
-    pub input_ros: Vec<RecordOpening>,
+    pub input_ros: Vec<RecordOpening<C>>,
     /// Output records
-    pub output_ros: Vec<RecordOpening>,
+    pub output_ros: Vec<RecordOpening<C>>,
     /// fee change record
-    pub fee_chg_ro: RecordOpening,
+    pub fee_chg_ro: RecordOpening<C>,
     /// List of input key pairs
-    pub input_keypairs: Vec<&'a UserKeyPair>,
+    pub input_keypairs: Vec<&'a UserKeyPair<C>>,
     /// List of credentials
-    pub input_creds: Vec<Option<ExpirableCredential>>,
-    pub(crate) input_acc_member_witnesses: Vec<AccMemberWitness>,
+    pub input_creds: Vec<Option<ExpirableCredential<C>>>,
+    pub(crate) input_acc_member_witnesses: Vec<AccMemberWitness<C::ScalarField>>,
     /// Root of the Merkle tree
-    pub root: NodeValue,
+    pub root: NodeValue<C::ScalarField>,
     rng: StdRng,
 }
 
-impl<'a> TransferParamsBuilder<'a> {
+impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     pub(crate) fn new_native(
         num_input: usize,
         num_output: usize,
         tree_depth: Option<u8>,
-        user_keypairs: Vec<&'a UserKeyPair>,
+        user_keypairs: Vec<&'a UserKeyPair<C>>,
     ) -> Self {
         assert_eq!(user_keypairs.len(), num_input);
         let tree_depth = Self::calculate_tree_depth(num_input, num_output, tree_depth);
@@ -337,7 +341,7 @@ impl<'a> TransferParamsBuilder<'a> {
         num_input: usize,
         num_output: usize,
         tree_depth: Option<u8>,
-        user_keypairs: Vec<&'a UserKeyPair>,
+        user_keypairs: Vec<&'a UserKeyPair<C>>,
     ) -> Self {
         assert_eq!(user_keypairs.len(), num_input);
         let tree_depth = Self::calculate_tree_depth(num_input, num_output, tree_depth);
@@ -595,7 +599,11 @@ impl<'a> TransferParamsBuilder<'a> {
 
     /// if `uid` is None, then it's by default assumed to be the first few
     /// leaves in the merkle tree.
-    pub(crate) fn update_acc_member_witness(&mut self, mt: &MerkleTree, uids: Option<Vec<u64>>) {
+    pub(crate) fn update_acc_member_witness(
+        &mut self,
+        mt: &MerkleTree<C::ScalarField>,
+        uids: Option<Vec<u64>>,
+    ) {
         let uids = if let Some(uids) = uids {
             assert_eq!(
                 uids.len(),
@@ -627,7 +635,7 @@ impl<'a> TransferParamsBuilder<'a> {
         self.refresh_merkle_root()
     }
 
-    pub(crate) fn update_fee_input_asset_def(mut self, asset_def: AssetDefinition) -> Self {
+    pub(crate) fn update_fee_input_asset_def(mut self, asset_def: AssetDefinition<C>) -> Self {
         self.input_ros[0].asset_def = asset_def;
         self.refresh_merkle_root()
     }
@@ -635,7 +643,7 @@ impl<'a> TransferParamsBuilder<'a> {
     pub(crate) fn update_input_asset_def(
         mut self,
         index: usize,
-        asset_def: AssetDefinition,
+        asset_def: AssetDefinition<C>,
     ) -> Self {
         assert!(index < self.input_ros.len());
         self.input_ros[index + 1].asset_def = asset_def; // first position is reserved for input fee
@@ -650,7 +658,7 @@ impl<'a> TransferParamsBuilder<'a> {
         self.refresh_merkle_root()
     }
 
-    pub(crate) fn update_fee_chg_asset_def(mut self, asset_def: AssetDefinition) -> Self {
+    pub(crate) fn update_fee_chg_asset_def(mut self, asset_def: AssetDefinition<C>) -> Self {
         self.fee_chg_ro.asset_def = asset_def;
         self
     }
@@ -658,7 +666,7 @@ impl<'a> TransferParamsBuilder<'a> {
     pub(crate) fn update_output_asset_def(
         mut self,
         index: usize,
-        asset_def: AssetDefinition,
+        asset_def: AssetDefinition<C>,
     ) -> Self {
         assert!(index < self.output_ros.len());
         self.output_ros[index].asset_def = asset_def;
@@ -683,7 +691,7 @@ impl<'a> TransferParamsBuilder<'a> {
         num_input: usize,
         num_output: usize,
         tree_depth: Option<u8>,
-        user_keypairs: Vec<&'a UserKeyPair>,
+        user_keypairs: Vec<&'a UserKeyPair<C>>,
         valid_until: u64,
     ) -> Self
     where
@@ -726,7 +734,7 @@ impl<'a> TransferParamsBuilder<'a> {
         );
     }
 
-    pub(crate) fn build_witness<R: RngCore + CryptoRng>(&self, rng: &mut R) -> TransferWitness {
+    pub(crate) fn build_witness<R: RngCore + CryptoRng>(&self, rng: &mut R) -> TransferWitness<C> {
         self.len_check();
         let mut inputs = vec![];
         for i in 0..self.num_input {
@@ -747,10 +755,17 @@ impl<'a> TransferParamsBuilder<'a> {
     pub fn build_transfer_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
-        proving_key: &TransferProvingKey,
+        proving_key: &TransferProvingKey<C>,
         valid_until: u64,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature), TxnApiError> {
+    ) -> Result<
+        (
+            TransferNote<C>,
+            Vec<ReceiverMemo>,
+            schnorr::Signature<C::JubjubParam>,
+        ),
+        TxnApiError,
+    > {
         if self.transfer_asset_def.is_none() {
             self.build_transfer_note_native(rng, proving_key)
         } else {
@@ -766,8 +781,15 @@ impl<'a> TransferParamsBuilder<'a> {
     fn build_transfer_note_native<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
-        proving_key: &TransferProvingKey,
-    ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature), TxnApiError> {
+        proving_key: &TransferProvingKey<C>,
+    ) -> Result<
+        (
+            TransferNote<C>,
+            Vec<ReceiverMemo>,
+            schnorr::Signature<C::JubjubParam>,
+        ),
+        TxnApiError,
+    > {
         self.len_check();
         let mut inputs = vec![];
         for i in 0..self.num_input {
@@ -801,10 +823,17 @@ impl<'a> TransferParamsBuilder<'a> {
     fn build_transfer_note_non_native<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
-        proving_key: &TransferProvingKey,
+        proving_key: &TransferProvingKey<C>,
         valid_until: u64,
         extra_proof_bound_data: Vec<u8>,
-    ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature), TxnApiError> {
+    ) -> Result<
+        (
+            TransferNote<C>,
+            Vec<ReceiverMemo>,
+            schnorr::Signature<C::JubjubParam>,
+        ),
+        TxnApiError,
+    > {
         self.len_check();
         let fee_input = FeeInput {
             ro: self.input_ros[0].clone(),
@@ -848,7 +877,7 @@ impl<'a> TransferParamsBuilder<'a> {
 }
 
 // private functions
-impl<'a> TransferParamsBuilder<'a> {
+impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     fn calculate_tree_depth(num_input: usize, num_output: usize, tree_depth: Option<u8>) -> u8 {
         assert_ne!(num_input, 0, "Require at least 1 input");
         assert_ne!(num_output, 0, "Require at least 1 output");
@@ -864,21 +893,21 @@ impl<'a> TransferParamsBuilder<'a> {
         }
     }
 
-    fn input_upk_at(&self, index: usize) -> UserPubKey {
+    fn input_upk_at(&self, index: usize) -> UserPubKey<C> {
         assert!(index < self.input_keypairs.len());
         self.input_keypairs[index].pub_key()
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct NonNativeAssetDefinition {
-    pub(crate) asset_def: AssetDefinition,
-    pub(crate) viewer_keypair: ViewerKeyPair,
-    pub(crate) minter_keypair: CredIssuerKeyPair,
-    pub(crate) freezer_keypair: FreezerKeyPair,
+pub(crate) struct NonNativeAssetDefinition<C: CapConfig> {
+    pub(crate) asset_def: AssetDefinition<C>,
+    pub(crate) viewer_keypair: ViewerKeyPair<C>,
+    pub(crate) minter_keypair: CredIssuerKeyPair<C>,
+    pub(crate) freezer_keypair: FreezerKeyPair<C>,
 }
 
-impl NonNativeAssetDefinition {
+impl<C: CapConfig> NonNativeAssetDefinition<C> {
     fn generate<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let minter_keypair = CredIssuerKeyPair::generate(rng);
@@ -900,21 +929,21 @@ impl NonNativeAssetDefinition {
 
 #[derive(Debug, Clone)]
 /// Struct containing the parameters needed to build a Mint note
-pub struct MintParamsBuilder<'a> {
+pub struct MintParamsBuilder<'a, C: CapConfig> {
     tree_depth: u8,
-    pub(crate) minter_keypair: &'a UserKeyPair,
-    pub(crate) fee_ro: RecordOpening,
+    pub(crate) minter_keypair: &'a UserKeyPair<C>,
+    pub(crate) fee_ro: RecordOpening<C>,
     pub(crate) fee: Amount,
-    pub(crate) mint_ro: RecordOpening,
-    pub(crate) ac_seed: AssetCodeSeed,
+    pub(crate) mint_ro: RecordOpening<C>,
+    pub(crate) ac_seed: AssetCodeSeed<C>,
     pub(crate) ac_description: Vec<u8>,
-    pub(crate) asset_def: AssetDefinition,
-    pub(crate) viewer_keypair: &'a ViewerKeyPair,
-    pub(crate) receiver_keypair: &'a UserKeyPair,
-    pub(crate) acc_member_witness: AccMemberWitness,
+    pub(crate) asset_def: AssetDefinition<C>,
+    pub(crate) viewer_keypair: &'a ViewerKeyPair<C>,
+    pub(crate) receiver_keypair: &'a UserKeyPair<C>,
+    pub(crate) acc_member_witness: AccMemberWitness<C::ScalarField>,
 }
 
-impl<'a> MintParamsBuilder<'a> {
+impl<'a, C: CapConfig> MintParamsBuilder<'a, C> {
     /// Generate the parameters for a Mint note
     #[allow(clippy::too_many_arguments)]
     pub fn new<R>(
@@ -923,9 +952,9 @@ impl<'a> MintParamsBuilder<'a> {
         input_amount: Amount,
         fee: Amount,
         mint_amount: Amount,
-        minter_keypair: &'a UserKeyPair,
-        receiver_keypair: &'a UserKeyPair,
-        viewer_keypair: &'a ViewerKeyPair,
+        minter_keypair: &'a UserKeyPair<C>,
+        receiver_keypair: &'a UserKeyPair<C>,
+        viewer_keypair: &'a ViewerKeyPair<C>,
     ) -> Self
     where
         R: RngCore + CryptoRng,
@@ -984,7 +1013,7 @@ impl<'a> MintParamsBuilder<'a> {
             .1; // safe unwrap()
     }
 
-    fn update_acc_member_witness(&mut self, mt: &MerkleTree, uid: Option<u64>) {
+    fn update_acc_member_witness(&mut self, mt: &MerkleTree<C::ScalarField>, uid: Option<u64>) {
         let uid = if let Some(uid) = uid { uid } else { 0 };
         self.acc_member_witness = AccMemberWitness::lookup_from_tree(mt, uid)
             .expect_ok()
@@ -992,7 +1021,7 @@ impl<'a> MintParamsBuilder<'a> {
             .1; // safe unwrap()
     }
 
-    pub(crate) fn build_witness<R: RngCore + CryptoRng>(&self, rng: &mut R) -> MintWitness {
+    pub(crate) fn build_witness<R: RngCore + CryptoRng>(&self, rng: &mut R) -> MintWitness<C> {
         let ac_digest = AssetCodeDigest::from_description(&self.ac_description);
         // avoid integer overflow crash on debug mode, and we don't want to return error
         let fee_chg = if self.fee_ro.amount >= self.fee {
@@ -1015,7 +1044,7 @@ impl<'a> MintParamsBuilder<'a> {
             chg_ro,
             ac_seed: self.ac_seed,
             ac_digest,
-            viewing_memo_enc_rand: ScalarField::rand(rng),
+            viewing_memo_enc_rand: C::JubjubScalarField::rand(rng),
         }
     }
 
@@ -1053,7 +1082,7 @@ impl<'a> MintParamsBuilder<'a> {
     pub(crate) fn build_witness_and_public_input<R>(
         &self,
         rng: &mut R,
-    ) -> Result<(MintWitness, MintPublicInput), TxnApiError>
+    ) -> Result<(MintWitness<C>, MintPublicInput<C>), TxnApiError>
     where
         R: RngCore + CryptoRng,
     {
@@ -1066,8 +1095,15 @@ impl<'a> MintParamsBuilder<'a> {
     pub fn build_mint_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
-        proving_key: &MintProvingKey,
-    ) -> Result<(MintNote, KeyPair, RecordOpening), TxnApiError> {
+        proving_key: &MintProvingKey<C>,
+    ) -> Result<
+        (
+            MintNote<C>,
+            schnorr::KeyPair<C::JubjubParam>,
+            RecordOpening<C>,
+        ),
+        TxnApiError,
+    > {
         let fee_input = FeeInput {
             ro: self.fee_ro.clone(),
             acc_member_witness: self.acc_member_witness.clone(),
@@ -1089,9 +1125,9 @@ impl<'a> MintParamsBuilder<'a> {
     pub(crate) fn rand<R>(
         rng: &mut R,
         tree_depth: u8,
-        minter_keypair: &'a UserKeyPair,
-        receiver_keypair: &'a UserKeyPair,
-        viewer_keypair: &'a ViewerKeyPair,
+        minter_keypair: &'a UserKeyPair<C>,
+        receiver_keypair: &'a UserKeyPair<C>,
+        viewer_keypair: &'a ViewerKeyPair<C>,
     ) -> Self
     where
         R: RngCore + CryptoRng,
@@ -1114,22 +1150,22 @@ impl<'a> MintParamsBuilder<'a> {
 
 #[derive(Debug, Clone)]
 /// Struct containing the parameters needed to build a Freeze note
-pub struct FreezeParamsBuilder<'a> {
+pub struct FreezeParamsBuilder<'a, C: CapConfig> {
     tree_depth: u8,
-    pub(crate) inputs: Vec<FreezeNoteInput<'a>>,
-    pub(crate) fee_input: FeeInput<'a>,
+    pub(crate) inputs: Vec<FreezeNoteInput<'a, C>>,
+    pub(crate) fee_input: FeeInput<'a, C>,
     pub(crate) fee: Amount,
 }
 
-impl<'a> FreezeParamsBuilder<'a> {
+impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
     /// Instantiate a new FreezeParamsBuilder
     pub fn new(
         tree_depth: u8,
         input_amounts: &[Amount],
         fee_input_amount: Amount,
         fee: Amount,
-        fee_keypair: &'a UserKeyPair,
-        freezing_keypairs: Vec<&'a FreezerKeyPair>,
+        fee_keypair: &'a UserKeyPair<C>,
+        freezing_keypairs: Vec<&'a FreezerKeyPair<C>>,
     ) -> Self {
         let rng = &mut ark_std::test_rng();
         assert_eq!(
@@ -1177,11 +1213,11 @@ impl<'a> FreezeParamsBuilder<'a> {
         builder
     }
 
-    fn input_ros(&self) -> Vec<&RecordOpening> {
+    fn input_ros(&self) -> Vec<&RecordOpening<C>> {
         self.inputs.iter().map(|input| &input.ro).collect()
     }
 
-    fn fee_ro(&self) -> &RecordOpening {
+    fn fee_ro(&self) -> &RecordOpening<C> {
         &self.fee_input.ro
     }
 
@@ -1190,8 +1226,8 @@ impl<'a> FreezeParamsBuilder<'a> {
     pub(crate) fn rand<R>(
         rng: &mut R,
         tree_depth: u8,
-        fee_keypair: &'a UserKeyPair,
-        freezing_keypairs: Vec<&'a FreezerKeyPair>,
+        fee_keypair: &'a UserKeyPair<C>,
+        freezing_keypairs: Vec<&'a FreezerKeyPair<C>>,
     ) -> Self
     where
         R: RngCore + CryptoRng,
@@ -1232,7 +1268,7 @@ impl<'a> FreezeParamsBuilder<'a> {
 
     fn update_acc_member_witness(
         &mut self,
-        mt: &MerkleTree,
+        mt: &MerkleTree<C::ScalarField>,
         input_uids: Option<Vec<u64>>,
         fee_uid: Option<u64>,
     ) {
@@ -1267,7 +1303,7 @@ impl<'a> FreezeParamsBuilder<'a> {
             .1;
     }
 
-    pub(crate) fn update_fee_asset_def(mut self, asset_def: AssetDefinition) -> Self {
+    pub(crate) fn update_fee_asset_def(mut self, asset_def: AssetDefinition<C>) -> Self {
         self.fee_input.ro.asset_def = asset_def;
         self.refresh_merkle_root();
         self
@@ -1296,7 +1332,7 @@ impl<'a> FreezeParamsBuilder<'a> {
         self
     }
 
-    pub(crate) fn update_input_policy(mut self, index: usize, policy: AssetPolicy) -> Self {
+    pub(crate) fn update_input_policy(mut self, index: usize, policy: AssetPolicy<C>) -> Self {
         assert!(index < self.inputs.len());
         self.inputs[index].ro.asset_def.policy = policy;
         self.refresh_merkle_root();
@@ -1304,19 +1340,21 @@ impl<'a> FreezeParamsBuilder<'a> {
     }
 
     // calculate the output ROs
-    fn output_ros(&self) -> Vec<RecordOpening> {
+    fn output_ros(&self) -> Vec<RecordOpening<C>> {
         let rng = &mut ark_std::test_rng();
         get_output_ros(rng, &self.inputs)
     }
 
     /// Build a witness
-    pub(crate) fn build_witness(&self) -> FreezeWitness {
+    pub(crate) fn build_witness(&self) -> FreezeWitness<C> {
         let rng = &mut ark_std::test_rng();
         let (txn_fee_input, _) = TxnFeeInfo::new(rng, self.fee_input.clone(), self.fee).unwrap();
         FreezeWitness::new_unchecked(self.inputs.clone(), &self.output_ros(), txn_fee_input)
     }
 
-    pub(crate) fn build_witness_and_public_input(&self) -> (FreezeWitness, FreezePublicInput) {
+    pub(crate) fn build_witness_and_public_input(
+        &self,
+    ) -> (FreezeWitness<C>, FreezePublicInput<C>) {
         let witness = self.build_witness();
         let pub_input = FreezePublicInput::from_witness(&witness).unwrap();
         (witness, pub_input)
@@ -1328,8 +1366,16 @@ impl<'a> FreezeParamsBuilder<'a> {
     pub fn build_freeze_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
-        proving_key: &FreezeProvingKey,
-    ) -> Result<(FreezeNote, KeyPair, RecordOpening, Vec<RecordOpening>), TxnApiError> {
+        proving_key: &FreezeProvingKey<C>,
+    ) -> Result<
+        (
+            FreezeNote<C>,
+            schnorr::KeyPair<C::JubjubParam>,
+            RecordOpening<C>,
+            Vec<RecordOpening<C>>,
+        ),
+        TxnApiError,
+    > {
         let (txn_fee_info, fee_chg_ro) = TxnFeeInfo::new(rng, self.fee_input.clone(), self.fee)?;
         let (note, keypair, outputs) =
             FreezeNote::generate(rng, self.inputs.clone(), txn_fee_info, proving_key)?;
@@ -1365,7 +1411,7 @@ impl RevealMap {
     }
 }
 
-impl AssetDefinition {
+impl<C: CapConfig> AssetDefinition<C> {
     /// Create a new random asset definition
     pub fn rand_for_test<R>(rng: &mut R) -> Self
     where
@@ -1379,7 +1425,7 @@ impl AssetDefinition {
     }
 }
 
-impl AssetPolicy {
+impl<C: CapConfig> AssetPolicy<C> {
     /// generates a random AssetPolicy
     pub fn rand_for_test<R>(rng: &mut R) -> Self
     where
@@ -1395,7 +1441,7 @@ impl AssetPolicy {
     }
 }
 
-impl RecordOpening {
+impl<C: CapConfig> RecordOpening<C> {
     /// Create a random record opening. Only used for testing.
     pub fn rand_for_test<R: RngCore + CryptoRng>(rng: &mut R) -> Self {
         let amount = Amount::from(rng.next_u64() as u128); // In order to avoid possible u128 overflows

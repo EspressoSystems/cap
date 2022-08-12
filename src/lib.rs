@@ -182,10 +182,20 @@ use crate::{
 };
 use ark_serialize::*;
 use ark_std::{boxed::Box, format, string::ToString, vec, vec::Vec};
+use config::CapConfig;
 use errors::TxnApiError;
 use freeze::FreezeNote;
-use jf_plonk::{proof_system::structs::Proof, transcript::SolidityTranscript};
-use jf_primitives::signatures::{schnorr::SchnorrSignatureScheme, SignatureScheme};
+use jf_plonk::{
+    proof_system::structs::{Proof, VerifyingKey},
+    transcript::SolidityTranscript,
+};
+use jf_primitives::{
+    merkle_tree::NodeValue,
+    signatures::{
+        schnorr::{self, SchnorrSignatureScheme},
+        SignatureScheme,
+    },
+};
 use jf_utils::tagged_blob;
 use mint::MintNote;
 use proof::{freeze::FreezeVerifyingKey, mint::MintVerifyingKey};
@@ -195,16 +205,16 @@ use transfer::TransferNote;
 /// A transaction note contains a note of possibly various transaction types,
 /// including transfer, mint and freeze.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum TransactionNote {
+pub enum TransactionNote<C: CapConfig> {
     /// a transfer note
-    Transfer(Box<TransferNote>),
+    Transfer(Box<TransferNote<C>>),
     /// a mint (asset issuance) note
-    Mint(Box<MintNote>),
+    Mint(Box<MintNote<C>>),
     /// a freeze/unfreeze note
-    Freeze(Box<FreezeNote>),
+    Freeze(Box<FreezeNote<C>>),
 }
 
-impl CanonicalSerialize for TransactionNote {
+impl<C: CapConfig> CanonicalSerialize for TransactionNote<C> {
     fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
     where
         W: ark_serialize::Write,
@@ -236,7 +246,7 @@ impl CanonicalSerialize for TransactionNote {
     }
 }
 
-impl CanonicalDeserialize for TransactionNote {
+impl<C: CapConfig> CanonicalDeserialize for TransactionNote<C> {
     fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
     where
         R: ark_serialize::Read,
@@ -258,7 +268,7 @@ impl CanonicalDeserialize for TransactionNote {
     }
 }
 
-impl commit::Committable for TransactionNote {
+impl<C: CapConfig> commit::Committable for TransactionNote<C> {
     fn commit(&self) -> commit::Commitment<Self> {
         let mut bytes = vec![];
         CanonicalSerialize::serialize(self, &mut bytes).unwrap();
@@ -268,9 +278,9 @@ impl commit::Committable for TransactionNote {
     }
 }
 
-impl TransactionNote {
+impl<C: CapConfig> TransactionNote<C> {
     /// Retrieve transaction input nullifiers
-    pub fn nullifiers(&self) -> Vec<Nullifier> {
+    pub fn nullifiers(&self) -> Vec<Nullifier<C>> {
         match self {
             TransactionNote::Transfer(note) => note.inputs_nullifiers.clone(),
             TransactionNote::Mint(note) => vec![note.input_nullifier],
@@ -278,7 +288,7 @@ impl TransactionNote {
         }
     }
     /// Retrieve transaction output record commitments
-    pub fn output_commitments(&self) -> Vec<RecordCommitment> {
+    pub fn output_commitments(&self) -> Vec<RecordCommitment<C>> {
         match self {
             TransactionNote::Transfer(note) => note.output_commitments.clone(),
             TransactionNote::Mint(note) => vec![note.chg_comm, note.mint_comm],
@@ -295,7 +305,7 @@ impl TransactionNote {
     }
 
     /// Retrieve merkle root
-    pub fn merkle_root(&self) -> NodeValue {
+    pub fn merkle_root(&self) -> NodeValue<C::ScalarField> {
         match self {
             TransactionNote::Transfer(note) => note.aux_info.merkle_root,
             TransactionNote::Mint(note) => note.aux_info.merkle_root,
@@ -307,16 +317,20 @@ impl TransactionNote {
     pub fn verify_receiver_memos_signature(
         &self,
         recv_memos: &[ReceiverMemo],
-        sig: &Signature,
+        sig: &schnorr::Signature<C::JubjubParam>,
     ) -> Result<(), TxnApiError> {
         let digest = get_receiver_memos_digest(recv_memos)?;
         self.txn_memo_ver_key()
-            .verify(&[digest], sig, SchnorrSignatureScheme::<CurveParam>::CS_ID)
+            .verify(
+                &[digest],
+                sig,
+                SchnorrSignatureScheme::<C::JubjubParam>::CS_ID,
+            )
             .map_err(TxnApiError::FailedReceiverMemoSignature)
     }
 
     /// Retrieve validity proof
-    pub fn validity_proof(&self) -> Proof<PairingEngine> {
+    pub fn validity_proof(&self) -> Proof<C::PairingCurve> {
         match self {
             TransactionNote::Transfer(note) => note.proof.clone(),
             TransactionNote::Mint(note) => note.proof.clone(),
@@ -326,11 +340,11 @@ impl TransactionNote {
 }
 
 // Private methods
-impl TransactionNote {
+impl<C: CapConfig> TransactionNote<C> {
     /// Retrieve reference to verification key used by user to sign messages
     /// bound to the note E.g. to verify receiver memos associated with the
     /// transaction outputs on the note
-    fn txn_memo_ver_key(&self) -> &VerKey {
+    fn txn_memo_ver_key(&self) -> &schnorr::VerKey<C::JubjubParam> {
         match self {
             TransactionNote::Transfer(note) => &note.aux_info.txn_memo_ver_key,
             TransactionNote::Mint(note) => &note.aux_info.txn_memo_ver_key,
@@ -339,20 +353,20 @@ impl TransactionNote {
     }
 }
 
-impl From<TransferNote> for TransactionNote {
-    fn from(xfr_note: TransferNote) -> Self {
+impl<C: CapConfig> From<TransferNote<C>> for TransactionNote<C> {
+    fn from(xfr_note: TransferNote<C>) -> Self {
         TransactionNote::Transfer(Box::new(xfr_note))
     }
 }
 
-impl From<MintNote> for TransactionNote {
-    fn from(mint_note: MintNote) -> Self {
+impl<C: CapConfig> From<MintNote<C>> for TransactionNote<C> {
+    fn from(mint_note: MintNote<C>) -> Self {
         TransactionNote::Mint(Box::new(mint_note))
     }
 }
 
-impl From<FreezeNote> for TransactionNote {
-    fn from(freeze_note: FreezeNote) -> Self {
+impl<C: CapConfig> From<FreezeNote<C>> for TransactionNote<C> {
+    fn from(freeze_note: FreezeNote<C>) -> Self {
         TransactionNote::Freeze(Box::new(freeze_note))
     }
 }
@@ -361,16 +375,16 @@ impl From<FreezeNote> for TransactionNote {
 /// various transaction types, including transfer, mint and freeze.
 #[tagged_blob("TXVERKEY")]
 #[derive(Debug, Clone)]
-pub enum TransactionVerifyingKey {
+pub enum TransactionVerifyingKey<C: CapConfig> {
     /// verification key for validity proof in transfer note
-    Transfer(TransferVerifyingKey),
+    Transfer(TransferVerifyingKey<C>),
     /// verification key for validity proof in mint note
-    Mint(MintVerifyingKey),
+    Mint(MintVerifyingKey<C>),
     /// verification key for validity proof in freeze note
-    Freeze(FreezeVerifyingKey),
+    Freeze(FreezeVerifyingKey<C>),
 }
 
-impl CanonicalSerialize for TransactionVerifyingKey {
+impl<C: CapConfig> CanonicalSerialize for TransactionVerifyingKey<C> {
     fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
     where
         W: ark_serialize::Write,
@@ -404,7 +418,7 @@ impl CanonicalSerialize for TransactionVerifyingKey {
     }
 }
 
-impl CanonicalDeserialize for TransactionVerifyingKey {
+impl<C: CapConfig> CanonicalDeserialize for TransactionVerifyingKey<C> {
     fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
     where
         R: ark_serialize::Read,
@@ -426,8 +440,8 @@ impl CanonicalDeserialize for TransactionVerifyingKey {
     }
 }
 
-impl TransactionVerifyingKey {
-    pub(crate) fn get_key_ref(&self) -> &VerifyingKey {
+impl<C: CapConfig> TransactionVerifyingKey<C> {
+    pub(crate) fn get_key_ref(&self) -> &VerifyingKey<C::PairingCurve> {
         match self {
             TransactionVerifyingKey::Transfer(key) => &key.verifying_key,
             TransactionVerifyingKey::Mint(key) => &key.verifying_key,
@@ -440,11 +454,11 @@ impl TransactionVerifyingKey {
 /// * `txns`: list of transaction notes to be verified
 /// * `txns_roots`: root values for each transaction
 /// * `verify_keys`: verification keys for each transaction instance
-pub fn txn_batch_verify(
-    txns: &[TransactionNote],
-    txns_roots: &[NodeValue],
+pub fn txn_batch_verify<C: CapConfig>(
+    txns: &[TransactionNote<C>],
+    txns_roots: &[NodeValue<C::ScalarField>],
     timestamp: u64,
-    verify_keys: &[&TransactionVerifyingKey],
+    verify_keys: &[&TransactionVerifyingKey<C>],
 ) -> Result<(), TxnApiError> {
     // check parameters
     if txns.len() != verify_keys.len() || txns.len() != txns_roots.len() {
@@ -471,7 +485,7 @@ pub fn txn_batch_verify(
             },
         })
         .collect::<Result<Vec<_>, TxnApiError>>()?;
-    let public_inputs_as_slice: Vec<&[BaseField]> =
+    let public_inputs_as_slice: Vec<&[C::ScalarField]> =
         public_inputs.iter().map(|x| x.as_slice()).collect();
 
     let proofs: Vec<_> = txns
@@ -490,7 +504,7 @@ pub fn txn_batch_verify(
             TransactionNote::Mint(note) => note.aux_info.txn_memo_ver_key.clone(),
             TransactionNote::Freeze(note) => note.aux_info.txn_memo_ver_key.clone(),
         })
-        .collect::<Vec<VerKey>>();
+        .collect::<Vec<schnorr::VerKey<C::JubjubParam>>>();
     let mut extra_msgs = Vec::new();
     for (key, txn) in keys.iter().zip(txns.iter()) {
         let mut buf = Vec::new();
@@ -525,11 +539,11 @@ pub fn txn_batch_verify(
 /// * `owner_pk` - Public key of the owner of the collected fee, usually the
 ///   block proposer's public key
 /// * `blind` - blinding factor of the record commitment
-pub fn derive_txns_fee_records(
-    fee_collectors: &[UserPubKey],
+pub fn derive_txns_fee_records<C: CapConfig>(
+    fee_collectors: &[UserPubKey<C>],
     fees: &[Amount],
-    blinds: &[BlindFactor],
-) -> Result<Vec<RecordCommitment>, TxnApiError> {
+    blinds: &[BlindFactor<C>],
+) -> Result<Vec<RecordCommitment<C>>, TxnApiError> {
     if fees.is_empty() {
         return Err(TxnApiError::InvalidParameter(
             "Require at least 1 transaction to collect fee".to_string(),
@@ -560,7 +574,7 @@ pub fn derive_txns_fee_records(
 }
 
 /// Compute amount of claimable transaction fee
-pub fn calculate_fee(txns: &[TransactionNote]) -> Result<Amount, TxnApiError> {
+pub fn calculate_fee<C: CapConfig>(txns: &[TransactionNote<C>]) -> Result<Amount, TxnApiError> {
     let fee_amounts: Vec<Amount> = txns
         .iter()
         .map(|txn| match txn {
@@ -574,12 +588,12 @@ pub fn calculate_fee(txns: &[TransactionNote]) -> Result<Amount, TxnApiError> {
 }
 
 /// Compute signature over a list of receiver memos
-pub fn sign_receiver_memos(
-    keypair: &KeyPair,
+pub fn sign_receiver_memos<C: CapConfig>(
+    keypair: &schnorr::KeyPair<C::JubjubParam>,
     recv_memos: &[ReceiverMemo],
-) -> Result<Signature, TxnApiError> {
+) -> Result<schnorr::Signature<C::JubjubParam>, TxnApiError> {
     let digest = get_receiver_memos_digest(recv_memos)?;
-    Ok(keypair.sign(&[digest], SchnorrSignatureScheme::<CurveParam>::CS_ID))
+    Ok(keypair.sign(&[digest], SchnorrSignatureScheme::<C::JubjubParam>::CS_ID))
 }
 
 /// crate prelude consisting important traits and structs
@@ -589,6 +603,7 @@ pub mod preclude {
         TransactionVerifyingKey,
     };
     pub use crate::{
+        config::*,
         constants::*,
         errors::*,
         freeze::*,
@@ -600,7 +615,6 @@ pub mod preclude {
         },
         structs::*,
         transfer::{AuxInfo as TransferNoteAuxInfo, TransferNote, TransferNoteInput},
-        types::*,
     };
 }
 
@@ -613,9 +627,10 @@ mod test {
         structs::{Amount, BlindFactor},
         txn_batch_verify,
         utils::params_builder::TxnsParams,
-        KeyPair, TransactionNote,
+        TransactionNote,
     };
     use ark_std::{vec, vec::Vec};
+    use jf_primitives::signatures::schnorr;
 
     #[test]
     fn test_transaction_note() -> Result<(), TxnApiError> {
@@ -760,7 +775,7 @@ mod test {
         // wrong recv_memo_ver_key should fail
         let wrong_param = params
             .clone()
-            .update_recv_memos_ver_key(0, KeyPair::generate(rng).ver_key());
+            .update_recv_memos_ver_key(0, schnorr::KeyPair::generate(rng).ver_key());
         assert!(txn_batch_verify(
             &wrong_param.txns,
             &roots,

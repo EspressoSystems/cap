@@ -12,26 +12,41 @@
 //! Configuration
 
 use ark_ec::{PairingEngine, TEModelParameters};
-use ark_ff::{PrimeField, SquareRootField};
+use ark_ff::{FpParameters, PrimeField, SquareRootField};
+use jf_rescue::RescueParameter;
+
+use crate::structs::AssetCode;
 
 /// Configuration for CAP system
-pub trait CapConfig {
+pub trait CapConfig: Sized + Clone {
     /// Pairing-friendly curve the CAP proof will be generated over
     type PairingCurve: PairingEngine<Fr = Self::ScalarField>;
     /// Curve parameter for Jubjub curve embedded in `PairingCurve`
-    type JubjubParam: TEModelParameters<
-        ScalarField = Self::JubjubScalarField,
-        BaseField = Self::ScalarField,
-    >;
+    type JubjubParam: TEModelParameters<ScalarField = Self::JubjubScalarField, BaseField = Self::ScalarField>
+        + Clone;
 
     /// Scalar field over which CAP circuit is over
-    type ScalarField: PrimeField + SquareRootField;
+    type ScalarField: PrimeField + SquareRootField + RescueParameter;
     /// Scalar field of jubjub curve
     type JubjubScalarField: PrimeField + SquareRootField;
+
+    /// Length of a `ScalarField` representation in bytes
+    const SCALAR_REPR_BYTE_LEN: u32 =
+        (<Self::ScalarField as PrimeField>::Params::MODULUS_BITS + 7) / 8;
+    // NOTE: -1 from BLS byte capacity to allow room for padding byte in all case,
+    // and avoid extra block.
+    /// number of byte can each `identityAttribute` take.
+    const PER_ATTR_BYTE_CAPACITY: u32 =
+        (<Self::ScalarField as PrimeField>::Params::CAPACITY / 8) - 1;
+    /// Native asset code, cannot be 0 as then code is identical to default code
+    const NATIVE_ASSET_CODE: AssetCode<Self> = AssetCode(Self::ScalarField::from(1u32));
+    /// Dummy asset code, cannot be 0 (default) or 1(native)
+    const DUMMY_ASSET_CODE: AssetCode<Self> = AssetCode(Self::ScalarField::from(2u32));
 }
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bn254")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config;
 
 #[cfg(feature = "bn254")]
@@ -44,6 +59,7 @@ impl CapConfig for Config {
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bls12_377")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config;
 
 #[cfg(feature = "bls12_377")]
@@ -56,6 +72,7 @@ impl CapConfig for Config {
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bls12_381")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Config;
 
 #[cfg(feature = "bls12_381")]

@@ -271,7 +271,7 @@ impl<'a, C: CapConfig> TransferWitness<'a, C> {
     /// parameters is unchecked.
     pub(crate) fn new_unchecked<R: RngCore + CryptoRng>(
         rng: &mut R,
-        inputs: Vec<TransferNoteInput<'a>>,
+        inputs: Vec<TransferNoteInput<'a, C>>,
         output_ros: &[RecordOpening<C>],
     ) -> Result<Self, TxnApiError> {
         let mut asset_def = AssetDefinition::native();

@@ -104,12 +104,6 @@ impl<C: CapConfig> InternalAssetCode<C> {
     }
 }
 
-impl<C: CapConfig> From<&AssetCode<C>> for C::ScalarField {
-    fn from(ac: &AssetCode<C>) -> Self {
-        ac.0
-    }
-}
-
 /// Record Amount type
 /// # How to convert between unsigned int types
 /// ```ignore
@@ -224,12 +218,12 @@ pub struct AssetCode<C: CapConfig>(pub(crate) C::ScalarField);
 impl<C: CapConfig> AssetCode<C> {
     /// Return the AssetCode assigned for the native asset
     pub const fn native() -> Self {
-        NATIVE_ASSET_CODE
+        C::NATIVE_ASSET_CODE
     }
 
     /// Return the AssetCode assigned for a dummy record
     pub const fn dummy() -> Self {
-        DUMMY_ASSET_CODE
+        C::DUMMY_ASSET_CODE
     }
 
     /// Generate a random asset code
@@ -436,17 +430,17 @@ impl RevealMap {
             self.0[ASSET_TRACING_MAP_LEN + i] = true;
         }
     }
-}
 
-impl<C: CapConfig> From<RevealMap> for C::ScalarField {
-    fn from(map: RevealMap) -> Self {
+    /// Convert to a scalar representation
+    pub fn to_scalar<C: CapConfig>(&self) -> C::ScalarField {
         C::ScalarField::from(
-            map.0
+            self.0
                 .iter()
                 .fold(0u64, |acc, &x| if x { acc * 2 + 1 } else { acc * 2 }),
         )
     }
 }
+
 // private or internal functions
 impl RevealMap {
     /// compute the hadamard product/entry-wise product of the (reveal_map *
@@ -781,12 +775,6 @@ impl<C: CapConfig> BlindFactor<C> {
     }
 }
 
-impl<C: CapConfig> From<C::ScalarField> for BlindFactor<C> {
-    fn from(scalar: C::ScalarField) -> Self {
-        BlindFactor(scalar)
-    }
-}
-
 /// The nullifier represents a spent/consumed asset record
 #[tagged_blob("NUL")]
 #[derive(
@@ -839,12 +827,6 @@ impl<C: CapConfig> RecordCommitment<C> {
 impl<C: CapConfig> From<RecordCommitment<C>> for NodeValue<C::ScalarField> {
     fn from(rc: RecordCommitment<C>) -> Self {
         NodeValue::from_scalar(rc.0)
-    }
-}
-
-impl<C: CapConfig> From<RecordCommitment<C>> for C::ScalarField {
-    fn from(input: RecordCommitment<C>) -> C::ScalarField {
-        input.0
     }
 }
 
@@ -1050,20 +1032,20 @@ pub struct IdentityAttribute<C: CapConfig>(pub(crate) C::ScalarField);
 impl<C: CapConfig> IdentityAttribute<C> {
     /// Create a new `IdentityAttribute` from its value in bytes.
     pub fn new(attr_value: &[u8]) -> Result<Self, TxnApiError> {
-        if attr_value.len() > PER_ATTR_BYTE_CAPACITY || attr_value.is_empty() {
+        if attr_value.len() > C::PER_ATTR_BYTE_CAPACITY as usize || attr_value.is_empty() {
             return Err(TxnApiError::InvalidParameter(format!(
                 "Each identity attribute takes at least 1 byte, at most {} bytes",
-                PER_ATTR_BYTE_CAPACITY
+                C::PER_ATTR_BYTE_CAPACITY
             )));
         }
         // use PKCS#5 padding:
         // see: https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS#5_and_PKCS#7
-        let pad_val = (BLS_SCALAR_REPR_BYTE_LEN) as usize - attr_value.len();
+        let pad_val = C::SCALAR_REPR_BYTE_LEN as usize - attr_value.len();
         let mut padded = attr_value.to_owned();
 
         // this ensures the leading bytes is 0
         // so that from_le_bytes_mod_order is always done without mod
-        padded.resize((BLS_SCALAR_REPR_BYTE_LEN - 1) as usize, pad_val as u8);
+        padded.resize((C::SCALAR_REPR_BYTE_LEN - 1) as usize, pad_val as u8);
         Ok(Self(C::ScalarField::from_le_bytes_mod_order(&padded)))
     }
 
@@ -1081,7 +1063,7 @@ impl<C: CapConfig> IdentityAttribute<C> {
         }
 
         let pad_len = padded_bytes[padded_bytes.len() - 2];
-        padded_bytes.truncate((BLS_SCALAR_REPR_BYTE_LEN) as usize - pad_len as usize);
+        padded_bytes.truncate(C::SCALAR_REPR_BYTE_LEN as usize - pad_len as usize);
         Ok(padded_bytes)
     }
 
@@ -1446,7 +1428,7 @@ impl<C: CapConfig> ViewableData<C> {
 
     pub(crate) fn from_mint_note(
         visible_data: &[C::ScalarField],
-        mint_note: &MintNote,
+        mint_note: &MintNote<C>,
     ) -> Result<Self, TxnApiError> {
         if visible_data.len() != 3 {
             return Err(TxnApiError::FailedViewableMemoDecryption(
@@ -1869,8 +1851,8 @@ mod test {
     #[quickcheck]
     fn id_attr_from_to_bytes_is_deterministic(bytes: Vec<u8>) -> bool {
         let empty_bytes_should_fail = bytes.is_empty() && IdentityAttribute::new(&bytes).is_err();
-        let extra_bytes_should_fail =
-            bytes.len() > PER_ATTR_BYTE_CAPACITY && IdentityAttribute::new(&bytes).is_err();
+        let extra_bytes_should_fail = bytes.len() > <Config as CapConfig>::PER_ATTR_BYTE_CAPACITY
+            && IdentityAttribute::new(&bytes).is_err();
 
         empty_bytes_should_fail
             || extra_bytes_should_fail

@@ -9,11 +9,8 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::{
-    circuit::{gadgets_helper::TransactionGadgetsHelper, structs::RecordOpeningVar},
-    prelude::CapConfig,
-};
-use ark_ff::One;
+use crate::circuit::{gadgets_helper::TransactionGadgetsHelper, structs::RecordOpeningVar};
+use ark_ff::{One, PrimeField};
 use ark_std::{string::ToString, vec::Vec};
 use jf_plonk::{
     circuit::{Circuit, PlonkCircuit, Variable},
@@ -78,7 +75,7 @@ pub(crate) trait TransactionGadgets {
     ) -> Result<Vec<Variable>, PlonkError>;
 }
 
-impl<C: CapConfig> TransactionGadgets for PlonkCircuit<C::ScalarField> {
+impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
     fn preserve_balance(
         &mut self,
         native_asset: Variable,
@@ -109,7 +106,7 @@ impl<C: CapConfig> TransactionGadgets for PlonkCircuit<C::ScalarField> {
             self.sum(&amounts_out[1..])?
         };
         let amount_diff = self.sub(total_amounts_in, total_amounts_out)?;
-        let one = C::ScalarField::one();
+        let one = F::one();
         let native_amount_diff = self.lc(
             &[amounts_in[0], amounts_out[0], fee, zero_var],
             &[one, -one, -one, one],

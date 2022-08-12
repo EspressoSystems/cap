@@ -10,7 +10,7 @@
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{
-    constants::{ATTRS_LEN, DUMMY_ASSET_CODE, MAX_TIMESTAMP_LEN},
+    constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
     prelude::CapConfig,
     structs::{AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo},
 };
@@ -33,9 +33,9 @@ use jf_primitives::circuit::{
 #[derive(Debug)]
 pub(crate) struct ViewableMemoVar(pub(crate) ElGamalHybridCtxtVars);
 
-impl<C: CapConfig> ViewableMemoVar {
+impl ViewableMemoVar {
     /// Create a variable for viewing memo
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemo<C>,
     ) -> Result<Self, PlonkError> {
@@ -44,7 +44,7 @@ impl<C: CapConfig> ViewableMemoVar {
     }
 
     /// Set ViewableMemoVar public
-    pub(crate) fn set_public(
+    pub(crate) fn set_public<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
@@ -58,7 +58,7 @@ impl<C: CapConfig> ViewableMemoVar {
 
     /// Obtain a bool variable indicating whether it's equal to another viewing
     /// memo `viewing_memo`.
-    pub(crate) fn check_equal(
+    pub(crate) fn check_equal<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemoVar,
@@ -77,13 +77,13 @@ impl<C: CapConfig> ViewableMemoVar {
             .zip(viewing_memo.0.symm_ctxts.iter())
         {
             let flag = circuit.check_equal(left, right)?;
-            check_equal = circuit.mul(check_equal, flag)?;
+            check_equal = <PlonkCircuit<_> as Circuit<_>>::mul(circuit, check_equal, flag)?;
         }
         Ok(check_equal)
     }
 
     /// Derive viewing memoby encrypting the content with viewer public key
-    pub(crate) fn derive(
+    pub(crate) fn derive<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewer_pk: &EncKeyVars,
         data: &[Variable],
@@ -116,9 +116,9 @@ pub(crate) struct RecordOpeningVar {
     pub(crate) blind: Variable,
 }
 
-impl<C: CapConfig> RecordOpeningVar {
+impl RecordOpeningVar {
     /// Create a variable for the opening of an asset record.
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         ro: &RecordOpening<C>,
     ) -> Result<Self, PlonkError> {
@@ -143,7 +143,7 @@ impl<C: CapConfig> RecordOpeningVar {
 
     /// Build constraints that derive the record commitment from an asset record
     /// opening.
-    pub(crate) fn compute_record_commitment(
+    pub(crate) fn compute_record_commitment<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
@@ -179,11 +179,11 @@ impl<C: CapConfig> RecordOpeningVar {
     }
 
     /// Return boolean indicating whether the record's asset code is dummy
-    pub(crate) fn check_asset_code_dummy(
+    pub(crate) fn check_asset_code_dummy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
-        let zero_if_dummy = circuit.add_constant(self.asset_code, &DUMMY_ASSET_CODE.0.neg())?;
+        let zero_if_dummy = circuit.add_constant(self.asset_code, &C::DUMMY_ASSET_CODE.0.neg())?;
         circuit.check_is_zero(zero_if_dummy)
     }
 }
@@ -197,9 +197,9 @@ pub(crate) struct AssetPolicyVar {
     pub(crate) reveal_threshold: Variable,
 }
 
-impl<C: CapConfig> AssetPolicyVar {
+impl AssetPolicyVar {
     /// Create a variable for an asset policy.
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicy<C>,
     ) -> Result<Self, PlonkError> {
@@ -222,7 +222,7 @@ impl<C: CapConfig> AssetPolicyVar {
     /// Set AssetPolicyVar public
     /// The order: (reveal_map, viewer_pk, cred_pk, freezer_pk,
     /// reveal_threshold)
-    pub(crate) fn set_public(
+    pub(crate) fn set_public<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
@@ -238,7 +238,7 @@ impl<C: CapConfig> AssetPolicyVar {
     }
 
     /// Constrain self to be a dummy policy.
-    pub(crate) fn enforce_dummy_policy(
+    pub(crate) fn enforce_dummy_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<(), PlonkError> {
@@ -252,7 +252,7 @@ impl<C: CapConfig> AssetPolicyVar {
     }
 
     /// Obtain a bool variable indicating whether `self` is dummy policy.
-    pub(crate) fn is_dummy_policy(
+    pub(crate) fn is_dummy_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
@@ -275,7 +275,7 @@ impl<C: CapConfig> AssetPolicyVar {
     }
 
     /// Constrain `self` to equal to another policy (in terms of values).
-    pub(crate) fn enforce_equal_policy(
+    pub(crate) fn enforce_equal_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
@@ -290,7 +290,7 @@ impl<C: CapConfig> AssetPolicyVar {
 
     /// Obtain a bool variable indicating whether `self` to equal to another
     /// policy (in terms of values).
-    pub(crate) fn check_equal_policy(
+    pub(crate) fn check_equal_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
@@ -306,7 +306,7 @@ impl<C: CapConfig> AssetPolicyVar {
 
     /// Obtain a bool variable indicating whether the policy's credential
     /// creator public key is dummy.
-    pub(crate) fn is_dummy_cred_pk(
+    pub(crate) fn is_dummy_cred_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
@@ -315,7 +315,7 @@ impl<C: CapConfig> AssetPolicyVar {
 
     /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
-    pub(crate) fn is_dummy_viewing_pk(
+    pub(crate) fn is_dummy_viewing_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
@@ -324,7 +324,7 @@ impl<C: CapConfig> AssetPolicyVar {
 
     /// Obtain a bool variable indicating whether the policy's viewer public
     /// key is dummy.
-    pub(crate) fn is_dummy_freezer_pk(
+    pub(crate) fn is_dummy_freezer_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<Variable, PlonkError> {
@@ -336,9 +336,9 @@ impl<C: CapConfig> AssetPolicyVar {
 #[derive(Debug)]
 pub(crate) struct IdAttrVar(pub(crate) Variable);
 
-impl<C: CapConfig> IdAttrVar {
+impl IdAttrVar {
     /// Create a variable for an identity attribute.
-    fn new(
+    fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         id_attr: &IdentityAttribute<C>,
     ) -> Result<Self, PlonkError> {
@@ -356,9 +356,9 @@ pub(crate) struct ExpirableCredVar {
     pub creator_pk: VerKeyVar,
 }
 
-impl<C: CapConfig> ExpirableCredVar {
+impl ExpirableCredVar {
     /// Create a variable for an expirable credential.
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         expirable_cred: &ExpirableCredential<C>,
     ) -> Result<Self, PlonkError> {
@@ -392,7 +392,7 @@ impl<C: CapConfig> ExpirableCredVar {
     ///   `valid_until`.
     /// * output - a bool variable indicating whether the credential signature
     ///   is valid.
-    pub(crate) fn verify(
+    pub(crate) fn verify<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         valid_until: Variable,

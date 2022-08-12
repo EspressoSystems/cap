@@ -20,7 +20,7 @@ use crate::{
     },
     structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
     utils::txn_helpers::{freeze::*, *},
-    AccMemberWitness, KeyPair, NodeValue, VerKey,
+    NodeValue,
 };
 use ark_serialize::*;
 use ark_std::{
@@ -28,7 +28,7 @@ use ark_std::{
     string::ToString,
     vec::Vec,
 };
-use jf_primitives::merkle_tree::AccMemberWitness;
+use jf_primitives::{merkle_tree::AccMemberWitness, signatures::schnorr};
 use serde::{Deserialize, Serialize};
 
 /// Freezing note structure
@@ -43,15 +43,15 @@ use serde::{Deserialize, Serialize};
     Serialize,
     Deserialize,
 )]
-pub struct FreezeNote {
+pub struct FreezeNote<C: CapConfig> {
     /// nullifiers for freezing/fee inputs
-    pub input_nullifiers: Vec<Nullifier>,
+    pub input_nullifiers: Vec<Nullifier<C>>,
     /// generated output commitments
-    pub output_commitments: Vec<RecordCommitment>,
+    pub output_commitments: Vec<RecordCommitment<C>>,
     /// proof of freezing
-    pub proof: FreezeValidityProof,
+    pub proof: FreezeValidityProof<C>,
     /// Auxiliary information (merkle root, fee)
-    pub aux_info: FreezeAuxInfo,
+    pub aux_info: FreezeAuxInfo<C>,
 }
 
 /// Auxiliary info of FreezeNote: includes merkle root and fee
@@ -66,14 +66,14 @@ pub struct FreezeNote {
     Deserialize,
     Clone,
 )]
-pub struct FreezeAuxInfo {
+pub struct FreezeAuxInfo<C: CapConfig> {
     /// Accumulator state
-    pub merkle_root: NodeValue,
+    pub merkle_root: NodeValue<C::ScalarField>,
     /// proposed fee in native asset type for the transfer
     pub fee: Amount,
     /// Transaction memos signature verification key (usually used for signing
     /// receiver memos)
-    pub txn_memo_ver_key: VerKey,
+    pub txn_memo_ver_key: schnorr::VerKey<C::JubjubParam>,
 }
 
 /// All necessary information for each freezing input record in the `FreezeNote`
@@ -89,7 +89,7 @@ pub struct FreezeNoteInput<'fkp, C: CapConfig> {
     pub keypair: &'fkp FreezerKeyPair<C>,
 }
 
-impl FreezeNote {
+impl<C: CapConfig> FreezeNote<C> {
     /// Generates a freezing note. (See "tests/examples.rs" for examples of
     /// use).
     /// * `rng` - Randomness generator
@@ -103,10 +103,17 @@ impl FreezeNote {
     /// On error return TxnApIError.
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        inputs: Vec<FreezeNoteInput>,
-        txn_fee_info: TxnFeeInfo,
-        proving_key: &FreezeProvingKey,
-    ) -> Result<(Self, KeyPair, Vec<RecordOpening>), TxnApiError> {
+        inputs: Vec<FreezeNoteInput<C>>,
+        txn_fee_info: TxnFeeInfo<C>,
+        proving_key: &FreezeProvingKey<C>,
+    ) -> Result<
+        (
+            Self,
+            schnorr::KeyPair<C::JubjubParam>,
+            Vec<RecordOpening<C>>,
+        ),
+        TxnApiError,
+    > {
         // 1. check input correctness
         check_inputs_len(inputs.len())?;
         check_proving_key_consistency(
@@ -125,7 +132,7 @@ impl FreezeNote {
         let output_ros = get_output_ros(rng, &inputs);
 
         // 2. Sample signing key
-        let signing_keypair = KeyPair::generate(rng);
+        let signing_keypair = schnorr::KeyPair::generate(rng);
 
         // 3. build public input and SNARK proof
         let fee_amount = txn_fee_info.fee_amount;
@@ -162,8 +169,8 @@ impl FreezeNote {
     ///   CustomError::TransferVerification Error.
     pub fn verify(
         &self,
-        verifying_key: &FreezeVerifyingKey,
-        merkle_root: NodeValue,
+        verifying_key: &FreezeVerifyingKey<C>,
+        merkle_root: NodeValue<C::ScalarField>,
     ) -> Result<(), TxnApiError> {
         let pub_input = self.check_instance_and_get_public_input(merkle_root)?;
         freeze::verify(
@@ -179,8 +186,8 @@ impl FreezeNote {
     /// * `returns` - public input or error
     pub(crate) fn check_instance_and_get_public_input(
         &self,
-        merkle_root: NodeValue,
-    ) -> Result<FreezePublicInput, TxnApiError> {
+        merkle_root: NodeValue<C::ScalarField>,
+    ) -> Result<FreezePublicInput<C>, TxnApiError> {
         // check root consistency
         if merkle_root != self.aux_info.merkle_root {
             return Err(TxnApiError::FailedTransactionVerification(
@@ -203,6 +210,7 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
+        prelude::Config,
         proof::{
             freeze::{self, FreezeProvingKey, FreezeVerifyingKey},
             universal_setup_for_staging,
@@ -325,9 +333,9 @@ mod test {
     }
 
     fn test_freeze_note_helper(
-        builder: &FreezeParamsBuilder,
-        proving_key: &FreezeProvingKey,
-        verifying_key: &FreezeVerifyingKey,
+        builder: &FreezeParamsBuilder<Config>,
+        proving_key: &FreezeProvingKey<Config>,
+        verifying_key: &FreezeVerifyingKey<Config>,
     ) -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
 

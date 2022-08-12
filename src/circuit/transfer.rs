@@ -280,9 +280,9 @@ pub(crate) struct TransferWitnessVar {
     pub(crate) viewing_memo_enc_rand: Variable,
 }
 
-impl<C: CapConfig> TransferWitnessVar {
+impl TransferWitnessVar {
     /// Create a variable for a transfer witness
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &TransferWitness<C>,
     ) -> Result<Self, PlonkError> {
@@ -322,9 +322,9 @@ pub(crate) struct TransferPubInputVar {
     pub(crate) viewing_memo: ViewableMemoVar,
 }
 
-impl<C: CapConfig> TransferPubInputVar {
+impl TransferPubInputVar {
     /// Create a transfer public input variable.
-    pub(crate) fn new(
+    pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         pub_input: &TransferPublicInput<C>,
     ) -> Result<Self, PlonkError> {
@@ -749,7 +749,7 @@ mod tests {
     }
 
     fn create_witness_and_pub_input<'a>(
-        builder: &'a TransferParamsBuilder,
+        builder: &'a TransferParamsBuilder<Config>,
     ) -> (TransferWitness<'a, Config>, TransferPublicInput<Config>) {
         let rng = &mut ark_std::test_rng();
         let witness = builder.build_witness(rng);

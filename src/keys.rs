@@ -314,7 +314,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
     pub fn open_transfer_viewing_memo(
         &self,
         asset_definition: &AssetDefinition<C>,
-        transfer_note: &TransferNote,
+        transfer_note: &TransferNote<C>,
     ) -> Result<(Vec<ViewableData<C>>, Vec<ViewableData<C>>), TxnApiError> {
         if self.pub_key() != asset_definition.policy.viewer_pk {
             return Err(TxnApiError::InvalidParameter(
@@ -371,7 +371,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
     /// Open MintNote ViewableMemo intoViewableData for new minted record
     pub fn open_mint_viewing_memo(
         &self,
-        mint_note: &MintNote,
+        mint_note: &MintNote<C>,
     ) -> Result<ViewableData<C>, TxnApiError> {
         let plaintext = self.decrypt(&mint_note.viewing_memo);
         let expected_len = 3; // (x,y) owner address and blinding factor
