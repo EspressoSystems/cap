@@ -86,7 +86,7 @@ pub(crate) fn safe_sum_amount(elems: &[Amount]) -> Option<Amount> {
 /// * `tree_depth` - depth of the Merkle tree
 /// * `returns` - size of the srs or an error
 // TODO add number of identity attributes as a parameter
-pub fn compute_universal_param_size(
+pub fn compute_universal_param_size<C: CapConfig>(
     note_type: NoteType,
     num_inputs: usize,
     num_outputs: usize,
@@ -94,13 +94,13 @@ pub fn compute_universal_param_size(
 ) -> Result<usize, TxnApiError> {
     let circuit = match note_type {
         NoteType::Transfer => {
-            TransferCircuit::build_for_preprocessing(num_inputs, num_outputs, tree_depth)?
+            TransferCircuit::<C>::build_for_preprocessing(num_inputs, num_outputs, tree_depth)?
                 .0
                  .0
         },
-        NoteType::Mint => MintCircuit::build_for_preprocessing(tree_depth)?.0 .0,
+        NoteType::Mint => MintCircuit::<C>::build_for_preprocessing(tree_depth)?.0 .0,
         NoteType::Freeze => {
-            FreezeCircuit::build_for_preprocessing(tree_depth, num_inputs)?
+            FreezeCircuit::<C>::build_for_preprocessing(tree_depth, num_inputs)?
                 .0
                  .0
         },
@@ -116,6 +116,7 @@ pub fn compute_universal_param_size(
 mod tests {
     use crate::{
         keys::UserKeyPair,
+        prelude::Config,
         structs::{Amount, AssetDefinition, FreezeFlag, NoteType, RecordOpening},
         utils::{compute_universal_param_size, get_asset_def_in_transfer_txn, safe_sum_amount},
     };
@@ -138,56 +139,56 @@ mod tests {
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Transfer, 3, 5, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 3, 5, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             131074,
-            compute_universal_param_size(NoteType::Transfer, 3, 5, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 3, 5, 26).unwrap()
         );
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Transfer, 2, 2, 10).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 2, 2, 10).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Transfer, 2, 2, 10).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 2, 2, 10).unwrap()
         );
 
         // Mint
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             16386,
-            compute_universal_param_size(NoteType::Mint, 0, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Mint, 0, 0, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Mint, 0, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Mint, 0, 0, 26).unwrap()
         );
         // Freeze
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             16386,
-            compute_universal_param_size(NoteType::Freeze, 2, 0, 5).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 2, 0, 5).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Freeze, 2, 0, 5).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 2, 0, 5).unwrap()
         );
 
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Freeze, 5, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 5, 0, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             131074,
-            compute_universal_param_size(NoteType::Freeze, 5, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 5, 0, 26).unwrap()
         );
     }
 
@@ -195,12 +196,12 @@ mod tests {
     fn test_get_asset_def_in_transfer_txn() {
         let mut rng = ark_std::test_rng();
 
-        let asset_def_native = AssetDefinition::native();
-        let asset_def_2 = AssetDefinition::rand_for_test(&mut rng);
-        let asset_def_3 = AssetDefinition::rand_for_test(&mut rng);
-        let user_keypair = UserKeyPair::generate(&mut rng);
+        let asset_def_native = AssetDefinition::<Config>::native();
+        let asset_def_2 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+        let asset_def_3 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
 
-        let ro_1 = RecordOpening::new(
+        let ro_1 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_native.clone(),
@@ -208,7 +209,7 @@ mod tests {
             FreezeFlag::Unfrozen,
         );
 
-        let ro_2 = RecordOpening::new(
+        let ro_2 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_2.clone(),
@@ -216,16 +217,17 @@ mod tests {
             FreezeFlag::Unfrozen,
         );
 
-        let ro_3 = RecordOpening::new(
+        let ro_3 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_3.clone(),
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
         );
-        let (ro_dummy, _keypair_dummy) = RecordOpening::dummy(&mut rng, FreezeFlag::Unfrozen);
+        let (ro_dummy, _keypair_dummy) =
+            RecordOpening::<Config>::dummy(&mut rng, FreezeFlag::Unfrozen);
 
-        assert!(get_asset_def_in_transfer_txn(&[]).is_err());
+        assert!(get_asset_def_in_transfer_txn::<Config>(&[]).is_err());
         assert_eq!(
             *get_asset_def_in_transfer_txn(&[ro_1.clone()]).unwrap(),
             asset_def_native
@@ -794,6 +796,7 @@ pub(crate) mod txn_helpers {
     mod tests {
         use crate::{
             keys::{UserKeyPair, ViewerPubKey},
+            prelude::Config,
             structs::{AssetDefinition, FreezeFlag, Nullifier, RecordOpening},
             utils::txn_helpers::{
                 check_distinct_input_nullifiers, derive_fee, transfer::check_asset_def,
@@ -805,7 +808,7 @@ pub(crate) mod txn_helpers {
         fn test_derive_fee() {
             let mut rng = ark_std::test_rng();
 
-            let asset_def_native = AssetDefinition::native();
+            let asset_def_native = AssetDefinition::<Config>::native();
             let asset_def_non_native = AssetDefinition::rand_for_test(&mut rng);
             let user_keypair = UserKeyPair::generate(&mut rng);
 
@@ -892,8 +895,8 @@ pub(crate) mod txn_helpers {
         #[test]
         fn test_distinct_input_nullifier() {
             let rng = &mut test_rng();
-            let nullifier1 = Nullifier::random_for_test(rng);
-            let nullifier2 = Nullifier::random_for_test(rng);
+            let nullifier1 = Nullifier::<Config>::random_for_test(rng);
+            let nullifier2 = Nullifier::<Config>::random_for_test(rng);
             assert!(check_distinct_input_nullifiers(&[nullifier1]).is_ok());
             assert!(check_distinct_input_nullifiers(&[nullifier1, nullifier1]).is_err());
             assert!(check_distinct_input_nullifiers(&[nullifier1, nullifier2]).is_ok());
@@ -903,9 +906,9 @@ pub(crate) mod txn_helpers {
         fn test_check_asset_def() {
             let mut rng = ark_std::test_rng();
 
-            let asset_def_native = AssetDefinition::native();
-            let asset_def_non_native_1 = AssetDefinition::rand_for_test(&mut rng);
-            let asset_def_non_native_2 = AssetDefinition::rand_for_test(&mut rng);
+            let asset_def_native = AssetDefinition::<Config>::native();
+            let asset_def_non_native_1 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+            let asset_def_non_native_2 = AssetDefinition::<Config>::rand_for_test(&mut rng);
             let mut asset_def_freezer_key_non_null_viewer_key_null = asset_def_non_native_2.clone();
             asset_def_freezer_key_non_null_viewer_key_null
                 .policy

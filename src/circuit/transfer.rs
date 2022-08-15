@@ -25,7 +25,7 @@ use crate::{
 use ark_ff::Zero;
 use ark_std::{format, string::ToString, vec, vec::Vec};
 use jf_plonk::{
-    circuit::{Circuit, PlonkCircuit, Variable},
+    circuit::{BoolVar, Circuit, PlonkCircuit, Variable},
     errors::{CircuitError::InternalError, PlonkError},
 };
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
@@ -79,9 +79,9 @@ impl<C: CapConfig> TransferCircuit<C> {
             .enumerate()
         {
             // The input is not frozen.
-            circuit.constant_gate(input.ro.freeze_flag, C::ScalarField::zero())?;
+            circuit.constant_gate(input.ro.freeze_flag.into(), C::ScalarField::zero())?;
             // check if record is dummy
-            let is_dummy_record = input.ro.check_asset_code_dummy(&mut circuit)?;
+            let is_dummy_record = input.ro.check_asset_code_dummy::<C>(&mut circuit)?;
             let is_zero_amount = circuit.check_is_zero(input.ro.amount)?;
             // if records is dummy, then amount must be zero
             // That is, check that either record is not dummy or the amount is zero
@@ -91,21 +91,22 @@ impl<C: CapConfig> TransferCircuit<C> {
             // The first input is with native asset code and is for txn fees.
             if i == 0 {
                 circuit.equal_gate(input.ro.asset_code, pub_input.native_asset_code)?;
-                input.ro.policy.enforce_dummy_policy(&mut circuit)?;
+                input.ro.policy.enforce_dummy_policy::<C>(&mut circuit)?;
             } else {
                 // if asset type code is dummy, then policy must be dummy
-                let is_dummy_policy = input.ro.policy.is_dummy_policy(&mut circuit)?;
+                let is_dummy_policy = input.ro.policy.is_dummy_policy::<C>(&mut circuit)?;
                 circuit.logic_or_gate(not_dummy_record, is_dummy_policy)?;
                 // if asset type code is not dummy, then policy must be the transfers note
                 // policy
                 let is_equal_policy = input
                     .ro
                     .policy
-                    .check_equal_policy(&mut circuit, &witness.policy)?;
+                    .check_equal_policy::<C>(&mut circuit, &witness.policy)?;
                 circuit.logic_or_gate(is_dummy_record, is_equal_policy)?;
             }
 
-            let (nullifier, root) = circuit.prove_spend(
+            let (nullifier, root) = TransactionGadgets::<C>::prove_spend(
+                &mut circuit,
                 &input.ro,
                 &input.acc_member_witness,
                 input.addr_secret,
@@ -119,8 +120,10 @@ impl<C: CapConfig> TransferCircuit<C> {
             circuit.logic_or_gate(is_dummy_record, is_correct_root)?;
 
             // Check credential if credential creator's cred_pk is present.
-            let b_dummy_cred_pk = input.ro.policy.is_dummy_cred_pk(&mut circuit)?;
-            let b_cred_vfy = input.cred.verify(&mut circuit, pub_input.valid_until)?;
+            let b_dummy_cred_pk = input.ro.policy.is_dummy_cred_pk::<C>(&mut circuit)?;
+            let b_cred_vfy = input
+                .cred
+                .verify::<C>(&mut circuit, pub_input.valid_until)?;
             circuit.logic_or_gate(b_dummy_cred_pk, b_cred_vfy)?;
         }
 
@@ -131,20 +134,20 @@ impl<C: CapConfig> TransferCircuit<C> {
             .enumerate()
         {
             // The output is not frozen.
-            circuit.constant_gate(output_ro.freeze_flag, C::ScalarField::zero())?;
+            circuit.constant_gate(output_ro.freeze_flag.into(), C::ScalarField::zero())?;
             // The first output is with native asset code and is for txn fees
             if i == 0 {
                 circuit.equal_gate(output_ro.asset_code, pub_input.native_asset_code)?;
-                output_ro.policy.enforce_dummy_policy(&mut circuit)?;
+                output_ro.policy.enforce_dummy_policy::<C>(&mut circuit)?;
             } else {
                 circuit.equal_gate(output_ro.asset_code, witness.asset_code)?;
                 output_ro
                     .policy
-                    .enforce_equal_policy(&mut circuit, &witness.policy)?;
+                    .enforce_equal_policy::<C>(&mut circuit, &witness.policy)?;
             }
 
             // commitment
-            let rc_out = output_ro.compute_record_commitment(&mut circuit)?;
+            let rc_out = output_ro.compute_record_commitment::<C>(&mut circuit)?;
             circuit.equal_gate(rc_out, expected_rc)?;
 
             // Range-check `amount`
@@ -167,7 +170,8 @@ impl<C: CapConfig> TransferCircuit<C> {
             .map(|ro| ro.amount)
             .collect();
 
-        let transfer_amount = circuit.preserve_balance(
+        let transfer_amount = TransactionGadgets::<C>::preserve_balance(
+            &mut circuit,
             pub_input.native_asset_code,
             witness.asset_code,
             pub_input.fee,
@@ -179,7 +183,7 @@ impl<C: CapConfig> TransferCircuit<C> {
         // `transfer_amount > asset_policy.reveal_threshold`
         let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
         let b_under_limit = circuit.check_in_range(amount_diff, AMOUNT_LEN)?;
-        let b_dummy_viewing_pk = witness.policy.is_dummy_viewing_pk(&mut circuit)?;
+        let b_dummy_viewing_pk = witness.policy.is_dummy_viewing_pk::<C>(&mut circuit)?;
         let under_limit_or_dummy_viewing_pk =
             circuit.logic_or(b_under_limit, b_dummy_viewing_pk)?;
         let b_correct_viewing_memo =
@@ -197,16 +201,16 @@ impl<C: CapConfig> TransferCircuit<C> {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &TransferWitnessVar,
         pub_input: &TransferPubInputVar,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         // 1. Prepare message to be encrypted
         let mut message: Vec<Variable> = vec![witness.asset_code];
-        let reveal_map_vars: Vec<Variable> = circuit.unpack(witness.policy.reveal_map, VIEWABLE_DATA_LEN)?
+        let reveal_map_vars: Vec<BoolVar> = circuit.unpack(witness.policy.reveal_map, VIEWABLE_DATA_LEN)?
                                             .into_iter()
                                             .rev() // unpack is in little endian
                                             .collect();
         let dummy_key = UserAddressVar::dummy(circuit);
         for input in witness.input_secrets.iter().skip(1) {
-            let is_dummy_record = input.ro.check_asset_code_dummy(circuit)?;
+            let is_dummy_record = input.ro.check_asset_code_dummy::<C>(circuit)?;
             // if record is dummy, then add dummy key to audit memo so that auditor can
             // recognize dummy records by looking at the key
             let addr_x = circuit.conditional_select(
@@ -239,7 +243,14 @@ impl<C: CapConfig> TransferCircuit<C> {
             bit_map_vars[0] = actual_reveal_bit;
             bit_map_vars[1] = actual_reveal_bit;
 
-            let revealed_vals = circuit.hadamard_product(&bit_map_vars, &vals)?;
+            let revealed_vals = TransactionGadgets::<C>::hadamard_product(
+                circuit,
+                &bit_map_vars
+                    .iter()
+                    .map(|&v| v.into())
+                    .collect::<Vec<Variable>>(),
+                &vals,
+            )?;
             message.extend_from_slice(&revealed_vals[..]);
         }
         for output_ro in witness.output_record_openings.iter().skip(1) {
@@ -251,13 +262,19 @@ impl<C: CapConfig> TransferCircuit<C> {
                 output_ro.blind,
             ];
 
-            let revealed_vals =
-                circuit.hadamard_product(&reveal_map_vars[..ASSET_TRACING_MAP_LEN], &vals)?;
+            let revealed_vals = TransactionGadgets::<C>::hadamard_product(
+                circuit,
+                &reveal_map_vars[..ASSET_TRACING_MAP_LEN]
+                    .iter()
+                    .map(|&v| v.into())
+                    .collect::<Vec<Variable>>(),
+                &vals,
+            )?;
             message.extend_from_slice(&revealed_vals[..]);
         }
 
         // 2. Derive viewing memo.
-        let derived_viewing_memo = ViewableMemoVar::derive(
+        let derived_viewing_memo = ViewableMemoVar::derive::<C>(
             circuit,
             &witness.policy.viewer_pk,
             &message,
@@ -267,7 +284,7 @@ impl<C: CapConfig> TransferCircuit<C> {
         // 3. Compare derived viewing_memo with that in the public input.
         pub_input
             .viewing_memo
-            .check_equal(circuit, &derived_viewing_memo)
+            .check_equal::<C>(circuit, &derived_viewing_memo)
     }
 }
 
@@ -344,7 +361,7 @@ impl TransferPubInputVar {
             .map(|rc| circuit.create_public_variable(rc.0))
             .collect::<Result<Vec<_>, PlonkError>>()?;
         let viewing_memo = ViewableMemoVar::new(circuit, &pub_input.viewing_memo)?;
-        viewing_memo.set_public(circuit)?;
+        viewing_memo.set_public::<C>(circuit)?;
         Ok(Self {
             root,
             native_asset_code,
@@ -415,7 +432,7 @@ mod tests {
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
         let rng = &mut ark_std::test_rng();
-        let mut input_ros = vec![RecordOpening::rand_for_test(rng); 5];
+        let mut input_ros = vec![RecordOpening::<Config>::rand_for_test(rng); 5];
         input_ros[0].asset_def = AssetDefinition::native();
         let output_ros = vec![RecordOpening::rand_for_test(rng); 4];
         let input_creds = vec![ExpirableCredential::dummy_unexpired().unwrap(); 5];

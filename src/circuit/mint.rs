@@ -26,7 +26,7 @@ use crate::{
 use ark_ff::Zero;
 use ark_std::{format, vec};
 use jf_plonk::{
-    circuit::{Circuit, PlonkCircuit, Variable},
+    circuit::{BoolVar, Circuit, PlonkCircuit, Variable},
     errors::PlonkError,
 };
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
@@ -56,21 +56,29 @@ impl<C: CapConfig> MintCircuit<C> {
         let pub_input = MintPubInputVar::new(&mut circuit, pub_input)?;
 
         // Check that public commitments are consistent with witness
-        let mint_rc = witness.mint_ro.compute_record_commitment(&mut circuit)?;
+        let mint_rc = witness
+            .mint_ro
+            .compute_record_commitment::<C>(&mut circuit)?;
         circuit.equal_gate(mint_rc, pub_input.mint_rc)?;
-        let chg_rc = witness.chg_ro.compute_record_commitment(&mut circuit)?;
+        let chg_rc = witness
+            .chg_ro
+            .compute_record_commitment::<C>(&mut circuit)?;
         circuit.equal_gate(chg_rc, pub_input.chg_rc)?;
 
         // Derive asset type code from secret seed and asset type digest
-        let mint_internal_ac =
-            circuit.derive_internal_asset_code(witness.ac_seed, witness.ac_digest)?;
+        let mint_internal_ac = TransactionGadgetsHelper::<C>::derive_internal_asset_code(
+            &mut circuit,
+            witness.ac_seed,
+            witness.ac_digest,
+        )?;
         circuit.equal_gate(mint_internal_ac, pub_input.mint_internal_ac)?;
 
         // Preserve balance
         circuit.add_gate(pub_input.fee, witness.chg_ro.amount, witness.fee_ro.amount)?;
 
         // Proof of spending
-        let (nullifier, root) = circuit.prove_spend(
+        let (nullifier, root) = TransactionGadgets::<C>::prove_spend(
+            &mut circuit,
             &witness.fee_ro,
             &witness.acc_member_witness,
             witness.creator_sk,
@@ -81,9 +89,9 @@ impl<C: CapConfig> MintCircuit<C> {
 
         // Check that records are not frozen
         let zero = C::ScalarField::zero();
-        circuit.constant_gate(witness.mint_ro.freeze_flag, zero)?;
-        circuit.constant_gate(witness.fee_ro.freeze_flag, zero)?;
-        circuit.constant_gate(witness.chg_ro.freeze_flag, zero)?;
+        circuit.constant_gate(witness.mint_ro.freeze_flag.into(), zero)?;
+        circuit.constant_gate(witness.fee_ro.freeze_flag.into(), zero)?;
+        circuit.constant_gate(witness.chg_ro.freeze_flag.into(), zero)?;
 
         // Range-check mint amount, note we do not need to range-check change amount as
         // it's no more than the input amount that has been range-checked before.
@@ -95,19 +103,27 @@ impl<C: CapConfig> MintCircuit<C> {
         circuit.equal_gate(witness.mint_ro.asset_code, pub_input.mint_ac)?;
         pub_input
             .mint_policy
-            .enforce_equal_policy(&mut circuit, &witness.mint_ro.policy)?;
+            .enforce_equal_policy::<C>(&mut circuit, &witness.mint_ro.policy)?;
 
         // Input/Change records should have native asset code and dummy policy
         circuit.equal_gate(witness.chg_ro.asset_code, pub_input.native_asset_code)?;
         circuit.equal_gate(witness.fee_ro.asset_code, pub_input.native_asset_code)?;
-        witness.chg_ro.policy.enforce_dummy_policy(&mut circuit)?;
-        witness.fee_ro.policy.enforce_dummy_policy(&mut circuit)?;
+        witness
+            .chg_ro
+            .policy
+            .enforce_dummy_policy::<C>(&mut circuit)?;
+        witness
+            .fee_ro
+            .policy
+            .enforce_dummy_policy::<C>(&mut circuit)?;
 
         // Input/Change records should have identical user addresses
         circuit.point_equal_gate(&witness.fee_ro.owner_addr.0, &witness.chg_ro.owner_addr.0)?;
 
         // Viewer memo is correctly constructed when `viewer_pk` is not null
-        let b_dummy_viewing_pk = pub_input.mint_policy.is_dummy_viewing_pk(&mut circuit)?;
+        let b_dummy_viewing_pk = pub_input
+            .mint_policy
+            .is_dummy_viewing_pk::<C>(&mut circuit)?;
         let b_correct_viewing_memo =
             Self::is_correct_viewing_memo(&mut circuit, &witness, &pub_input.viewing_memo)?;
         circuit.logic_or_gate(b_dummy_viewing_pk, b_correct_viewing_memo)?;
@@ -123,7 +139,7 @@ impl<C: CapConfig> MintCircuit<C> {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &MintWitnessVar,
         viewing_memo: &ViewableMemoVar,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         // 1. Prepare message to be encrypted: note (amount, asset_code, policy) are
         // public, thus no need to encrypt
         let mint_ro = &witness.mint_ro;
@@ -134,7 +150,7 @@ impl<C: CapConfig> MintCircuit<C> {
         ];
 
         // 2. Derive viewing memo.
-        let derived_viewing_memo = ViewableMemoVar::derive(
+        let derived_viewing_memo = ViewableMemoVar::derive::<C>(
             circuit,
             &witness.mint_ro.policy.viewer_pk,
             &message,
@@ -142,7 +158,7 @@ impl<C: CapConfig> MintCircuit<C> {
         )?;
 
         // 3. Compare derived viewing_memo with that in the public input.
-        viewing_memo.check_equal(circuit, &derived_viewing_memo)
+        viewing_memo.check_equal::<C>(circuit, &derived_viewing_memo)
     }
 }
 
@@ -226,9 +242,9 @@ impl MintPubInputVar {
         let mint_ac = circuit.create_public_variable(pub_input.mint_ac.0)?;
         let mint_internal_ac = circuit.create_public_variable(pub_input.mint_internal_ac.0)?;
         let mint_policy = AssetPolicyVar::new(circuit, &pub_input.mint_policy)?;
-        mint_policy.set_public(circuit)?;
+        mint_policy.set_public::<C>(circuit)?;
         let viewing_memo = ViewableMemoVar::new(circuit, &pub_input.viewing_memo)?;
-        viewing_memo.set_public(circuit)?;
+        viewing_memo.set_public::<C>(circuit)?;
         Ok(Self {
             root,
             native_asset_code,
@@ -269,7 +285,7 @@ mod tests {
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
         let rng = &mut ark_std::test_rng();
-        let mint_ro = RecordOpening::rand_for_test(rng);
+        let mint_ro = RecordOpening::<Config>::rand_for_test(rng);
         let mint_internal_ac = InternalAssetCode::new(AssetCodeSeed::generate(rng), &[]);
         let mint_ac = AssetCode::new_domestic_from_internal(&mint_internal_ac);
         let pub_input = MintPublicInput {

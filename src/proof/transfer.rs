@@ -131,7 +131,7 @@ pub fn preprocess<C: CapConfig>(
     tree_depth: u8,
 ) -> Result<(TransferProvingKey<C>, TransferVerifyingKey<C>, usize), TxnApiError> {
     let (dummy_circuit, n_constraints) =
-        TransferCircuit::build_for_preprocessing(n_inputs, n_outputs, tree_depth)?;
+        TransferCircuit::<C>::build_for_preprocessing(n_inputs, n_outputs, tree_depth)?;
     let (proving_key, verifying_key) =
         PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
             TxnApiError::FailedSnark(format!(
@@ -468,7 +468,7 @@ mod test {
         constants::MAX_TIMESTAMP_LEN,
         errors::TxnApiError,
         keys::{CredIssuerPubKey, UserAddress, UserKeyPair},
-        prelude::CapConfig,
+        prelude::{CapConfig, Config},
         proof::universal_setup_for_staging,
         structs::{Amount, AssetDefinition, ExpirableCredential},
         utils::params_builder::TransferParamsBuilder,
@@ -480,7 +480,7 @@ mod test {
         /// Return a bit indicating whether the credential is a dummy, unexpired
         /// one. This function only used in test.
         pub(crate) fn is_dummy_unexpired(&self) -> bool {
-            self.user_addr == UserAddress::default()
+            self.user_addr == UserAddress::<C>::default()
                 && self.creator_pk == CredIssuerPubKey::default()
                 && !self.is_expired(2u64.pow(MAX_TIMESTAMP_LEN as u32) - 2)
         }
@@ -490,10 +490,10 @@ mod test {
     fn test_transfer_witness_creation() {
         let rng = &mut ark_std::test_rng();
         let cred_expiry = 9998u64;
-        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypair = UserKeyPair::<Config>::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
-        let builder = TransferParamsBuilder::new_non_native(2, 6, None, user_keypairs)
+        let builder = TransferParamsBuilder::<Config>::new_non_native(2, 6, None, user_keypairs)
             .set_input_amounts(30u64.into(), &[25u64.into()])
             .set_output_amounts(19u64.into(), &Amount::from_vec(&[3, 4, 5, 6, 7])[..])
             .set_input_creds(cred_expiry);
@@ -532,7 +532,7 @@ mod test {
         assert_eq!(&witness.output_record_openings[1..], &builder.output_ros);
 
         // tranfer native asset type
-        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypair = UserKeyPair::<Config>::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
         let builder = TransferParamsBuilder::new_native(2, 3, None, user_keypairs)
             .set_input_amounts(20u64.into(), &Amount::from_vec(&[10])[..])
@@ -549,10 +549,10 @@ mod test {
         let cred_expiry = 9998u64;
         let valid_until = 1234u64;
 
-        let user_keypair = UserKeyPair::generate(rng);
+        let user_keypair = UserKeyPair::<Config>::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
         // transfer non-native asset type
-        let builder = TransferParamsBuilder::new_non_native(2, 3, None, user_keypairs)
+        let builder = TransferParamsBuilder::<Config>::new_non_native(2, 3, None, user_keypairs)
             .set_input_amounts(30u64.into(), &Amount::from_vec(&[10])[..])
             .set_output_amounts(19u64.into(), &Amount::from_vec(&[4, 6])[..])
             .set_input_creds(cred_expiry);
@@ -608,9 +608,9 @@ mod test {
         let num_input = 2;
         let num_output = 6;
         let depth = 10;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key_1, verifying_key_1, _) =
-            super::preprocess(&universal_param, num_input, num_output, depth)?;
+            super::preprocess::<Config>(&universal_param, num_input, num_output, depth)?;
 
         let cred_expiry = 9998u64;
         let valid_until = 1234u64;

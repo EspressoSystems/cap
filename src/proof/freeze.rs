@@ -99,7 +99,7 @@ pub fn preprocess<C: CapConfig>(
     tree_depth: u8,
 ) -> Result<(FreezeProvingKey<C>, FreezeVerifyingKey<C>, usize), TxnApiError> {
     let (dummy_circuit, n_constraints) =
-        FreezeCircuit::build_for_preprocessing(tree_depth, num_input)?;
+        FreezeCircuit::<C>::build_for_preprocessing(tree_depth, num_input)?;
 
     let (proving_key, verifying_key) =
         PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
@@ -202,7 +202,7 @@ impl<'a, C: CapConfig> FreezeWitness<'a, C> {
         input_ros
             .iter()
             .for_each(|ro| mt.push(ro.derive_record_commitment().to_field_element()));
-        let input_acc_member_witnesses: Vec<AccMemberWitness> = (0..num_input)
+        let input_acc_member_witnesses = (0..num_input)
             .map(|uid| {
                 AccMemberWitness::lookup_from_tree(&mt, uid as u64)
                     .expect_ok().unwrap() // safe unwrap()
@@ -355,6 +355,7 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
+        prelude::Config,
         proof::{freeze, universal_setup_for_staging},
         structs::Amount,
         utils::params_builder::FreezeParamsBuilder,
@@ -366,7 +367,7 @@ mod test {
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
-        let fee_keypair = UserKeyPair::generate(rng);
+        let fee_keypair = UserKeyPair::<Config>::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
         let fee_input_amount = Amount::from(10u64);
@@ -436,9 +437,9 @@ mod test {
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
-            freeze::preprocess(&universal_param, num_input, tree_depth)?;
+            freeze::preprocess::<Config>(&universal_param, num_input, tree_depth)?;
 
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
         let fee_input_amount = Amount::from(10u64);

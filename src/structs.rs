@@ -20,7 +20,7 @@ use crate::{
     utils::*,
 };
 use ark_ec::twisted_edwards_extended::GroupAffine;
-use ark_ff::{BigInteger, BigInteger256, Field, PrimeField, UniformRand, Zero};
+use ark_ff::{BigInteger, Field, PrimeField, UniformRand, Zero};
 use ark_serialize::*;
 use ark_std::{
     borrow::ToOwned,
@@ -58,7 +58,14 @@ pub enum NoteType {
 
 /// The random seed used in AssetCode derivation
 #[tagged_blob("ASSET_SEED")]
-#[derive(Debug, Copy, Clone, Default, CanonicalSerialize, CanonicalDeserialize, PartialEq)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig")
+)]
 pub struct AssetCodeSeed<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> AssetCodeSeed<C> {
@@ -69,7 +76,13 @@ impl<C: CapConfig> AssetCodeSeed<C> {
 }
 
 /// The digest of asset description
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig")
+)]
 pub(crate) struct AssetCodeDigest<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> AssetCodeDigest<C> {
@@ -82,8 +95,15 @@ impl<C: CapConfig> AssetCodeDigest<C> {
 
 /// A unique identifier/code for an asset type
 #[tagged_blob("INTERNAL_ASSET_CODE")]
-#[derive(
-    Debug, Clone, Copy, PartialEq, Default, CanonicalSerialize, CanonicalDeserialize, Hash, Eq,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct InternalAssetCode<C: CapConfig>(pub(crate) C::ScalarField);
 
@@ -200,18 +220,17 @@ impl TryFrom<primitive_types::U256> for Amount {
 
 /// Asset code structure
 #[tagged_blob("ASSET_CODE")]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    PartialOrd,
-    Ord,
-    Default,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Hash,
-    Eq,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    PartialOrd(bound = "C: CapConfig"),
+    Ord(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct AssetCode<C: CapConfig>(pub(crate) C::ScalarField);
 
@@ -469,17 +488,14 @@ impl RevealMap {
 /// * `freezer_pk` - freezer public key
 /// * `reveal_map` - a binary vector indicating the subset of asset record info
 ///   and identity attributes to be revealed to the viewer
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Clone,
-    Default,
-    CanonicalDeserialize,
-    CanonicalSerialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalDeserialize, CanonicalSerialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct AssetPolicy<C: CapConfig> {
     pub(crate) viewer_pk: ViewerPubKey<C>,
@@ -691,7 +707,7 @@ impl<C: CapConfig> AssetPolicy<C> {
     /// Transform to a list of scalars
     /// The order: (reveal_map, viewer_pk, cred_pk, freezer_pk)
     pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
-        let mut result = vec![self.reveal_map.into()];
+        let mut result = vec![self.reveal_map.to_scalar::<C>()];
         result.extend_from_slice(&self.viewer_pk.to_scalars());
         result.extend_from_slice(&self.cred_pk.to_scalars());
         result.extend_from_slice(&self.freezer_pk.to_scalars());
@@ -704,7 +720,15 @@ impl<C: CapConfig> AssetPolicy<C> {
 /// * `code` -- asset code as unique id code
 /// * `policy` -- asset policy attached
 #[tagged_blob("ASSET_DEF")]
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Default, CanonicalDeserialize, CanonicalSerialize)]
+#[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub struct AssetDefinition<C: CapConfig> {
     /// asset code as unique id code
     pub code: AssetCode<C>,
@@ -760,8 +784,15 @@ impl<C: CapConfig> AssetDefinition<C> {
 
 /// The blind factor used to produce a hiding commitment
 #[tagged_blob("BLIND")]
-#[derive(
-    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct BlindFactor<C: CapConfig>(pub(crate) C::ScalarField);
 
@@ -777,17 +808,16 @@ impl<C: CapConfig> BlindFactor<C> {
 
 /// The nullifier represents a spent/consumed asset record
 #[tagged_blob("NUL")]
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Hash,
-    CanonicalSerialize,
-    CanonicalDeserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    PartialOrd(bound = "C: CapConfig"),
+    Ord(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct Nullifier<C: CapConfig>(pub(crate) C::ScalarField);
 
@@ -803,7 +833,17 @@ impl<C: CapConfig> Nullifier<C> {
 
 /// Asset record to be published
 #[tagged_blob("REC")]
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Copy(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
+
 pub struct RecordCommitment<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> From<&RecordOpening<C>> for RecordCommitment<C> {
@@ -902,18 +942,16 @@ impl CanonicalDeserialize for FreezeFlag {
 
 /// The opening of an asset record, containing all fields (and secrets) required
 /// to compute commitment/proofs/.. values related to this asset record.
-#[derive(
-    Clone,
-    Debug,
-    Default,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalDeserialize,
-    CanonicalSerialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalDeserialize, CanonicalSerialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
+#[serde(bound = "C: CapConfig")]
 pub struct RecordOpening<C: CapConfig> {
     /// value
     pub amount: Amount,
@@ -989,8 +1027,7 @@ impl<C: CapConfig> RecordOpening<C> {
         // To minimize the number of Rescue calls, combine `reveal_map` and
         // `freeze_flag` to a single scalar `reveal_map << 1 + freeze_flag`
         let freeze_flag: u8 = self.freeze_flag.into();
-        let reveal_map_and_freeze_flag = C::ScalarField::from(self.asset_def.policy.reveal_map)
-            .double()
+        let reveal_map_and_freeze_flag = self.asset_def.policy.reveal_map.to_scalar::<C>().double()
             + C::ScalarField::from(freeze_flag);
 
         let reveal_threshold = C::ScalarField::from(self.asset_def.policy.reveal_threshold.0);
@@ -999,7 +1036,7 @@ impl<C: CapConfig> RecordOpening<C> {
             .commit(
                 &[
                     C::ScalarField::from(self.amount.0),
-                    C::ScalarField::from(&self.asset_def.code),
+                    self.asset_def.code.0,
                     user_pubkey_x,
                     user_pubkey_y,
                     viewer_pubkey_x,
@@ -1020,13 +1057,28 @@ impl<C: CapConfig> RecordOpening<C> {
 
 // The actual credential which is basically a Schnorr signature over attributes
 #[tagged_blob("CRED")]
-#[derive(Debug, Clone, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub(crate) struct Credential<C: CapConfig>(pub(crate) Signature<C::EmbeddedCurveParam>);
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
 /// created by an identity creator.
 #[tagged_blob("ID")]
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub struct IdentityAttribute<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> IdentityAttribute<C> {
@@ -1098,17 +1150,15 @@ impl<C: CapConfig> IdentityAttribute<C> {
 
 /// A credential with expiry created by a credential creator for a user
 /// testifying user's identity attributes
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
+#[serde(bound = "C: CapConfig")]
 pub struct ExpirableCredential<C: CapConfig> {
     pub(crate) user_addr: UserAddress<C>,
     pub(crate) attrs: Vec<IdentityAttribute<C>>,
@@ -1186,7 +1236,7 @@ impl<C: CapConfig> ExpirableCredential<C> {
 
     /// Create a dummy unexpired ExpirableCredential as placeholder.
     pub(crate) fn dummy_unexpired() -> Result<Self, TxnApiError> {
-        let dummy_user = UserAddress::default();
+        let dummy_user = UserAddress::<C>::default();
         let dummy_minter_keypair = CredIssuerKeyPair::default();
         let dummy_attrs = IdentityAttribute::default_vector();
         let dummy_expiry = 2u64.pow(MAX_TIMESTAMP_LEN as u32) - 1;
@@ -1209,7 +1259,14 @@ impl<C: CapConfig> ExpirableCredential<C> {
 /// Concretely, it is a ciphertext over details of a
 /// transaction, enabling asset viewing and identity viewing.
 #[tagged_blob("AUDMEMO")]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub struct ViewableMemo<C: CapConfig>(pub(crate) elgamal::Ciphertext<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewableMemo<C> {
@@ -1293,12 +1350,12 @@ impl<C: CapConfig> ViewableMemo<C> {
                             .collect::<Vec<_>>(),
                     );
                 }
-                let mut reveal_vals = asset_def.policy.reveal_map.hadamard_product(&vals);
+                let mut reveal_vals = asset_def.policy.reveal_map.hadamard_product::<C>(&vals);
                 // when the record is dummy, we replace the random secret key with a dummy one
                 // on the viewing memo so that viewer can recognize the record as
                 // dummy. Recall that random address on the record is needed for
                 // security reasons (it hides the nullifier key)
-                let (dummy_x, dummy_y) = (&UserAddress::default()).into();
+                let (dummy_x, dummy_y) = (&UserAddress::<C>::default()).into();
                 if input_ro.is_dummy() {
                     reveal_vals[0] = dummy_x;
                     reveal_vals[1] = dummy_y;
@@ -1322,7 +1379,7 @@ impl<C: CapConfig> ViewableMemo<C> {
                     .asset_def
                     .policy
                     .reveal_map
-                    .hadamard_product(&vals);
+                    .hadamard_product::<C>(&vals);
                 message.extend_from_slice(&reveal_vals);
             }
 
@@ -1354,14 +1411,19 @@ impl<C: CapConfig> ViewableMemo<C> {
         let mut seed = [0u8; 32];
         seed.copy_from_slice(&bytes[0..32]);
         let mut rng = rand_chacha::ChaChaRng::from_seed(seed);
-        let random_viewer_pk = ViewerPubKey::random(&mut rng);
+        let random_viewer_pk = ViewerPubKey::<C>::random(&mut rng);
         let msg_size = (input_ros_len - 1) * (VIEWABLE_DATA_LEN) + (output_ros_len - 1) * 4 + 1;
         ViewableMemo(random_viewer_pk.encrypt(randomizer, &vec![C::ScalarField::zero(); msg_size]))
     }
 }
 
 /// Transfer ViewableMemo decrypted
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig")
+)]
 pub struct ViewableData<C: CapConfig> {
     /// asset code of the associated policy
     pub asset_code: AssetCode<C>,
@@ -1420,7 +1482,7 @@ impl<C: CapConfig> ViewableData<C> {
             .reveal_map
             .is_blinding_factor_revealed()
         {
-            Some(BlindFactor::from(*v))
+            Some(BlindFactor(*v))
         } else {
             None
         }
@@ -1483,7 +1545,12 @@ impl<C: CapConfig> ViewableData<C> {
             let big_int = data[2].into_repr();
             let mut u128_max_bits_le = vec![true; 128];
             u128_max_bits_le.resize(256, false);
-            if big_int > BigInteger256::from_bits_le(&u128_max_bits_le) {
+            // if big_int > BigInteger256::from_bits_le(&u128_max_bits_le) {
+            if big_int
+                > <<C::ScalarField as PrimeField>::BigInt as BigInteger>::from_bits_le(
+                    &u128_max_bits_le,
+                )
+            {
                 return Err(TxnApiError::FailedViewableMemoDecryption(
                     "Invalid amount".to_ascii_lowercase(),
                 ));
@@ -1568,7 +1635,7 @@ impl ReceiverMemo {
             )
         })?;
 
-        let ro: RecordOpening = bincode::deserialize(&ro_bytes).map_err(|_| {
+        let ro: RecordOpening<C> = bincode::deserialize(&ro_bytes).map_err(|_| {
             DeserializationError::SerdeError(
                 "Unable to deserialize RecordOpening during ReceiverMemo decryption".to_string(),
             )
@@ -1590,7 +1657,8 @@ impl ReceiverMemo {
 
 /// All necessary information for the input record that is meant to pay
 /// transaction fee in all different transactions.
-#[derive(Debug, Clone)]
+#[derive(Derivative)]
+#[derivative(Debug(bound = "C: CapConfig"))]
 pub struct FeeInput<'kp, C: CapConfig> {
     /// Record opening
     pub ro: RecordOpening<C>,
@@ -1601,6 +1669,15 @@ pub struct FeeInput<'kp, C: CapConfig> {
     pub owner_keypair: &'kp UserKeyPair<C>,
 }
 
+impl<'kp, C: CapConfig> Clone for FeeInput<'kp, C> {
+    fn clone(&self) -> Self {
+        Self {
+            ro: self.ro.clone(),
+            acc_member_witness: self.acc_member_witness.clone(),
+            owner_keypair: &self.owner_keypair,
+        }
+    }
+}
 /// Fee structure containing fee input spending info, fee to pay and change
 /// record opening
 pub struct TxnFeeInfo<'kp, C: CapConfig> {
@@ -1679,7 +1756,7 @@ mod test {
         fn bitmap_to_scalar_conv() {
             let mut reveal_map = RevealMap::default();
             assert_eq!(
-                F::from(reveal_map), // (00)0,000,000,000 = 0
+                reveal_map.to_scalar::<Config>(), // (00)0,000,000,000 = 0
                 F::zero()
             );
             reveal_map.reveal_record_opening();
@@ -1689,12 +1766,12 @@ mod test {
             reveal_map.reveal_ith_id_attribute(5).unwrap();
             reveal_map.reveal_ith_id_attribute(6).unwrap();
             assert_eq!(
-                F::from(reveal_map), // (11)1,101,101,110 = 3950
+                reveal_map.to_scalar::<Config>(), // (11)1,101,101,110 = 3950
                 F::from(3950u32)
             );
             reveal_map.reveal_all_id_attributes();
             assert_eq!(
-                F::from(reveal_map), // (11)1,111,111,111 = 4095
+                reveal_map.to_scalar::<Config>(), // (11)1,111,111,111 = 4095
                 F::from(4095u32)
             );
         }
@@ -1710,9 +1787,9 @@ mod test {
                 let rand_u64 = rng.next_u64();
                 attrs[i] = F::from(rand_u64);
             }
-            assert_eq!(reveal_map.hadamard_product(&attrs), attrs);
+            assert_eq!(reveal_map.hadamard_product::<Config>(&attrs), attrs);
             assert_eq!(
-                RevealMap::default().hadamard_product(&attrs),
+                RevealMap::default().hadamard_product::<Config>(&attrs),
                 [zero; VIEWABLE_DATA_LEN]
             );
             let mut expected_mapped_vals = attrs.clone();
@@ -1726,7 +1803,10 @@ mod test {
             reveal_map.reveal_ith_id_attribute(2).unwrap();
             reveal_map.reveal_ith_id_attribute(4).unwrap();
             reveal_map.reveal_ith_id_attribute(5).unwrap();
-            assert_eq!(reveal_map.hadamard_product(&attrs), expected_mapped_vals);
+            assert_eq!(
+                reveal_map.hadamard_product::<Config>(&attrs),
+                expected_mapped_vals
+            );
         }
     }
 
@@ -1743,8 +1823,9 @@ mod test {
             let rng = &mut ark_std::test_rng();
             let tree_depth = 10;
             let max_degree = 32770;
-            let universal_param = universal_setup_for_staging(max_degree, rng)?;
-            let (proving_key, ..) = proof::mint::preprocess(&universal_param, tree_depth)?;
+            let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
+            let (proving_key, ..) =
+                proof::mint::preprocess::<Config>(&universal_param, tree_depth)?;
 
             let input_amount = Amount::from(10u64);
             let fee = Amount::from(4u64);
@@ -1791,10 +1872,10 @@ mod test {
         #[test]
         fn transfer() {
             let mut rng = ark_std::test_rng();
-            let viewer_keypair = ViewerKeyPair::generate(&mut rng);
+            let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);
             let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
             let freezer_keypair = FreezerKeyPair::generate(&mut rng);
-            let (..) = AssetCode::random(&mut rng);
+            let (..) = AssetCode::<Config>::random(&mut rng);
             let mut policy = AssetPolicy::default()
                 .set_viewer_pub_key(viewer_keypair.pub_key())
                 .set_cred_creator_pub_key(minter_keypair.pub_key())
@@ -1828,7 +1909,7 @@ mod test {
             );
             assert!(transfer_data.is_err());
 
-            let user_address = UserPubKey::default().address;
+            let user_address = UserPubKey::<Config>::default().address;
             let (x, y) = (&user_address).into();
 
             // Wrong amount
@@ -1850,20 +1931,26 @@ mod test {
 
     #[quickcheck]
     fn id_attr_from_to_bytes_is_deterministic(bytes: Vec<u8>) -> bool {
-        let empty_bytes_should_fail = bytes.is_empty() && IdentityAttribute::new(&bytes).is_err();
-        let extra_bytes_should_fail = bytes.len() > <Config as CapConfig>::PER_ATTR_BYTE_CAPACITY
-            && IdentityAttribute::new(&bytes).is_err();
+        let empty_bytes_should_fail =
+            bytes.is_empty() && IdentityAttribute::<Config>::new(&bytes).is_err();
+        let extra_bytes_should_fail = bytes.len()
+            > <Config as CapConfig>::PER_ATTR_BYTE_CAPACITY as usize
+            && IdentityAttribute::<Config>::new(&bytes).is_err();
 
         empty_bytes_should_fail
             || extra_bytes_should_fail
-            || bytes == IdentityAttribute::new(&bytes).unwrap().value().unwrap()
+            || bytes
+                == IdentityAttribute::<Config>::new(&bytes)
+                    .unwrap()
+                    .value()
+                    .unwrap()
     }
 
     #[test]
     fn test_expirable_credential() -> Result<(), TxnApiError> {
         let mut rng = ark_std::test_rng();
-        let user_keypair = UserKeyPair::generate(&mut rng);
-        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::<Config>::generate(&mut rng);
         let mut attrs = IdentityAttribute::random_vector(&mut rng);
         let cred_expiry = 1234u64;
         let now = 1000u64;
@@ -1883,7 +1970,7 @@ mod test {
 
         // invalid credential with wrong upk should fail
         let mut cred2 = cred.clone();
-        cred2.user_addr = UserKeyPair::generate(&mut rng).address();
+        cred2.user_addr = UserKeyPair::<Config>::generate(&mut rng).address();
         assert!(cred2.verify(now).is_err());
 
         // invalid credential with wrong attribute should fail
@@ -1917,7 +2004,7 @@ mod test {
     fn test_asset_code() {
         let rng = &mut ark_std::test_rng();
         let cap_token_description = b"cap_usdx";
-        let seed = AssetCodeSeed::generate(rng);
+        let seed = AssetCodeSeed::<Config>::generate(rng);
         let internal_asset_code = InternalAssetCode::new(seed, cap_token_description);
         let asset_code = AssetCode::new_domestic_from_internal(&internal_asset_code);
         assert!(asset_code.verify_domestic(&internal_asset_code).is_ok());
@@ -1925,7 +2012,7 @@ mod test {
         assert!(asset_code.verify_domestic(&bad_internal).is_err());
 
         let external_description = b"ERC20 token";
-        let external_asset_code = AssetCode::new_foreign(external_description);
+        let external_asset_code = AssetCode::<Config>::new_foreign(external_description);
         assert!(external_asset_code
             .verify_foreign(external_description)
             .is_ok());
@@ -1937,10 +2024,10 @@ mod test {
     #[test]
     fn test_asset_policy() {
         let mut rng = ark_std::test_rng();
-        let viewer_keypair = ViewerKeyPair::generate(&mut rng);
+        let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);
         let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
-        let (..) = AssetCode::random(&mut rng);
+        let (..) = AssetCode::<Config>::random(&mut rng);
         let policy = AssetPolicy::default()
             .set_viewer_pub_key(viewer_keypair.pub_key())
             .set_cred_creator_pub_key(minter_keypair.pub_key())
@@ -2058,7 +2145,8 @@ mod test {
         // asset code related
         let asset_code_seed = AssetCodeSeed::generate(&mut rng);
         let ser_bytes = bincode::serialize(&asset_code_seed).unwrap();
-        let asset_code_seed_rec: AssetCodeSeed = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let asset_code_seed_rec: AssetCodeSeed<Config> =
+            bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(asset_code_seed, asset_code_seed_rec);
 
         // record related
@@ -2104,16 +2192,16 @@ mod test {
         let receiver_memo = ReceiverMemo::from_ro(&mut rng, &ro, &[]).unwrap();
 
         let ser_bytes = bincode::serialize(&ro).unwrap();
-        let de: RecordOpening = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: RecordOpening<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, ro);
         let ser_bytes = bincode::serialize(&rc).unwrap();
-        let de: RecordCommitment = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: RecordCommitment<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, rc);
         let ser_bytes = bincode::serialize(&cred).unwrap();
-        let de: ExpirableCredential = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: ExpirableCredential<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, cred);
         let ser_bytes = bincode::serialize(&viewing_memo).unwrap();
-        let de: ViewableMemo = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: ViewableMemo<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, viewing_memo);
         let ser_bytes = bincode::serialize(&receiver_memo).unwrap();
         let de: ReceiverMemo = bincode::deserialize(&ser_bytes[..]).unwrap();

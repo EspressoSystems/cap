@@ -87,17 +87,20 @@ impl<C: CapConfig> FreezeCircuit<C> {
         let first_output = &witness.output_ros[0];
         // The first input/output are with native asset definition
         circuit.equal_gate(first_input.asset_code, pub_input.native_asset_code)?;
-        first_input.policy.enforce_dummy_policy(&mut circuit)?;
+        first_input.policy.enforce_dummy_policy::<C>(&mut circuit)?;
         circuit.equal_gate(first_output.asset_code, pub_input.native_asset_code)?;
-        first_output.policy.enforce_dummy_policy(&mut circuit)?;
+        first_output
+            .policy
+            .enforce_dummy_policy::<C>(&mut circuit)?;
         // The first input/output are not frozen
         let unfrozen = C::ScalarField::zero();
-        circuit.constant_gate(first_input.freeze_flag, unfrozen)?;
-        circuit.constant_gate(first_output.freeze_flag, unfrozen)?;
+        circuit.constant_gate(first_input.freeze_flag.into(), unfrozen)?;
+        circuit.constant_gate(first_output.freeze_flag.into(), unfrozen)?;
         // Fee balance
         circuit.add_gate(first_output.amount, pub_input.fee, first_input.amount)?;
         // Proof of spending
-        let (nullifier, root) = circuit.prove_spend(
+        let (nullifier, root) = TransactionGadgets::<C>::prove_spend(
+            &mut circuit,
             first_input,
             &witness.input_acc_member_witnesses[0],
             witness.fee_sk,
@@ -114,14 +117,18 @@ impl<C: CapConfig> FreezeCircuit<C> {
             .zip(witness.output_ros.iter().skip(1))
         {
             // Freezing flag flipped
-            circuit.add_gate(ro_in.freeze_flag, ro_out.freeze_flag, circuit.one())?;
+            circuit.add_gate(
+                ro_in.freeze_flag.into(),
+                ro_out.freeze_flag.into(),
+                circuit.one(),
+            )?;
             // Output ro preserves the amount, address, asset definition of input ro
             circuit.equal_gate(ro_in.amount, ro_out.amount)?;
             circuit.point_equal_gate(&ro_in.owner_addr.0, &ro_out.owner_addr.0)?;
             circuit.equal_gate(ro_in.asset_code, ro_out.asset_code)?;
             ro_in
                 .policy
-                .enforce_equal_policy(&mut circuit, &ro_out.policy)?;
+                .enforce_equal_policy::<C>(&mut circuit, &ro_out.policy)?;
         }
 
         // Check output commitments correctness
@@ -130,7 +137,7 @@ impl<C: CapConfig> FreezeCircuit<C> {
             .iter()
             .zip(pub_input.output_commitments.iter())
         {
-            let rc_out = ro_out.compute_record_commitment(&mut circuit)?;
+            let rc_out = ro_out.compute_record_commitment::<C>(&mut circuit)?;
             circuit.equal_gate(rc_out, expected_comm)?;
         }
 
@@ -148,14 +155,19 @@ impl<C: CapConfig> FreezeCircuit<C> {
             )
         {
             // Freezing public key cannot be dummy, unless record is dummy
-            let b_dummy_freeze_pk = ro_in.policy.is_dummy_freezer_pk(&mut circuit)?;
+            let b_dummy_freeze_pk = ro_in.policy.is_dummy_freezer_pk::<C>(&mut circuit)?;
             let b_not_dummy_freeze_pk = circuit.logic_neg(b_dummy_freeze_pk)?;
-            let b_is_dummy_ro = ro_in.check_asset_code_dummy(&mut circuit)?;
+            let b_is_dummy_ro = ro_in.check_asset_code_dummy::<C>(&mut circuit)?;
             circuit.logic_or_gate(b_not_dummy_freeze_pk, b_is_dummy_ro)?;
 
             // Proof of spending
-            let (nullifier, root) =
-                circuit.prove_spend(ro_in, acc_wit_in, freeze_sk, Spender::Freezer)?;
+            let (nullifier, root) = TransactionGadgets::<C>::prove_spend(
+                &mut circuit,
+                ro_in,
+                acc_wit_in,
+                freeze_sk,
+                Spender::Freezer,
+            )?;
             // enforce correct root if record is not dummy
             let is_correct_mt_root = circuit.check_equal(root, pub_input.merkle_root)?;
             circuit.logic_or_gate(is_correct_mt_root, b_is_dummy_ro)?;
@@ -281,9 +293,9 @@ mod tests {
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
-        let input_nullifiers: Vec<Nullifier> =
+        let input_nullifiers: Vec<Nullifier<Config>> =
             (0..5).map(|i| Nullifier(F::from(i as u8))).collect();
-        let output_commitments: Vec<RecordCommitment> = (6..10)
+        let output_commitments: Vec<RecordCommitment<Config>> = (6..10)
             .map(|i| RecordCommitment(F::from(i as u8)))
             .collect();
         let pub_input = FreezePublicInput {

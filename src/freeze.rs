@@ -32,16 +32,13 @@ use jf_primitives::{merkle_tree::AccMemberWitness, signatures::schnorr};
 use serde::{Deserialize, Serialize};
 
 /// Freezing note structure
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Clone,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct FreezeNote<C: CapConfig> {
     /// nullifiers for freezing/fee inputs
@@ -55,16 +52,13 @@ pub struct FreezeNote<C: CapConfig> {
 }
 
 /// Auxiliary info of FreezeNote: includes merkle root and fee
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Serialize,
-    Deserialize,
-    Clone,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct FreezeAuxInfo<C: CapConfig> {
     /// Accumulator state
@@ -229,7 +223,7 @@ mod test {
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             freeze::preprocess(&universal_param, num_input, tree_depth)?;
 
@@ -355,12 +349,12 @@ mod test {
             .is_err());
 
         // test receiver memos signature
-        let txn: TransactionNote = note.into();
+        let txn: TransactionNote<Config> = note.into();
         let recv_memos: Vec<_> = record_openings
             .iter()
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]).unwrap())
             .collect();
-        let sig = sign_receiver_memos(&keypair, &recv_memos).unwrap();
+        let sig = sign_receiver_memos::<Config>(&keypair, &recv_memos).unwrap();
         assert!(txn
             .verify_receiver_memos_signature(&recv_memos, &sig)
             .is_ok());

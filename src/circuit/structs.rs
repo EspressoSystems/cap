@@ -20,7 +20,7 @@ use ark_std::{format, ops::Neg, string::ToString, vec, vec::Vec};
 use jf_plonk::{
     circuit::{
         customized::ecc::{Point, PointVariable},
-        Circuit, PlonkCircuit, Variable,
+        BoolVar, Circuit, PlonkCircuit, Variable,
     },
     errors::{CircuitError::InternalError, PlonkError},
 };
@@ -62,7 +62,7 @@ impl ViewableMemoVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemoVar,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         if viewing_memo.0.symm_ctxts.len() != self.0.symm_ctxts.len() {
             return Err(PlonkError::CircuitError(InternalError(
                 "the compared viewing memo has different ciphertext length".to_string(),
@@ -77,7 +77,7 @@ impl ViewableMemoVar {
             .zip(viewing_memo.0.symm_ctxts.iter())
         {
             let flag = circuit.check_equal(left, right)?;
-            check_equal = <PlonkCircuit<_> as Circuit<_>>::mul(circuit, check_equal, flag)?;
+            check_equal = circuit.logic_and(check_equal, flag)?;
         }
         Ok(check_equal)
     }
@@ -112,7 +112,7 @@ pub(crate) struct RecordOpeningVar {
     pub(crate) asset_code: Variable,
     pub(crate) owner_addr: UserAddressVar,
     pub(crate) policy: AssetPolicyVar,
-    pub(crate) freeze_flag: Variable,
+    pub(crate) freeze_flag: BoolVar,
     pub(crate) blind: Variable,
 }
 
@@ -129,7 +129,7 @@ impl RecordOpeningVar {
                 .create_point_variable(Point::from(ro.pub_key.address_internal().into_affine()))?,
         );
         let policy = AssetPolicyVar::new(circuit, &ro.asset_def.policy)?;
-        let freeze_flag = circuit.create_bool_variable(ro.freeze_flag.into())?;
+        let freeze_flag = circuit.create_boolean_variable(ro.freeze_flag.into())?;
         let blind = circuit.create_variable(ro.blind.0)?;
         Ok(Self {
             amount,
@@ -152,7 +152,12 @@ impl RecordOpeningVar {
         // freeze_flag`
         let zero_var = circuit.zero();
         let reveal_and_freeze = circuit.lc(
-            &[self.policy.reveal_map, self.freeze_flag, zero_var, zero_var],
+            &[
+                self.policy.reveal_map,
+                self.freeze_flag.into(),
+                zero_var,
+                zero_var,
+            ],
             &[
                 C::ScalarField::from(2u32),
                 C::ScalarField::one(),
@@ -182,7 +187,7 @@ impl RecordOpeningVar {
     pub(crate) fn check_asset_code_dummy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         let zero_if_dummy = circuit.add_constant(self.asset_code, &C::DUMMY_ASSET_CODE.0.neg())?;
         circuit.check_is_zero(zero_if_dummy)
     }
@@ -203,7 +208,7 @@ impl AssetPolicyVar {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicy<C>,
     ) -> Result<Self, PlonkError> {
-        let reveal_map = circuit.create_variable(C::ScalarField::from(policy.reveal_map))?;
+        let reveal_map = circuit.create_variable(policy.reveal_map.to_scalar::<C>())?;
         let viewer_pk = circuit.create_enc_key_variable(&policy.viewer_pk.0)?;
         let cred_pk = circuit.create_signature_vk_variable(&policy.cred_pk.0)?;
         let freezer_pk =
@@ -255,10 +260,10 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
-        let dummy_viewer = self.is_dummy_viewing_pk(circuit)?;
-        let dummy_cred_pk = self.is_dummy_cred_pk(circuit)?;
-        let dummy_freezer_pk = self.is_dummy_freezer_pk(circuit)?;
+    ) -> Result<BoolVar, PlonkError> {
+        let dummy_viewer = self.is_dummy_viewing_pk::<C>(circuit)?;
+        let dummy_cred_pk = self.is_dummy_cred_pk::<C>(circuit)?;
+        let dummy_freezer_pk = self.is_dummy_freezer_pk::<C>(circuit)?;
 
         let reveal_map_plus_reveal_threshold =
             circuit.add(self.reveal_map, self.reveal_threshold)?;
@@ -294,7 +299,7 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         let a_eq = circuit.check_equal(self.reveal_map, policy.reveal_map)?;
         let b_eq = circuit.check_equal_point(&self.viewer_pk.0, &policy.viewer_pk.0)?;
         let c_eq = circuit.check_equal_point(&self.cred_pk.0, &policy.cred_pk.0)?;
@@ -309,7 +314,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_cred_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.cred_pk.0)
     }
 
@@ -318,7 +323,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_viewing_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.viewer_pk.0)
     }
 
@@ -327,7 +332,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_freezer_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.freezer_pk)
     }
 }
@@ -396,7 +401,7 @@ impl ExpirableCredVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         valid_until: Variable,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<BoolVar, PlonkError> {
         if self.attrs.len() != ATTRS_LEN {
             return Err(PlonkError::CircuitError(InternalError(format!(
                 "wrong number of attributes in credential: {0}",
@@ -441,7 +446,7 @@ mod tests {
     use ark_ff::{One, Zero};
     use ark_std::{test_rng, vec::Vec};
     use jf_plonk::{
-        circuit::{Circuit, PlonkCircuit, Variable},
+        circuit::{BoolVar, Circuit, PlonkCircuit},
         errors::PlonkError,
     };
 
@@ -455,11 +460,11 @@ mod tests {
     fn build_verify_cred_circuit(
         valid_until: F,
         expirable_cred: &ExpirableCredential<Config>,
-    ) -> Result<(Variable, ExpirableCredVar, PlonkCircuit<F>), PlonkError> {
+    ) -> Result<(BoolVar, ExpirableCredVar, PlonkCircuit<F>), PlonkError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let valid_until = circuit.create_variable(valid_until)?;
         let expirable_cred = ExpirableCredVar::new(&mut circuit, expirable_cred)?;
-        let b = expirable_cred.verify(&mut circuit, valid_until)?;
+        let b = expirable_cred.verify::<Config>(&mut circuit, valid_until)?;
         Ok((b, expirable_cred, circuit))
     }
 
@@ -467,7 +472,7 @@ mod tests {
     fn test_verify_expirable_credential() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
         let minter_keypair = CredIssuerKeyPair::generate(rng);
-        let user = UserKeyPair::generate(rng);
+        let user = UserKeyPair::<Config>::generate(rng);
         let expiry = 9999u64;
         let attrs = IdentityAttribute::random_vector(rng);
         let expirable_cred =
@@ -476,7 +481,7 @@ mod tests {
         // Happy path
         let valid_until = F::from(expiry - 100u64);
         let (b, cred_var, mut circuit) = build_verify_cred_circuit(valid_until, &expirable_cred)?;
-        assert_eq!(circuit.witness(b)?, F::one());
+        assert_eq!(circuit.witness(b.into())?, F::one());
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
 
         // Wrong credential (prover response in Schnorr) should fail.
@@ -498,11 +503,11 @@ mod tests {
     #[test]
     fn test_compute_record_commitment_consistency() -> Result<(), PlonkError> {
         let rng = &mut test_rng();
-        let record_open = RecordOpening::rand_for_test(rng);
+        let record_open = RecordOpening::<Config>::rand_for_test(rng);
         let record_comm = record_open.derive_record_commitment();
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let ro_var = RecordOpeningVar::new(&mut circuit, &record_open)?;
-        let rc_var = ro_var.compute_record_commitment(&mut circuit)?;
+        let rc_var = ro_var.compute_record_commitment::<Config>(&mut circuit)?;
 
         // check output consistency
         assert_eq!(record_comm.0, circuit.witness(rc_var)?);
@@ -522,17 +527,17 @@ mod tests {
     fn test_enforce_dummy_policy() -> Result<(), PlonkError> {
         // good path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let dummy_policy = AssetPolicy::default();
+        let dummy_policy = AssetPolicy::<Config>::default();
         let dummy_policy = AssetPolicyVar::new(&mut circuit, &dummy_policy)?;
-        dummy_policy.enforce_dummy_policy(&mut circuit)?;
+        dummy_policy.enforce_dummy_policy::<Config>(&mut circuit)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
         // bad path
         let rng = &mut test_rng();
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let policy = AssetPolicy::rand_for_test(rng);
+        let policy = AssetPolicy::<Config>::rand_for_test(rng);
 
         let policy = AssetPolicyVar::new(&mut circuit, &policy)?;
-        policy.enforce_dummy_policy(&mut circuit)?;
+        policy.enforce_dummy_policy::<Config>(&mut circuit)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
         Ok(())
@@ -543,20 +548,20 @@ mod tests {
         let mut rng = &mut test_rng();
         // happy path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let policy1 = AssetPolicy::rand_for_test(&mut rng);
+        let policy1 = AssetPolicy::<Config>::rand_for_test(&mut rng);
         let policy2 = policy1.clone();
         let policy1 = AssetPolicyVar::new(&mut circuit, &policy1)?;
         let policy2 = AssetPolicyVar::new(&mut circuit, &policy2)?;
-        policy1.enforce_equal_policy(&mut circuit, &policy2)?;
+        policy1.enforce_equal_policy::<Config>(&mut circuit, &policy2)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
 
         // error path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let policy1 = AssetPolicy::rand_for_test(&mut rng);
-        let policy2 = AssetPolicy::rand_for_test(&mut rng);
+        let policy1 = AssetPolicy::<Config>::rand_for_test(&mut rng);
+        let policy2 = AssetPolicy::<Config>::rand_for_test(&mut rng);
         let policy1 = AssetPolicyVar::new(&mut circuit, &policy1)?;
         let policy2 = AssetPolicyVar::new(&mut circuit, &policy2)?;
-        policy1.enforce_equal_policy(&mut circuit, &policy2)?;
+        policy1.enforce_equal_policy::<Config>(&mut circuit, &policy2)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_err());
 
         Ok(())
@@ -572,18 +577,18 @@ mod tests {
         let data: Vec<F> = (0..10).map(|i| F::from(i as u32)).collect();
         let mut data2 = data.clone();
         data2[0] = F::from(1u32);
-        let pk = ViewerKeyPair::generate(rng).pub_key();
-        let pk2 = ViewerKeyPair::generate(rng).pub_key();
+        let pk = ViewerKeyPair::<Config>::generate(rng).pub_key();
+        let pk2 = ViewerKeyPair::<Config>::generate(rng).pub_key();
         let enc_rand = Fj::from(324u32);
         let enc_rand_2 = Fj::from(23432u32);
 
-        let viewing_memo_1 = ViewableMemo(pk.encrypt(enc_rand, &data));
+        let viewing_memo_1 = ViewableMemo::<Config>(pk.encrypt(enc_rand, &data));
         // different pub_key
-        let viewing_memo_2 = ViewableMemo(pk2.encrypt(enc_rand, &data));
+        let viewing_memo_2 = ViewableMemo::<Config>(pk2.encrypt(enc_rand, &data));
         // different data
-        let viewing_memo_3 = ViewableMemo(pk.encrypt(enc_rand, &data2));
+        let viewing_memo_3 = ViewableMemo::<Config>(pk.encrypt(enc_rand, &data2));
         // different enc_rand
-        let viewing_memo_4 = ViewableMemo(pk.encrypt(enc_rand_2, &data));
+        let viewing_memo_4 = ViewableMemo::<Config>(pk.encrypt(enc_rand_2, &data));
 
         check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_1, F::one())?;
         check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_2, F::zero())?;
@@ -591,7 +596,7 @@ mod tests {
         check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_4, F::zero())?;
 
         // should return error when compared to an viewing memowith different format
-        let viewing_memo_5 = ViewableMemo(pk.encrypt(enc_rand, &[]));
+        let viewing_memo_5 = ViewableMemo::<Config>(pk.encrypt(enc_rand, &[]));
         assert!(
             check_check_equal_viewing_memo(&viewing_memo_1, &viewing_memo_5, F::zero()).is_err()
         );
@@ -607,9 +612,9 @@ mod tests {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let viewing_memo_1 = ViewableMemoVar::new(&mut circuit, viewing_memo_1)?;
         let viewing_memo_2 = ViewableMemoVar::new(&mut circuit, viewing_memo_2)?;
-        let flag = viewing_memo_1.check_equal(&mut circuit, &viewing_memo_2)?;
+        let flag = viewing_memo_1.check_equal::<Config>(&mut circuit, &viewing_memo_2)?;
 
-        assert_eq!(circuit.witness(flag)?, expect_equal);
+        assert_eq!(circuit.witness(flag.into())?, expect_equal);
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
         Ok(())
     }

@@ -31,16 +31,13 @@ use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
 
 /// Asset issuance/Mint note structure for single newly minted asset type.
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalDeserialize,
-    CanonicalSerialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalDeserialize, CanonicalSerialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct MintNote<C: CapConfig> {
     /// nullifier for the input (i.e. transaction fee record)
@@ -64,16 +61,13 @@ pub struct MintNote<C: CapConfig> {
 }
 
 /// Auxiliary info of `MintNote`
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalDeserialize,
-    CanonicalSerialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalDeserialize, CanonicalSerialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct MintAuxInfo<C: CapConfig> {
     /// Merkle tree accumulator root
@@ -230,7 +224,7 @@ mod test {
         let tree_depth = 10;
         // increasing the max_degree since bls12_377 requires a larger one
         let max_degree = 32770;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             proof::mint::preprocess(&universal_param, tree_depth)?;
 
@@ -385,7 +379,7 @@ mod test {
         // test receiver memos and signature embedding the mint note in a transaction
         // note
         let recv_memos = [ReceiverMemo::from_ro(rng, &builder.mint_ro, &[]).unwrap()];
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos).unwrap();
+        let sig = sign_receiver_memos::<Config>(&sig_keypair, &recv_memos).unwrap();
         let txn = TransactionNote::Mint(Box::new(note.clone()));
         assert!(
             txn.verify_receiver_memos_signature(&recv_memos, &sig)
@@ -405,7 +399,7 @@ mod test {
         assert_eq!(visible_data.asset_code, builder.asset_def.code);
 
         // check receiver memos signature
-        let txn: TransactionNote = note.into();
+        let txn: TransactionNote<Config> = note.into();
         assert!(
             txn.verify_receiver_memos_signature(&recv_memos, &sig)
                 .is_ok(),

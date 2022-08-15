@@ -122,7 +122,7 @@ pub fn universal_setup_for_staging<R: RngCore + CryptoRng, C: CapConfig>(
     max_degree: usize,
     _rng: &mut R,
 ) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
-    load_srs(max_degree)
+    load_srs::<C>(max_degree)
 }
 
 #[cfg(not(feature = "bn254"))]

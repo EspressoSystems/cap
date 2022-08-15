@@ -43,16 +43,13 @@ use serde::{Deserialize, Serialize};
 
 /// Anonymous Transfer note structure for single sender, single asset type (+
 /// native asset type for fees)
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    Clone,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct TransferNote<C: CapConfig> {
     /// nullifier for inputs
@@ -70,16 +67,13 @@ pub struct TransferNote<C: CapConfig> {
 
 /// Auxiliary info of TransferNote: includes merkle root, native asset, fee,
 /// valid max time and receiver memos verification key
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Hash,
-    CanonicalSerialize,
-    CanonicalDeserialize,
-    Clone,
-    Serialize,
-    Deserialize,
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
 )]
 pub struct AuxInfo<C: CapConfig> {
     /// Accumulator state
@@ -98,7 +92,8 @@ pub struct AuxInfo<C: CapConfig> {
 
 /// All necessary information for each input record in the `TransferNote`
 /// generation.
-#[derive(Debug, Clone)]
+#[derive(Derivative)]
+#[derivative(Debug(bound = "C: CapConfig"))]
 pub struct TransferNoteInput<'kp, C: CapConfig> {
     /// Record opening of the input record.
     pub ro: RecordOpening<C>,
@@ -110,6 +105,17 @@ pub struct TransferNoteInput<'kp, C: CapConfig> {
     /// The identity credential of the user. Optional, only needed if asset
     /// policy has a non-empty `ViewerPubKey`.
     pub cred: Option<ExpirableCredential<C>>,
+}
+
+impl<'kp, C: CapConfig> Clone for TransferNoteInput<'kp, C> {
+    fn clone(&self) -> Self {
+        Self {
+            ro: self.ro.clone(),
+            acc_member_witness: self.acc_member_witness.clone(),
+            owner_keypair: &self.owner_keypair,
+            cred: self.cred.clone(),
+        }
+    }
 }
 
 impl<'kp, C: CapConfig> From<FeeInput<'kp, C>> for TransferNoteInput<'kp, C> {
@@ -287,8 +293,8 @@ impl<C: CapConfig> TransferNote<C> {
                 "input records and output records should NOT be empty".to_string(),
             ));
         }
-        let input_ros: Vec<&RecordOpening> = inputs.iter().map(|input| &input.ro).collect();
-        let output_refs: Vec<&RecordOpening> = outputs.iter().collect();
+        let input_ros: Vec<&RecordOpening<C>> = inputs.iter().map(|input| &input.ro).collect();
+        let output_refs: Vec<&RecordOpening<C>> = outputs.iter().collect();
         check_proving_key_consistency(proving_key, &inputs, outputs.len())?;
         check_input_pub_keys(&inputs)?;
         check_dummy_inputs(&input_ros)?;
@@ -428,13 +434,18 @@ mod tests {
         let extra_proof_bound_data = "0x12345678901234567890".as_bytes().to_vec();
 
         let mut prng = ark_std::test_rng();
-        let domain_size =
-            compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth).unwrap();
-        let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
+        let domain_size = compute_universal_param_size::<Config>(
+            NoteType::Transfer,
+            num_input,
+            num_output,
+            depth,
+        )
+        .unwrap();
+        let srs = universal_setup_for_staging::<_, Config>(domain_size, &mut prng).unwrap();
         let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
-        let keypair1 = UserKeyPair::generate(&mut prng);
-        let keypair2 = UserKeyPair::generate(&mut prng);
+        let keypair1 = UserKeyPair::<Config>::generate(&mut prng);
+        let keypair2 = UserKeyPair::<Config>::generate(&mut prng);
 
         // ====================================
         // a transfer with 0 fee
@@ -592,14 +603,18 @@ mod tests {
         // 6. Multiple non-native asset type should fail, currently only support
         // single type transfer (apart from native for fee)
         {
-            let keypair = UserKeyPair::generate(&mut prng);
+            let keypair = UserKeyPair::<Config>::generate(&mut prng);
             let num_input = 3;
             let num_output = 3;
 
-            let domain_size =
-                compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth)
-                    .unwrap();
-            let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
+            let domain_size = compute_universal_param_size::<Config>(
+                NoteType::Transfer,
+                num_input,
+                num_output,
+                depth,
+            )
+            .unwrap();
+            let srs = universal_setup_for_staging::<_, Config>(domain_size, &mut prng).unwrap();
 
             let (prover_key, ..) = preprocess(&srs, num_input, num_output, depth).unwrap();
 
@@ -741,10 +756,16 @@ mod tests {
         let extra_proof_bound_data = "0x12345678901234567890".as_bytes().to_vec();
 
         let mut prng = ark_std::test_rng();
-        let domain_size =
-            compute_universal_param_size(NoteType::Transfer, num_input, num_output, depth).unwrap();
-        let srs = universal_setup_for_staging(domain_size, &mut prng).unwrap();
-        let (prover_key, verifier_key, _) = preprocess(&srs, num_input, num_output, depth).unwrap();
+        let domain_size = compute_universal_param_size::<Config>(
+            NoteType::Transfer,
+            num_input,
+            num_output,
+            depth,
+        )
+        .unwrap();
+        let srs = universal_setup_for_staging::<_, Config>(domain_size, &mut prng).unwrap();
+        let (prover_key, verifier_key, _) =
+            preprocess::<Config>(&srs, num_input, num_output, depth).unwrap();
 
         let fee_input = Amount::from(30u64);
         let fee_chg = Amount::from(19u64);

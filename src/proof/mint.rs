@@ -73,7 +73,7 @@ pub fn preprocess<C: CapConfig>(
     srs: &UniversalSrs<C::PairingCurve>,
     tree_depth: u8,
 ) -> Result<(MintProvingKey<C>, MintVerifyingKey<C>, usize), TxnApiError> {
-    let (dummy_circuit, n_constraints) = MintCircuit::build_for_preprocessing(tree_depth)?;
+    let (dummy_circuit, n_constraints) = MintCircuit::<C>::build_for_preprocessing(tree_depth)?;
 
     let (proving_key, verifying_key) =
         PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
@@ -301,12 +301,12 @@ mod test {
         let input_amount = Amount::from(30u64);
         let fee = Amount::from(10u64);
         let mint_amount = Amount::from(15u64);
-        let minter_keypair = UserKeyPair::generate(rng);
-        let receiver_keypair = UserKeyPair::generate(rng);
-        let viewer_keypair = ViewerKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::<Config>::generate(rng);
+        let receiver_keypair = UserKeyPair::<Config>::generate(rng);
+        let viewer_keypair = ViewerKeyPair::<Config>::generate(rng);
 
         // transfer non-native asset type
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,
@@ -324,7 +324,7 @@ mod test {
 
         // negative fee should fail
         let bad_fee = input_amount + Amount::from(1u64);
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,
@@ -349,7 +349,7 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 10;
         let max_degree = 32770;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
             mint::preprocess::<Config>(&universal_param, tree_depth)?;
 
@@ -361,7 +361,7 @@ mod test {
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let recv_memo_ver_key = schnorr::KeyPair::generate(rng).ver_key();
 
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,

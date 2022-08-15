@@ -11,7 +11,6 @@
 
 use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
 use ark_ec::{twisted_edwards_extended::GroupAffine, AffineCurve};
-use ark_ff::PrimeField;
 use jf_plonk::{
     circuit::{
         customized::{ecc::PointVariable, rescue::RescueGadget},
@@ -20,9 +19,8 @@ use jf_plonk::{
     errors::PlonkError,
 };
 use jf_primitives::circuit::prf::PrfGadget;
-use jf_rescue::RescueParameter;
 
-pub(crate) trait TransactionGadgetsHelper {
+pub(crate) trait TransactionGadgetsHelper<C: CapConfig> {
     fn derive_internal_asset_code(
         &mut self,
         seed: Variable,
@@ -42,7 +40,7 @@ pub(crate) trait TransactionGadgetsHelper {
     ) -> Result<Variable, PlonkError>;
 }
 
-impl<F: RescueParameter> TransactionGadgetsHelper for PlonkCircuit<F> {
+impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> {
     fn derive_internal_asset_code(
         &mut self,
         seed: Variable,
@@ -51,16 +49,13 @@ impl<F: RescueParameter> TransactionGadgetsHelper for PlonkCircuit<F> {
         self.eval_prf(seed, &[aux])
     }
 
-    fn derive_user_address<C: CapConfig<ScalarField = F>>(
-        &mut self,
-        secret_key: Variable,
-    ) -> Result<UserAddressVar, PlonkError> {
+    fn derive_user_address(&mut self, secret_key: Variable) -> Result<UserAddressVar, PlonkError> {
         let base = GroupAffine::<C::EmbeddedCurveParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
     }
 
-    fn derive_nullifier_key<C: CapConfig<ScalarField = F>>(
+    fn derive_nullifier_key(
         &mut self,
         secret_key: Variable,
         public_key: &PointVariable,
@@ -116,7 +111,11 @@ mod tests {
 
         let seed_var = circuit.create_variable(asset_code_seed.0)?;
         let aux_var = circuit.create_variable(aux.0)?;
-        let asset_code_var = circuit.derive_internal_asset_code(seed_var, aux_var)?;
+        let asset_code_var = TransactionGadgetsHelper::<Config>::derive_internal_asset_code(
+            &mut circuit,
+            seed_var,
+            aux_var,
+        )?;
 
         // Check asset_code consistency
         assert_eq!(internal_asset_code.0, circuit.witness(asset_code_var)?);
@@ -136,7 +135,8 @@ mod tests {
 
         let spend_key = fr_to_fq::<_, EmbeddedCurveParam>(key_pair.address_secret_ref());
         let spend_key_var = circuit.create_variable(spend_key)?;
-        let address_var = circuit.derive_user_address(spend_key_var)?;
+        let address_var =
+            TransactionGadgetsHelper::<Config>::derive_user_address(&mut circuit, spend_key_var)?;
 
         // Check address consistency
         let (address_x, address_y): (F, F) = (&key_pair.address()).into();
@@ -163,7 +163,11 @@ mod tests {
         // Check derivation from freezer secret key
         let spend_key_var = circuit.create_variable(spend_key)?;
         let freezer_pk_var = circuit.create_point_variable(Point::from(freezer_public_key))?;
-        let nullifier_key_var = circuit.derive_nullifier_key(spend_key_var, &freezer_pk_var)?;
+        let nullifier_key_var = TransactionGadgetsHelper::<Config>::derive_nullifier_key(
+            &mut circuit,
+            spend_key_var,
+            &freezer_pk_var,
+        )?;
         let nullifier_key = freezer_keypair.derive_nullifier_key(&user_public_key.address());
 
         // Check address consistency
@@ -181,7 +185,11 @@ mod tests {
         let user_pk_var = circuit.create_point_variable(Point::from(
             user_public_key.address_internal().into_affine(),
         ))?;
-        let nullifier_key_var = circuit.derive_nullifier_key(freezer_key_var, &user_pk_var)?;
+        let nullifier_key_var = TransactionGadgetsHelper::<Config>::derive_nullifier_key(
+            &mut circuit,
+            freezer_key_var,
+            &user_pk_var,
+        )?;
         let nullifier_key_2 = user_key_pair.derive_nullifier_key(&freezer_keypair.pub_key());
         assert_eq!(nullifier_key, nullifier_key_2);
 
@@ -207,7 +215,12 @@ mod tests {
         let key_var = circuit.create_variable(nullifier_key.0)?;
         let uid_var = circuit.create_variable(uid_scalar)?;
         let commitment_var = circuit.create_variable(commitment)?;
-        let nullifier_var = circuit.nullify(key_var, uid_var, commitment_var)?;
+        let nullifier_var = TransactionGadgetsHelper::<Config>::nullify(
+            &mut circuit,
+            key_var,
+            uid_var,
+            commitment_var,
+        )?;
 
         let nullifier = nullifier_key.nullify(uid, &RecordCommitment(commitment));
         // Check nullifier consistency

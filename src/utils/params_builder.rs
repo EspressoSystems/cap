@@ -75,14 +75,14 @@ impl<C: CapConfig> TxnsParams<C> {
         let transfer_num_output = 3;
         let freeze_num_input = 3;
 
-        let domain_size = compute_universal_param_size(
+        let domain_size = compute_universal_param_size::<C>(
             NoteType::Transfer,
             transfer_num_input,
             transfer_num_output,
             tree_depth,
         )
         .unwrap();
-        let srs = proof::universal_setup_for_staging(domain_size, rng).unwrap();
+        let srs = proof::universal_setup_for_staging::<_, C>(domain_size, rng).unwrap();
         let (transfer_prover_key, transfer_verifier_key, _) =
             transfer::preprocess(&srs, transfer_num_input, transfer_num_output, tree_depth)
                 .unwrap();
@@ -91,7 +91,7 @@ impl<C: CapConfig> TxnsParams<C> {
             freeze::preprocess(&srs, freeze_num_input, tree_depth).unwrap();
 
         let valid_until = 1000;
-        let user_keypairs: Vec<UserKeyPair> = (0..transfer_num_input)
+        let user_keypairs: Vec<UserKeyPair<C>> = (0..transfer_num_input)
             .into_iter()
             .map(|_| UserKeyPair::generate(rng))
             .collect();
@@ -134,7 +134,7 @@ impl<C: CapConfig> TxnsParams<C> {
             .collect();
 
         let mut fee_keypairs = vec![];
-        let mut freezing_keypairs: Vec<Vec<FreezerKeyPair>> = vec![];
+        let mut freezing_keypairs: Vec<Vec<FreezerKeyPair<C>>> = vec![];
         (0..num_freeze_txn).for_each(|_| {
             fee_keypairs.push(UserKeyPair::generate(rng));
             let freezers = (0..freeze_num_input - 1)
@@ -192,7 +192,7 @@ impl<C: CapConfig> TxnsParams<C> {
             offset += builder.input_ros().len() as u64 + 1;
         }
 
-        let transfer_txns: Vec<TransactionNote> = transfer_builders
+        let transfer_txns: Vec<TransactionNote<C>> = transfer_builders
             .into_par_iter()
             .map(|builder| {
                 let rng = &mut ark_std::test_rng();
@@ -816,7 +816,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]))
             .collect();
         let recv_memos = recv_memos_res?;
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos)?;
+        let sig = sign_receiver_memos::<C>(&sig_keypair, &recv_memos)?;
         Ok((note, recv_memos, sig))
     }
 
@@ -871,7 +871,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]))
             .collect();
         let recv_memos = recv_memos_res?;
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos)?;
+        let sig = sign_receiver_memos::<C>(&sig_keypair, &recv_memos)?;
         Ok((note, recv_memos, sig))
     }
 }
@@ -1173,7 +1173,7 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
             freezing_keypairs.len(),
             "Should be same number of (non-fee) inputs and freezing keypairs"
         );
-        let inputs: Vec<FreezeNoteInput> = input_amounts
+        let inputs: Vec<FreezeNoteInput<C>> = input_amounts
             .iter()
             .zip(freezing_keypairs.iter())
             .map(|(amount, keypair)| {

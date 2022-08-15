@@ -149,6 +149,9 @@ extern crate std;
 #[macro_use]
 extern crate derive_more;
 
+#[macro_use]
+extern crate derivative;
+
 pub mod bench_utils;
 pub(crate) mod circuit;
 pub mod config;
@@ -178,7 +181,6 @@ use crate::{
         Amount, AssetDefinition, BlindFactor, FreezeFlag, Nullifier, ReceiverMemo,
         RecordCommitment, RecordOpening,
     },
-    utils::txn_helpers::get_receiver_memos_digest,
 };
 use ark_serialize::*;
 use ark_std::{boxed::Box, format, string::ToString, vec, vec::Vec};
@@ -191,16 +193,14 @@ use jf_plonk::{
 };
 use jf_primitives::{
     merkle_tree::NodeValue,
-    signatures::{
-        schnorr::{self, SchnorrSignatureScheme},
-        SignatureScheme,
-    },
+    signatures::{schnorr, SchnorrSignatureScheme, SignatureScheme},
 };
 use jf_utils::tagged_blob;
 use mint::MintNote;
 use proof::{freeze::FreezeVerifyingKey, mint::MintVerifyingKey};
 use serde::{Deserialize, Serialize};
 use transfer::TransferNote;
+use utils::txn_helpers::get_receiver_memos_digest;
 
 /// A transaction note contains a note of possibly various transaction types,
 /// including transfer, mint and freeze.
@@ -223,17 +223,17 @@ impl<C: CapConfig> CanonicalSerialize for TransactionNote<C> {
             Self::Transfer(transfer_note) => {
                 let flag = 0;
                 w.write_all(&[flag])?;
-                <TransferNote as CanonicalSerialize>::serialize(transfer_note, &mut w)
+                <TransferNote<C> as CanonicalSerialize>::serialize(transfer_note, &mut w)
             },
             Self::Mint(mint_note) => {
                 let flag = 1;
                 w.write_all(&[flag])?;
-                <MintNote as CanonicalSerialize>::serialize(mint_note, &mut w)
+                <MintNote<C> as CanonicalSerialize>::serialize(mint_note, &mut w)
             },
             Self::Freeze(freeze_note) => {
                 let flag = 2;
                 w.write_all(&[flag])?;
-                <FreezeNote as CanonicalSerialize>::serialize(freeze_note, &mut w)
+                <FreezeNote<C> as CanonicalSerialize>::serialize(freeze_note, &mut w)
             },
         }
     }
@@ -255,13 +255,13 @@ impl<C: CapConfig> CanonicalDeserialize for TransactionNote<C> {
         r.read_exact(&mut flag)?;
         match flag[0] {
             0 => Ok(Self::Transfer(Box::new(
-                <TransferNote as CanonicalDeserialize>::deserialize(&mut r)?,
+                <TransferNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             ))),
             1 => Ok(Self::Mint(Box::new(
-                <MintNote as CanonicalDeserialize>::deserialize(&mut r)?,
+                <MintNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             ))),
             2 => Ok(Self::Freeze(Box::new(
-                <FreezeNote as CanonicalDeserialize>::deserialize(&mut r)?,
+                <FreezeNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             ))),
             _ => Err(SerializationError::InvalidData),
         }
@@ -319,12 +319,12 @@ impl<C: CapConfig> TransactionNote<C> {
         recv_memos: &[ReceiverMemo],
         sig: &schnorr::Signature<C::EmbeddedCurveParam>,
     ) -> Result<(), TxnApiError> {
-        let digest = get_receiver_memos_digest(recv_memos)?;
+        let digest = get_receiver_memos_digest::<C>(recv_memos)?;
         self.txn_memo_ver_key()
             .verify(
                 &[digest],
                 sig,
-                SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
+                <SchnorrSignatureScheme<C::EmbeddedCurveParam> as SignatureScheme>::CS_ID,
             )
             .map_err(TxnApiError::FailedReceiverMemoSignature)
     }
@@ -393,18 +393,18 @@ impl<C: CapConfig> CanonicalSerialize for TransactionVerifyingKey<C> {
             Self::Transfer(transfer_key) => {
                 let flag = 0;
                 w.write_all(&[flag])?;
-                <TransferVerifyingKey as CanonicalSerialize>::serialize(transfer_key, &mut w)
+                <TransferVerifyingKey<C> as CanonicalSerialize>::serialize(transfer_key, &mut w)
             },
             Self::Mint(mint_key) => {
                 let flag = 1;
                 w.write_all(&[flag])?;
-                <MintVerifyingKey as CanonicalSerialize>::serialize(mint_key, &mut w)
+                <MintVerifyingKey<C> as CanonicalSerialize>::serialize(mint_key, &mut w)
             },
 
             Self::Freeze(freeze_key) => {
                 let flag = 2;
                 w.write_all(&[flag])?;
-                <FreezeVerifyingKey as CanonicalSerialize>::serialize(freeze_key, &mut w)
+                <FreezeVerifyingKey<C> as CanonicalSerialize>::serialize(freeze_key, &mut w)
             },
         }
     }
@@ -427,13 +427,13 @@ impl<C: CapConfig> CanonicalDeserialize for TransactionVerifyingKey<C> {
         r.read_exact(&mut flag)?;
         match flag[0] {
             0 => Ok(Self::Transfer(
-                <TransferVerifyingKey as CanonicalDeserialize>::deserialize(&mut r)?,
+                <TransferVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             )),
             1 => Ok(Self::Mint(
-                <MintVerifyingKey as CanonicalDeserialize>::deserialize(&mut r)?,
+                <MintVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             )),
             2 => Ok(Self::Freeze(
-                <FreezeVerifyingKey as CanonicalDeserialize>::deserialize(&mut r)?,
+                <FreezeVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
             )),
             _ => Err(SerializationError::InvalidData),
         }
@@ -570,7 +570,7 @@ pub fn derive_txns_fee_records<C: CapConfig>(
                 blind,
             })
         })
-        .collect::<Vec<RecordCommitment>>())
+        .collect::<Vec<RecordCommitment<C>>>())
 }
 
 /// Compute amount of claimable transaction fee
@@ -592,7 +592,7 @@ pub fn sign_receiver_memos<C: CapConfig>(
     keypair: &schnorr::KeyPair<C::EmbeddedCurveParam>,
     recv_memos: &[ReceiverMemo],
 ) -> Result<schnorr::Signature<C::EmbeddedCurveParam>, TxnApiError> {
-    let digest = get_receiver_memos_digest(recv_memos)?;
+    let digest = get_receiver_memos_digest::<C>(recv_memos)?;
     Ok(keypair.sign(
         &[digest],
         SchnorrSignatureScheme::<C::EmbeddedCurveParam>::CS_ID,
@@ -627,6 +627,7 @@ mod test {
         calculate_fee, derive_txns_fee_records,
         errors::TxnApiError,
         keys::UserPubKey,
+        prelude::Config,
         structs::{Amount, BlindFactor},
         txn_batch_verify,
         utils::params_builder::TxnsParams,
@@ -642,7 +643,7 @@ mod test {
         let num_mint_txn = 2;
         let num_freeze_txn = 3;
         let tree_depth = 10;
-        let params = TxnsParams::generate_txns(
+        let params: TxnsParams<Config> = TxnsParams::generate_txns(
             rng,
             num_transfer_txn,
             num_mint_txn,
@@ -706,10 +707,10 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let pks = (0..7)
             .map(|_| UserPubKey::default())
-            .collect::<Vec<UserPubKey>>();
+            .collect::<Vec<UserPubKey<Config>>>();
         let blinds = (0..7)
             .map(|_| BlindFactor::rand(rng))
-            .collect::<Vec<BlindFactor>>();
+            .collect::<Vec<BlindFactor<Config>>>();
         let fee_amounts: Vec<Amount> = txns
             .iter()
             .map(|txn| match txn {
@@ -718,11 +719,13 @@ mod test {
                 TransactionNote::Freeze(note) => note.aux_info.fee,
             })
             .collect();
-        assert!(derive_txns_fee_records(&pks, &fee_amounts[..], &blinds).is_ok());
-        assert!(
-            derive_txns_fee_records(&[UserPubKey::default()], &[], &[BlindFactor::rand(rng)])
-                .is_err()
-        );
+        assert!(derive_txns_fee_records::<Config>(&pks, &fee_amounts[..], &blinds).is_ok());
+        assert!(derive_txns_fee_records::<Config>(
+            &[UserPubKey::default()],
+            &[],
+            &[BlindFactor::rand(rng)]
+        )
+        .is_err());
 
         Ok(())
     }
@@ -734,7 +737,7 @@ mod test {
         let num_mint_txn = 2;
         let num_freeze_txn = 3;
         let tree_depth = 10;
-        let params = TxnsParams::generate_txns(
+        let params: TxnsParams<Config> = TxnsParams::generate_txns(
             rng,
             num_transfer_txn,
             num_mint_txn,

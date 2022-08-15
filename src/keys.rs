@@ -57,7 +57,15 @@ pub type UserAddress<C: CapConfig> = schnorr::VerKey<C::EmbeddedCurveParam>;
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
-#[derive(Clone, Default, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub struct UserPubKey<C: CapConfig> {
     pub(crate) address: UserAddress<C>,
     enc_key: aead::EncKey,
@@ -128,7 +136,13 @@ impl<C: CapConfig> UserPubKey<C> {
 
 /// A key pair for the user who owns and can consume records (spend asset)
 #[tagged_blob("USERKEY")]
-#[derive(Debug, Default, Clone, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(Derivative, CanonicalSerialize, CanonicalDeserialize)]
+#[derivative(
+    Default(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Debug(bound = "C: CapConfig")
+)]
+// #[derive(Default, Debug, Clone, CanonicalSerialize, CanonicalDeserialize)]
 pub struct UserKeyPair<C: CapConfig> {
     pub(crate) addr_keypair: schnorr::KeyPair<C::EmbeddedCurveParam>,
     pub(crate) enc_keypair: aead::KeyPair,
@@ -203,7 +217,15 @@ impl<C: CapConfig> UserKeyPair<C> {
 
 /// Public key for the credential creator
 #[tagged_blob("CREDPUBKEY")]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
+#[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub struct CredIssuerPubKey<C: CapConfig>(pub(crate) schnorr::VerKey<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> CredIssuerPubKey<C> {
@@ -235,7 +257,13 @@ impl<C: CapConfig> CredIssuerPubKey<C> {
 
 /// Key pair for the credential creator
 #[tagged_blob("CREDKEY")]
-#[derive(Debug, Clone, Default, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig")
+)]
+
 pub struct CredIssuerKeyPair<C: CapConfig>(pub(crate) schnorr::KeyPair<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> CredIssuerKeyPair<C> {
@@ -263,7 +291,15 @@ impl<C: CapConfig> CredIssuerKeyPair<C> {
 
 /// Public key for the viewer
 #[tagged_blob("AUDPUBKEY")]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Default, CanonicalDeserialize, CanonicalSerialize)]
+#[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig")
+)]
 pub struct ViewerPubKey<C: CapConfig>(pub(crate) elgamal::EncKey<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewerPubKey<C> {
@@ -290,7 +326,8 @@ impl<C: CapConfig> ViewerPubKey<C> {
 }
 /// Key pair for the viewer
 #[tagged_blob("AUDKEY")]
-#[derive(Debug, Clone, CanonicalDeserialize, CanonicalSerialize)]
+#[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
+#[derivative(Debug(bound = "C: CapConfig"), Clone(bound = "C: CapConfig"))]
 pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> ViewerKeyPair<C> {
@@ -390,7 +427,13 @@ impl<C: CapConfig> ViewerKeyPair<C> {
 
 /// Public key for the freezer
 #[tagged_blob("FREEZEPUBKEY")]
-#[derive(Clone, Debug, Eq, Default, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Debug(bound = "C: CapConfig")
+)]
 pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> FreezerPubKey<C> {
@@ -415,7 +458,13 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 
 /// Key pair for the freezer
 #[tagged_blob("FREEZEKEY")]
-#[derive(Clone, Debug, Default, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig")
+)]
+
 pub struct FreezerKeyPair<C: CapConfig> {
     pub(crate) sec_key: C::EmbeddedCurveScalarField,
     pub(crate) pub_key: GroupProjective<C::EmbeddedCurveParam>,
@@ -496,7 +545,14 @@ fn compute_nullifier_key<C: CapConfig>(
 /// Secret key used to nullify records, can only be derived by either the record
 /// owner (`UserKeyPair`) or the correct freezer (`FreezerKeyPair`)
 #[tagged_blob("NULKEY")]
-#[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
+#[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
 pub(crate) struct NullifierKey<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> NullifierKey<C> {
@@ -504,7 +560,7 @@ impl<C: CapConfig> NullifierKey<C> {
     // accumulator for security purposes)
     // nl := PRF(nk; uid || com) where uid is leaf index, com is the coin/ar
     // commitment
-    pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment<C>) -> Self {
+    pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment<C>) -> Nullifier<C> {
         let prf_key = PrfKey::from(self.0);
         Nullifier(
             PRF::new(2, 1)
@@ -529,7 +585,7 @@ mod test {
     #[test]
     fn test_user_keypair() {
         let mut rng = ark_std::test_rng();
-        let user_keypair = UserKeyPair::generate(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let user_pubkey = user_keypair.pub_key();
 
         let msg = "message".as_bytes();
@@ -542,15 +598,15 @@ mod test {
         let other_sig = user_keypair.sign(&wrong_msg);
         assert!(user_pubkey.verify_sig(&msg, &other_sig).is_err());
 
-        let other_pubkey = UserKeyPair::generate(&mut rng).pub_key();
+        let other_pubkey = UserKeyPair::<Config>::generate(&mut rng).pub_key();
         assert!(other_pubkey.verify_sig(&msg, &sig).is_err());
     }
 
     #[test]
     fn test_derive_nullifier_key() {
         let mut rng = ark_std::test_rng();
-        let user_keypair = UserKeyPair::generate(&mut rng);
-        let freezer_keypair = FreezerKeyPair::generate(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
+        let freezer_keypair = FreezerKeyPair::<Config>::generate(&mut rng);
         let nk1 = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
         let nk2 = freezer_keypair.derive_nullifier_key(&user_keypair.address());
         assert_eq!(nk1, nk2);
@@ -581,14 +637,14 @@ mod test {
     #[test]
     fn test_serde() {
         let mut rng = ark_std::test_rng();
-        let user_keypair = UserKeyPair::generate(&mut rng);
-        let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
-        let viewer_keypair = ViewerKeyPair::generate(&mut rng);
-        let freezer_keypair = FreezerKeyPair::generate(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
+        let minter_keypair = CredIssuerKeyPair::<Config>::generate(&mut rng);
+        let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);
+        let freezer_keypair = FreezerKeyPair::<Config>::generate(&mut rng);
         let nullifier_key = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
 
         let ser_bytes = bincode::serialize(&user_keypair).unwrap();
-        let de: UserKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: UserKeyPair<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de.enc_keypair.enc_key(), user_keypair.enc_keypair.enc_key());
         assert_eq!(
             de.addr_keypair.ver_key(),
@@ -596,16 +652,16 @@ mod test {
         );
 
         let ser_bytes = bincode::serialize(&minter_keypair).unwrap();
-        let de: CredIssuerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: CredIssuerKeyPair<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de.0.ver_key(), minter_keypair.0.ver_key());
         let ser_bytes = bincode::serialize(&viewer_keypair).unwrap();
-        let de: ViewerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: ViewerKeyPair<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de.0.enc_key(), viewer_keypair.0.enc_key());
         let ser_bytes = bincode::serialize(&freezer_keypair).unwrap();
-        let de: FreezerKeyPair = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: FreezerKeyPair<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, freezer_keypair);
         let ser_bytes = bincode::serialize(&nullifier_key).unwrap();
-        let de: NullifierKey = bincode::deserialize(&ser_bytes[..]).unwrap();
+        let de: NullifierKey<Config> = bincode::deserialize(&ser_bytes[..]).unwrap();
         assert_eq!(de, nullifier_key);
     }
 }

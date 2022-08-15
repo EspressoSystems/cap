@@ -9,8 +9,11 @@
 // FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::circuit::{gadgets_helper::TransactionGadgetsHelper, structs::RecordOpeningVar};
-use ark_ff::{One, PrimeField};
+use crate::{
+    circuit::{gadgets_helper::TransactionGadgetsHelper, structs::RecordOpeningVar},
+    prelude::CapConfig,
+};
+use ark_ff::One;
 use ark_std::{string::ToString, vec::Vec};
 use jf_plonk::{
     circuit::{Circuit, PlonkCircuit, Variable},
@@ -26,7 +29,7 @@ pub(crate) enum Spender {
 }
 
 // High-level transaction related gadgets
-pub(crate) trait TransactionGadgets {
+pub(crate) trait TransactionGadgets<C: CapConfig> {
     /// Add constraints that enforces the balance between inputs and outputs.
     /// Return the input transfer amount (which excludes the fee input amount).
     /// In case `asset != native_asset`, enforces
@@ -75,7 +78,7 @@ pub(crate) trait TransactionGadgets {
     ) -> Result<Vec<Variable>, PlonkError>;
 }
 
-impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
+impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
     fn preserve_balance(
         &mut self,
         native_asset: Variable,
@@ -106,7 +109,7 @@ impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
             self.sum(&amounts_out[1..])?
         };
         let amount_diff = self.sub(total_amounts_in, total_amounts_out)?;
-        let one = F::one();
+        let one = C::ScalarField::one();
         let native_amount_diff = self.lc(
             &[amounts_in[0], amounts_out[0], fee, zero_var],
             &[one, -one, -one, one],
@@ -116,9 +119,9 @@ impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
         // `amount_diff` + `native_amount_diff` == 0 when `same_asset == 1`)
         self.mul_add_gate(
             &[
-                same_asset,
+                same_asset.into(),
                 amount_diff,
-                same_asset,
+                same_asset.into(),
                 native_amount_diff,
                 zero_var,
             ],
@@ -126,9 +129,9 @@ impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
         )?;
         // enforce `same_asset` * `amount_diff` = `amount_diff` (i.e., `amount_diff` ==
         // 0 when `same_asset == 0`)
-        self.mul_gate(same_asset, amount_diff, amount_diff)?;
+        self.mul_gate(same_asset.into(), amount_diff, amount_diff)?;
         // enforce `same_asset` * `native_amount_diff` = `native_amount_diff`,
-        self.mul_gate(same_asset, native_amount_diff, native_amount_diff)?;
+        self.mul_gate(same_asset.into(), native_amount_diff, native_amount_diff)?;
 
         Ok(total_amounts_in)
     }
@@ -148,15 +151,15 @@ impl<F: PrimeField> TransactionGadgets for PlonkCircuit<F> {
         };
 
         // PoK of secret key
-        let pk = self.derive_user_address(sk)?;
+        let pk = TransactionGadgetsHelper::<C>::derive_user_address(self, sk)?;
         self.point_equal_gate(&pk.0, pk1_point)?;
 
         // compute commitment
-        let commitment = ro.compute_record_commitment(self)?;
+        let commitment = ro.compute_record_commitment::<C>(self)?;
 
         // derive nullify key and compute nullifier
-        let nk = self.derive_nullifier_key(sk, pk2_point)?;
-        let nullifier = self.nullify(nk, uid, commitment)?;
+        let nk = TransactionGadgetsHelper::<C>::derive_nullifier_key(self, sk, pk2_point)?;
+        let nullifier = TransactionGadgetsHelper::<C>::nullify(self, nk, uid, commitment)?;
 
         // verify Merkle path
         let root = self.compute_merkle_root(
@@ -233,8 +236,14 @@ mod tests {
             .map(|&val| circuit.create_variable(val))
             .collect::<Result<Vec<_>, PlonkError>>()?;
         let fee = circuit.create_variable(fee)?;
-        let transfer_amount =
-            circuit.preserve_balance(native_asset, asset, fee, &amounts_in, &amounts_out)?;
+        let transfer_amount = TransactionGadgets::<Config>::preserve_balance(
+            &mut circuit,
+            native_asset,
+            asset,
+            fee,
+            &amounts_in,
+            &amounts_out,
+        )?;
         assert_eq!(expected_transfer_amount, circuit.witness(transfer_amount)?);
         Ok(circuit)
     }
@@ -327,7 +336,13 @@ mod tests {
             AccMemberWitnessVar::new::<_, EmbeddedCurveParam>(&mut circuit, &acc_member_witness)?;
 
         let sk_var = circuit.create_variable(sk)?;
-        let (nullifier, root) = circuit.prove_spend(&ro_var, &acc_wit_var, sk_var, spender)?;
+        let (nullifier, root) = TransactionGadgets::<Config>::prove_spend(
+            &mut circuit,
+            &ro_var,
+            &acc_wit_var,
+            sk_var,
+            spender,
+        )?;
 
         assert_eq!(circuit.witness(nullifier)?, expected_nullifier);
         assert_eq!(circuit.witness(root)?, expected_root);
@@ -396,24 +411,29 @@ mod tests {
         Ok(())
     }
 
-    fn check_hadamard_product(
+    fn check_hadamard_product<C: CapConfig<ScalarField = F>>(
         reveal_map: &RevealMap,
         vals: &[F],
         bit_len: usize,
     ) -> Result<(), PlonkError> {
-        let expected_hadamard = reveal_map.hadamard_product(vals);
+        let expected_hadamard = reveal_map.hadamard_product::<C>(vals);
         let mut circuit = PlonkCircuit::new_turbo_plonk();
-        let reveal_map_var = circuit.create_variable(F::from(*reveal_map))?;
+        let reveal_map_var = circuit.create_variable(reveal_map.to_scalar::<C>())?;
         let bit_map_vars: Vec<Variable> = circuit
             .unpack(reveal_map_var, VIEWABLE_DATA_LEN)?
             .into_iter()
             .rev()
+            .map(|bv| bv.into())
             .collect();
         let vals = vals
             .iter()
             .map(|&val| circuit.create_variable(val))
             .collect::<Result<Vec<_>, PlonkError>>()?;
-        let prod = circuit.hadamard_product(&bit_map_vars[..bit_len], &vals[..bit_len])?;
+        let prod = TransactionGadgets::<Config>::hadamard_product(
+            &mut circuit,
+            &bit_map_vars[..bit_len],
+            &vals[..bit_len],
+        )?;
 
         for i in 0..bit_len {
             assert_eq!(circuit.witness(prod[i])?, expected_hadamard[i]);
@@ -430,16 +450,16 @@ mod tests {
         let mut reveal_map = RevealMap::default();
         reveal_map.reveal_all();
         let vals: Vec<F> = (0..VIEWABLE_DATA_LEN).map(|i| F::from(i as u32)).collect();
-        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
+        check_hadamard_product::<Config>(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
         let reveal_map = RevealMap::default();
-        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
+        check_hadamard_product::<Config>(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
         let rng = &mut ark_std::test_rng();
         let reveal_map = RevealMap::rand_for_test(rng);
-        check_hadamard_product(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
+        check_hadamard_product::<Config>(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
-        check_hadamard_product(&reveal_map, &vals, 4)?;
+        check_hadamard_product::<Config>(&reveal_map, &vals, 4)?;
         Ok(())
     }
 }

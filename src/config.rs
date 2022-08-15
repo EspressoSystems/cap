@@ -11,23 +11,37 @@
 
 //! Configuration
 
-use ark_ec::{PairingEngine, TEModelParameters};
+use ark_ec::{
+    short_weierstrass_jacobian::GroupAffine, PairingEngine, SWModelParameters, TEModelParameters,
+};
 use ark_ff::{FpParameters, PrimeField, SquareRootField};
 use ark_std::fmt::Debug;
+use jf_plonk::circuit::customized::ecc::SWToTEConParam;
 use jf_rescue::RescueParameter;
 
 use crate::structs::AssetCode;
 
 /// Configuration for CAP system
-pub trait CapConfig: Sized + Clone + Debug {
+pub trait CapConfig: Sized + Clone + Debug + PartialEq {
     /// Pairing-friendly curve the CAP proof will be generated over
-    type PairingCurve: PairingEngine<Fr = Self::ScalarField>;
+    type PairingCurve: PairingEngine<
+        Fr = Self::ScalarField,
+        Fq = Self::BaseField,
+        G1Affine = GroupAffine<Self::PairingCurveParam>,
+    >;
+    /// Curve parameter for `PairingCurve`
+    type PairingCurveParam: SWModelParameters<
+        ScalarField = Self::ScalarField,
+        BaseField = Self::BaseField,
+    >;
     /// Curve parameter for Jubjub curve embedded in `PairingCurve`
     type EmbeddedCurveParam: TEModelParameters<
-            ScalarField = Self::EmbeddedCurveScalarField,
-            BaseField = Self::ScalarField,
-        > + Clone;
+        ScalarField = Self::EmbeddedCurveScalarField,
+        BaseField = Self::ScalarField,
+    >;
 
+    /// Base field which our CAP proof will be expressed in
+    type BaseField: RescueParameter + SWToTEConParam;
     /// Scalar field over which CAP circuit is over
     type ScalarField: PrimeField + SquareRootField + RescueParameter;
     /// Scalar field of jubjub curve
@@ -55,7 +69,9 @@ pub struct Config;
 #[cfg(feature = "bn254")]
 impl CapConfig for Config {
     type PairingCurve = ark_bn254::Bn254;
+    type PairingCurveParam = ark_bn254::g1::Parameters;
     type EmbeddedCurveParam = ark_ed_on_bn254::EdwardsParameters;
+    type BaseField = ark_bn254::Fq;
     type ScalarField = ark_bn254::Fr;
     type EmbeddedCurveScalarField = ark_ed_on_bn254::Fr;
 }
@@ -68,7 +84,9 @@ pub struct Config;
 #[cfg(feature = "bls12_377")]
 impl CapConfig for Config {
     type PairingCurve = ark_bls12_377::Bls12_377;
+    type PairingCurveParam = ark_bls12_377::g1::Parameters;
     type EmbeddedCurveParam = ark_ed_on_bls12_377::EdwardsParameters;
+    type BaseField = ark_bls12_377::Fq;
     type ScalarField = ark_bls12_377::Fr;
     type EmbeddedCurveScalarField = ark_ed_on_bls12_377::Fr;
 }
@@ -81,7 +99,9 @@ pub struct Config;
 #[cfg(feature = "bls12_381")]
 impl CapConfig for Config {
     type PairingCurve = ark_bls12_381::Bls12_377;
+    type PairingCurveParam = ark_bls12_381::g1::Parameters;
     type EmbeddedCurveParam = ark_ed_on_bls12_381::EdwardsParameters;
+    type BaseField = ark_bls12_381::Fq;
     type ScalarField = ark_bls12_381::Fr;
     type EmbeddedCurveScalarField = ark_ed_on_bls12_381::Fr;
 }
