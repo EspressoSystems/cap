@@ -371,7 +371,7 @@ impl ExpirableCredVar {
         let expiry = circuit.create_variable(C::ScalarField::from(expirable_cred.expiry))?;
         let cred = circuit.create_signature_variable(&expirable_cred.cred.0)?;
         let user_addr = UserAddressVar(circuit.create_point_variable(Point::from(
-            expirable_cred.user_addr.0.internal().into_affine(),
+            expirable_cred.user_addr.internal().into_affine(),
         ))?);
         let creator_pk = circuit.create_signature_vk_variable(&expirable_cred.creator_pk.0)?;
         let attrs = expirable_cred

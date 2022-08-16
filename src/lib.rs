@@ -600,8 +600,8 @@ pub fn sign_receiver_memos<C: CapConfig>(
 /// crate prelude consisting important traits and structs
 pub mod prelude {
     pub use super::{
-        calculate_fee, derive_txns_fee_records, sign_receiver_memos, TransactionNote,
-        TransactionVerifyingKey,
+        calculate_fee, derive_txns_fee_records, sign_receiver_memos, txn_batch_verify,
+        TransactionNote, TransactionVerifyingKey,
     };
     pub use crate::{
         config::*,
@@ -612,7 +612,7 @@ pub mod prelude {
         mint::*,
         proof::{
             freeze::FreezePublicInput, mint::MintPublicInput, transfer::TransferPublicInput,
-            universal_setup_for_staging,
+            universal_setup, universal_setup_for_staging,
         },
         structs::*,
         transfer::{AuxInfo as TransferNoteAuxInfo, TransferNote, TransferNoteInput},

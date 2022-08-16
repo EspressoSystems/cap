@@ -289,7 +289,6 @@ mod tests {
     use jf_primitives::merkle_tree::NodeValue;
 
     type F = <Config as CapConfig>::ScalarField;
-    type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {

@@ -17,30 +17,28 @@ use jf_cap::{
         compute_sizes, compute_title_simple, get_builder_freeze, save_result_to_file_simple, GEN,
         NUM_INPUTS_RANGE, TREE_DEPTH, VERIFY,
     },
-    freeze::FreezeNote,
-    keys::{FreezerKeyPair, UserKeyPair},
-    proof::{
-        freeze,
-        freeze::{FreezeProvingKey, FreezeVerifyingKey},
-        universal_setup,
-    },
-    structs::NoteType,
+    prelude::*,
+    proof::freeze::{self, FreezeProvingKey, FreezeVerifyingKey},
     utils::{compute_universal_param_size, params_builder::FreezeParamsBuilder},
-    NodeValue,
 };
+use jf_primitives::merkle_tree::NodeValue;
 use rand::rngs::StdRng;
 use std::time::Duration;
 
 fn run_freeze_creation(
     prng: &mut StdRng,
-    builder: &FreezeParamsBuilder,
-    proving_key: &FreezeProvingKey,
-) -> FreezeNote {
+    builder: &FreezeParamsBuilder<Config>,
+    proving_key: &FreezeProvingKey<Config>,
+) -> FreezeNote<Config> {
     let (note, ..) = builder.build_freeze_note(prng, proving_key).unwrap();
     note
 }
 
-fn run_freeze_verification(verifier_key: &FreezeVerifyingKey, note: &FreezeNote, root: NodeValue) {
+fn run_freeze_verification(
+    verifier_key: &FreezeVerifyingKey<Config>,
+    note: &FreezeNote<Config>,
+    root: NodeValue<<Config as CapConfig>::ScalarField>,
+) {
     assert!(note.verify(verifier_key, root).is_ok());
 }
 
@@ -56,8 +54,9 @@ fn run_benchmark_freeze(c: &mut Criterion, filename_list: &mut Vec<String>) {
 
         // Public parameters
         let domain_size =
-            compute_universal_param_size(NoteType::Freeze, *num_inputs, 0, TREE_DEPTH).unwrap();
-        let srs = universal_setup(domain_size, &mut prng).unwrap();
+            compute_universal_param_size::<Config>(NoteType::Freeze, *num_inputs, 0, TREE_DEPTH)
+                .unwrap();
+        let srs = jf_cap::proof::universal_setup::<_, Config>(domain_size, &mut prng).unwrap();
         let (proving_key, verifying_key, n_constraints) =
             freeze::preprocess(&srs, *num_inputs, TREE_DEPTH).unwrap();
 

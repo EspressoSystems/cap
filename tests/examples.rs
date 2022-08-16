@@ -21,30 +21,10 @@ use ark_std::{
     rc::Rc,
 };
 use jf_cap::{
-    calculate_fee,
-    constants::{ATTRS_LEN, MAX_TIMESTAMP_LEN},
-    errors::TxnApiError,
-    freeze::FreezeNote,
-    keys::{
-        CredIssuerKeyPair, FreezerKeyPair, FreezerPubKey, UserAddress, UserKeyPair, UserPubKey,
-        ViewerKeyPair, ViewerPubKey,
-    },
-    mint::MintNote,
-    proof::{
-        freeze::FreezeProvingKey,
-        mint::MintProvingKey,
-        transfer::{preprocess, TransferProvingKey},
-        universal_setup, UniversalParam,
-    },
-    sign_receiver_memos,
-    structs::{
-        Amount, AssetCode, AssetCodeSeed, AssetDefinition, AssetPolicy, BlindFactor,
-        ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, Nullifier, ReceiverMemo,
-        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableData,
-    },
-    transfer::{TransferNote, TransferNoteInput},
-    txn_batch_verify, BaseField, CurveParam, TransactionNote, TransactionVerifyingKey,
+    prelude::*,
+    proof::{freeze::FreezeProvingKey, mint::MintProvingKey, transfer::TransferProvingKey},
 };
+use jf_plonk::proof_system::structs::UniversalSrs;
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
     signatures::schnorr::Signature,
@@ -59,17 +39,17 @@ pub const MAX_DEGREE: usize = 65538; // in practice, please use `crate::utils::c
 pub const MAX_DEGREE: usize = 131074;
 
 /// simulate retrieving global public structured reference string
-pub fn mock_retrieve_srs() -> UniversalParam {
-    universal_setup(MAX_DEGREE, &mut ark_std::test_rng()).unwrap()
+pub fn mock_retrieve_srs() -> UniversalSrs<<Config as CapConfig>::PairingCurve> {
+    universal_setup::<_, Config>(MAX_DEGREE, &mut ark_std::test_rng()).unwrap()
 }
 
 /// Naive ledger structure
 ///  maintains merkle tree of record commitments, nullifier ser and set with
 /// historial merkle roots
 pub struct LedgerStateMock {
-    mt: MerkleTree<BaseField>,
-    nullifiers: HashSet<Nullifier>,
-    mt_roots: HashSet<NodeValue<BaseField>>,
+    mt: MerkleTree<<Config as CapConfig>::ScalarField>,
+    nullifiers: HashSet<Nullifier<Config>>,
+    mt_roots: HashSet<NodeValue<<Config as CapConfig>::ScalarField>>,
 }
 
 impl LedgerStateMock {
@@ -88,9 +68,9 @@ impl LedgerStateMock {
     pub fn mock_mint_native_asset<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        owner_pub_key: UserPubKey,
+        owner_pub_key: UserPubKey<Config>,
         amount: Amount,
-    ) -> (RecordOpening, u64) {
+    ) -> (RecordOpening<Config>, u64) {
         let ro = RecordOpening::new(
             rng,
             amount,
@@ -109,10 +89,10 @@ impl LedgerStateMock {
     pub fn mock_mint_non_native_asset<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        owner_pub_key: UserPubKey,
+        owner_pub_key: UserPubKey<Config>,
         amount: Amount,
-        asset_definition: AssetDefinition,
-    ) -> (RecordOpening, u64) {
+        asset_definition: AssetDefinition<Config>,
+    ) -> (RecordOpening<Config>, u64) {
         let ro = RecordOpening::new(
             rng,
             amount,
@@ -128,12 +108,12 @@ impl LedgerStateMock {
     }
 
     // insert output record commitment in merkle tree
-    fn insert_record(&mut self, rc: RecordCommitment) {
+    fn insert_record(&mut self, rc: RecordCommitment<Config>) {
         self.mt.push(rc.to_field_element())
     }
 
     // insert input nullifier in nullifier set
-    fn insert_nullifier(&mut self, nullifier: &Nullifier) {
+    fn insert_nullifier(&mut self, nullifier: &Nullifier<Config>) {
         self.nullifiers.insert(*nullifier);
     }
 
@@ -143,17 +123,20 @@ impl LedgerStateMock {
     }
 
     /// Check that input nullifier is in the nullifier set
-    pub fn check_nullifier(&self, nullifier: &Nullifier) -> bool {
+    pub fn check_nullifier(&self, nullifier: &Nullifier<Config>) -> bool {
         self.nullifiers.contains(nullifier)
     }
 
     /// Check that root is in historial merkle root set
-    pub fn check_valid_root(&self, merkle_root: &NodeValue<BaseField>) -> bool {
+    pub fn check_valid_root(
+        &self,
+        merkle_root: &NodeValue<<Config as CapConfig>::ScalarField>,
+    ) -> bool {
         self.mt_roots.contains(merkle_root)
     }
 
     // insert input nullifiers and output record commitments
-    fn insert_transfer_note(&mut self, xfr_note: &TransferNote, store_new_mt_root: bool) {
+    fn insert_transfer_note(&mut self, xfr_note: &TransferNote<Config>, store_new_mt_root: bool) {
         // 1 insert output commitments to merkle tree
         xfr_note
             .output_commitments
@@ -172,7 +155,7 @@ impl LedgerStateMock {
     }
 
     // insert input nullifiers and output record commitments
-    fn insert_mint_note(&mut self, mint_note: &MintNote, store_new_mt_root: bool) {
+    fn insert_mint_note(&mut self, mint_note: &MintNote<Config>, store_new_mt_root: bool) {
         // 1 insert new record commitments: fee change record and new minted record
         self.insert_record(mint_note.chg_comm);
         self.insert_record(mint_note.mint_comm);
@@ -187,7 +170,7 @@ impl LedgerStateMock {
     }
 
     // insert input nullifiers and output record commitments
-    fn insert_freeze_note(&mut self, freeze_note: &FreezeNote, store_new_mt_root: bool) {
+    fn insert_freeze_note(&mut self, freeze_note: &FreezeNote<Config>, store_new_mt_root: bool) {
         // 1 insert new record commitments: fee change record and new minted record
         for output in freeze_note.output_commitments.iter() {
             self.insert_record(*output);
@@ -231,15 +214,15 @@ impl LedgerStateMock {
 /// Ledger Transaction Block
 #[derive(Clone, CanonicalSerialize)]
 pub struct MockBlock {
-    txns: Vec<TransactionNote>,
-    fee_blind: BlindFactor,
-    proposer_pub_key: UserPubKey,
+    txns: Vec<TransactionNote<Config>>,
+    fee_blind: BlindFactor<Config>,
+    proposer_pub_key: UserPubKey<Config>,
 }
 
 impl MockBlock {
     /// scan the block and derive record commitment corresponding to the
     /// collected fee owned by block proposer
-    pub fn derive_fee_record_commitment(&self) -> Result<RecordCommitment> {
+    pub fn derive_fee_record_commitment(&self) -> Result<RecordCommitment<Config>> {
         let total_fee = calculate_fee(&self.txns)?;
         Ok(RecordCommitment::from(&RecordOpening {
             amount: total_fee,
@@ -254,15 +237,18 @@ impl MockBlock {
 /// Simple Validator that verify transfers against current ledger state
 pub struct ValidatorMock {
     // mapping between transaction type description and corresponding verifying key
-    verifying_keys: HashMap<String, Rc<TransactionVerifyingKey>>,
-    srs: Rc<UniversalParam>,
+    verifying_keys: HashMap<String, Rc<TransactionVerifyingKey<Config>>>,
+    srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
     // for fee collection ownership
     wallet: SimpleUserWalletMock,
 }
 
 impl ValidatorMock {
     /// Create a new validator/block proposer containing a user wallet
-    pub fn new<R: CryptoRng + RngCore>(rng: &mut R, srs: Rc<UniversalParam>) -> ValidatorMock {
+    pub fn new<R: CryptoRng + RngCore>(
+        rng: &mut R,
+        srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
+    ) -> ValidatorMock {
         ValidatorMock {
             verifying_keys: HashMap::new(),
             srs: Rc::clone(&srs),
@@ -288,7 +274,7 @@ impl ValidatorMock {
     pub fn validate_single_xfr_note(
         &mut self,
         ledger_state: &LedgerStateMock,
-        xfr_note: &TransferNote,
+        xfr_note: &TransferNote<Config>,
         timestamp: u64,
     ) -> Result<()> {
         let n_inputs = xfr_note.inputs_nullifiers.len();
@@ -327,8 +313,12 @@ impl ValidatorMock {
     pub fn collect_fee_and_build_block<R: CryptoRng + RngCore>(
         &self,
         rng: &mut R,
-        txns: Vec<TransactionNote>,
-    ) -> Result<(RecordOpening, MockBlock, Signature<CurveParam>)> {
+        txns: Vec<TransactionNote<Config>>,
+    ) -> Result<(
+        RecordOpening<Config>,
+        MockBlock,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         // 1. sample collected fee record
         let total_fee = calculate_fee(&txns)?;
         let record_opening = RecordOpening::new(
@@ -360,9 +350,9 @@ impl ValidatorMock {
         &mut self,
         ledger_state: &LedgerStateMock,
         block: &MockBlock,
-        block_sig: &Signature<CurveParam>,
+        block_sig: &Signature<<Config as CapConfig>::EmbeddedCurveParam>,
         timestamp: u64,
-        proposer_pub_key: &UserPubKey,
+        proposer_pub_key: &UserPubKey<Config>,
     ) -> Result<()> {
         // 1. check address
         if block.proposer_pub_key != *proposer_pub_key {
@@ -384,7 +374,7 @@ impl ValidatorMock {
     fn validate_txns_batch(
         &mut self,
         ledger_state: &LedgerStateMock,
-        txns: &[TransactionNote],
+        txns: &[TransactionNote<Config>],
         timestamp: u64,
     ) -> Result<()> {
         let mut verifying_keys = vec![];
@@ -434,7 +424,7 @@ impl ValidatorMock {
         )?)
     }
 
-    fn get_mint_verifying_key(&mut self) -> Rc<TransactionVerifyingKey> {
+    fn get_mint_verifying_key(&mut self) -> Rc<TransactionVerifyingKey<Config>> {
         let description = String::from("Mint");
         if !self.verifying_keys.contains_key(&description) {
             let (_, verifying_key, _) =
@@ -451,11 +441,12 @@ impl ValidatorMock {
         &mut self,
         n_inputs: usize,
         n_outputs: usize,
-    ) -> Rc<TransactionVerifyingKey> {
+    ) -> Rc<TransactionVerifyingKey<Config>> {
         let description = format!("Xfr_{}_{}", n_inputs, n_outputs);
         if !self.verifying_keys.contains_key(&description) {
             let (_, verifying_key, _) =
-                preprocess(&self.srs, n_inputs, n_outputs, TREE_DEPTH).unwrap();
+                jf_cap::proof::transfer::preprocess(&self.srs, n_inputs, n_outputs, TREE_DEPTH)
+                    .unwrap();
             self.verifying_keys.insert(
                 description.clone(),
                 Rc::new(TransactionVerifyingKey::Transfer(verifying_key)),
@@ -464,7 +455,7 @@ impl ValidatorMock {
         self.verifying_keys.get(&description).unwrap().clone()
     }
 
-    fn get_freeze_verifying_key(&mut self, n_inputs: usize) -> Rc<TransactionVerifyingKey> {
+    fn get_freeze_verifying_key(&mut self, n_inputs: usize) -> Rc<TransactionVerifyingKey<Config>> {
         let description = format!("Freeze_{}", n_inputs);
         if !self.verifying_keys.contains_key(&description) {
             let (_, verifying_key, _) =
@@ -481,8 +472,8 @@ impl ValidatorMock {
     // of nullifiers already checked (in a block)
     fn check_txn_input_nullifiers(
         ledger_state: &LedgerStateMock,
-        nullifiers: &[Nullifier],
-        checked_nullifiers: &mut HashSet<Nullifier>,
+        nullifiers: &[Nullifier<Config>],
+        checked_nullifiers: &mut HashSet<Nullifier<Config>>,
     ) -> Result<()> {
         // 1. check nullifiers against ledger state
         if nullifiers
@@ -505,26 +496,26 @@ impl ValidatorMock {
 
 /// Simple Viewer that scan Transfer note and attempt to decrypt ViewableMemos
 pub struct ViewerMock {
-    keypair: ViewerKeyPair,
-    asset_def: AssetDefinition,
+    keypair: ViewerKeyPair<Config>,
+    asset_def: AssetDefinition<Config>,
 }
 
 impl ViewerMock {
     /// Create a new viewer
-    pub fn new(keypair: ViewerKeyPair, asset_def: AssetDefinition) -> ViewerMock {
+    pub fn new(keypair: ViewerKeyPair<Config>, asset_def: AssetDefinition<Config>) -> ViewerMock {
         ViewerMock { keypair, asset_def }
     }
 
-    pub fn pub_key(&self) -> ViewerPubKey {
+    pub fn pub_key(&self) -> ViewerPubKey<Config> {
         self.keypair.pub_key()
     }
     /// Scan transfer note viewing memos and attempt to open them
     /// Return Error if asset policy does not math of error in decryption
     pub fn scan_xfr(
         &self,
-        xfr_note: &TransferNote,
+        xfr_note: &TransferNote<Config>,
         uid_offset: u64,
-    ) -> Result<(Vec<ViewableData>, Vec<(ViewableData, u64)>)> {
+    ) -> Result<(Vec<ViewableData<Config>>, Vec<(ViewableData<Config>, u64)>)> {
         let n_inputs = xfr_note.inputs_nullifiers.len() - 1;
         let n_outputs = xfr_note.output_commitments.len() - 1;
         let (input_visible_data, output_visible_data) = self
@@ -550,7 +541,11 @@ impl ViewerMock {
         Ok((input_visible_data, output_visible_data_uids))
     }
 
-    pub fn scan_mint(&self, mint_note: &MintNote, uid_offset: u64) -> Result<(ViewableData, u64)> {
+    pub fn scan_mint(
+        &self,
+        mint_note: &MintNote<Config>,
+        uid_offset: u64,
+    ) -> Result<(ViewableData<Config>, u64)> {
         let visible_data = self.keypair.open_mint_viewing_memo(mint_note)?;
         Ok((visible_data, uid_offset + 1)) // skip fee change record
     }
@@ -562,41 +557,53 @@ pub struct FreezerMock {
     // Viewer: freezer needsviewing data and hence we assume that a freezer is also an viewer.
     // Alternatively, freezer and viewer can be independent entities and communicate via RPC
     viewer: ViewerMock,
-    keypair: FreezerKeyPair,
-    srs: Rc<UniversalParam>,
-    proving_keys: HashMap<String, FreezeProvingKey>,
+    keypair: FreezerKeyPair<Config>,
+    srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
+    proving_keys: HashMap<String, FreezeProvingKey<Config>>,
     // wallet: wallet used to pay fees
     wallet: SimpleUserWalletMock,
-    freezable_records: HashMap<UserAddress, HashSet<(RecordOpening, u64)>>, // record + uid
-    releasable_records: HashMap<UserAddress, HashSet<(RecordOpening, u64)>>, // record + uid
+    freezable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, // record + uid
+    releasable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, // record + uid
     // unconfirmed_frozen_records:Frozen records where freeze transaction has been produced, but
     // has not been confirmed by network It store the user address (original record and uid)
     // and frozen record opening Once the nullifier is detected in a validated freeze
     // transaction, the user address is used to indexing freezable_records and remove
     // (original_record opening and its uid). The frozen record opening is added to
     // releasable_records.
-    unconfirmed_frozen_records:
-        HashMap<Nullifier, (UserAddress, (RecordOpening, u64), RecordOpening)>, /* address, (original record, uid), frozen opening */
+    unconfirmed_frozen_records: HashMap<
+        Nullifier<Config>,
+        (
+            UserAddress<Config>,
+            (RecordOpening<Config>, u64),
+            RecordOpening<Config>,
+        ),
+    >, /* address, (original record, uid), frozen opening */
     // unconfirmed_released_records: Released records where unfreeze transaction has been produced,
     // but has not been confirmed by network It store the user address (frozen record and uid)
     // and released record opening Once the nullifier is detected in a validated unfreeze
     // transaction, the user address is used to indexing releasable_records and remove
     // (frozen_record opening and its uid). The released record opening is added to
     // freezaable_records.
-    unconfirmed_released_records:
-        HashMap<Nullifier, (UserAddress, (RecordOpening, u64), RecordOpening)>, /* address, (frozen record, uid), released record opening */
+    unconfirmed_released_records: HashMap<
+        Nullifier<Config>,
+        (
+            UserAddress<Config>,
+            (RecordOpening<Config>, u64),
+            RecordOpening<Config>,
+        ),
+    >, /* address, (frozen record, uid), released record opening */
     // user_keys_orable: The user address is detected via viewing memo, but we assume freezer can
     // find out the entirety of user's public key (including the encryption key for ReceiverMemo)
     // either via direct channel with the user, or via public bulletin board.
-    user_keys_oracle: HashMap<UserAddress, UserPubKey>,
+    user_keys_oracle: HashMap<UserAddress<Config>, UserPubKey<Config>>,
 }
 
 impl<'a> FreezerMock {
     /// Create a new freezer
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        srs: Rc<UniversalParam>,
-        asset_code: AssetCode,
+        srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
+        asset_code: AssetCode<Config>,
     ) -> FreezerMock {
         let freezer_keypair = FreezerKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);
@@ -623,30 +630,30 @@ impl<'a> FreezerMock {
         }
     }
 
-    pub fn asset_def(&self) -> AssetDefinition {
+    pub fn asset_def(&self) -> AssetDefinition<Config> {
         self.viewer.asset_def.clone()
     }
 
-    pub fn pub_key(&self) -> FreezerPubKey {
+    pub fn pub_key(&self) -> FreezerPubKey<Config> {
         self.keypair.pub_key()
     }
 
-    pub fn add_user_key(&mut self, key: UserPubKey) {
+    pub fn add_user_key(&mut self, key: UserPubKey<Config>) {
         self.user_keys_oracle.insert(key.address(), key);
     }
 
-    fn get_proving_key(&self, n_inputs: usize) -> Option<&FreezeProvingKey> {
+    fn get_proving_key(&self, n_inputs: usize) -> Option<&FreezeProvingKey<Config>> {
         let description = format!("Freeze_{}", n_inputs);
         self.proving_keys.get(&description)
     }
 
-    fn compute_proving_key(&self, n_inputs: usize) -> FreezeProvingKey {
+    fn compute_proving_key(&self, n_inputs: usize) -> FreezeProvingKey<Config> {
         let (proving_key, ..) =
             jf_cap::proof::freeze::preprocess(&self.srs, n_inputs, TREE_DEPTH).unwrap();
         proving_key
     }
 
-    fn insert_proving_key(&mut self, n_inputs: usize, proving_key: FreezeProvingKey) {
+    fn insert_proving_key(&mut self, n_inputs: usize, proving_key: FreezeProvingKey<Config>) {
         let description = format!("Freeze_{}", n_inputs);
         self.proving_keys.insert(description, proving_key);
     }
@@ -679,7 +686,7 @@ impl<'a> FreezerMock {
     /// and update freezable/releasable status for freeze notes
     pub fn scan_txn(
         &mut self,
-        txn: &TransactionNote,
+        txn: &TransactionNote<Config>,
         receiver_memos: &[ReceiverMemo],
         uid_offset: u64,
     ) -> Result<()> {
@@ -693,7 +700,7 @@ impl<'a> FreezerMock {
 
     // check if created record is freezable
     // Store record opening of freezable minted record
-    fn scan_mint(&mut self, mint_note: &MintNote, uid_offset: u64) -> Result<()> {
+    fn scan_mint(&mut self, mint_note: &MintNote<Config>, uid_offset: u64) -> Result<()> {
         let (visible_data, uid) = self.viewer.scan_mint(mint_note, uid_offset)?;
         let user_address = visible_data.user_address.as_ref().unwrap();
         let ro = RecordOpening {
@@ -721,7 +728,7 @@ impl<'a> FreezerMock {
     }
 
     // scan a transfer looking for freezable records and store their openings
-    fn scan_xfr(&mut self, xfr_note: &TransferNote, uid_offset: u64) -> Result<()> {
+    fn scan_xfr(&mut self, xfr_note: &TransferNote<Config>, uid_offset: u64) -> Result<()> {
         let (_input_records, output_records_and_uids) =
             self.viewer.scan_xfr(xfr_note, uid_offset)?;
         // take only outputs
@@ -755,7 +762,7 @@ impl<'a> FreezerMock {
     }
 
     // scan a freeze note updating state on unconfirmed freezable and frozen records
-    fn scan_freeze(&mut self, freeze_note: &FreezeNote, uid_offset: u64) -> Result<()> {
+    fn scan_freeze(&mut self, freeze_note: &FreezeNote<Config>, uid_offset: u64) -> Result<()> {
         let uid_offset = uid_offset + 1;
         for (position, nullifier) in freeze_note.input_nullifiers.iter().skip(1).enumerate() {
             match self.unconfirmed_frozen_records.get(nullifier) {
@@ -800,10 +807,14 @@ impl<'a> FreezerMock {
     pub fn unfreeze_user<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        user: &UserAddress,
+        user: &UserAddress<Config>,
         fee: Amount,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
+    ) -> Result<(
+        FreezeNote<Config>,
+        Vec<ReceiverMemo>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, false)
     }
 
@@ -811,10 +822,14 @@ impl<'a> FreezerMock {
     pub fn freeze_user<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        user: &UserAddress,
+        user: &UserAddress<Config>,
         fee: Amount,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
+    ) -> Result<(
+        FreezeNote<Config>,
+        Vec<ReceiverMemo>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         self.freeze_user_internal(rng, user, fee, merkle_tree_oracle, true)
     }
 
@@ -822,11 +837,15 @@ impl<'a> FreezerMock {
     fn freeze_user_internal<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        user: &UserAddress,
+        user: &UserAddress<Config>,
         fee: Amount,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
         freeze: bool, // true: freeze, false: unfreeze
-    ) -> Result<(FreezeNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
+    ) -> Result<(
+        FreezeNote<Config>,
+        Vec<ReceiverMemo>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         // 1. get records for user
         let records_and_uids = if freeze {
             self.freezable_records
@@ -918,7 +937,7 @@ impl<'a> FreezerMock {
             .iter()
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]).unwrap())
             .collect();
-        let sig = sign_receiver_memos(&sig_key, &recv_memos)?;
+        let sig = sign_receiver_memos::<Config>(&sig_key, &recv_memos)?;
 
         // records_and_uids doesn't contain any dummy record,
         // hence I cannot zip with freeze_note_outputs_record_openings (may contain
@@ -969,28 +988,28 @@ const UNEXPIRED_VALID_UNTIL: u64 = 2u64.pow(MAX_TIMESTAMP_LEN as u32) - 1;
 /// linked to the user
 pub struct SimpleUserWalletMock {
     // spending, decrypting, signing keys
-    keypair: UserKeyPair,
+    keypair: UserKeyPair<Config>,
     // user credentials
-    credential: Option<ExpirableCredential>,
+    credential: Option<ExpirableCredential<Config>>,
     // reference to SRS
-    srs: Rc<UniversalParam>,
+    srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
     // map from description string to corresponding verifying key
-    proving_keys: HashMap<String, TransferProvingKey>,
+    proving_keys: HashMap<String, TransferProvingKey<Config>>,
     // submitted record for spending, not confirmed by network yet
     // store mapping from nullifier to record opening and uid of the record (position in the merkle
     // tree)
-    unconfirmed_spent_records: HashMap<Nullifier, (RecordOpening, u64)>,
+    unconfirmed_spent_records: HashMap<Nullifier<Config>, (RecordOpening<Config>, u64)>,
     // owned records not spent yet, maps asset code to (record_opening, uid)
-    unspent_records: HashMap<AssetCode, HashSet<(RecordOpening, u64)>>,
+    unspent_records: HashMap<AssetCode<Config>, HashSet<(RecordOpening<Config>, u64)>>,
     // record openings produces as fee change, waiting confirmation to add to unspent_records
-    unconfirmed_fee_chg_records: HashSet<RecordOpening>,
+    unconfirmed_fee_chg_records: HashSet<RecordOpening<Config>>,
 }
 
 impl SimpleUserWalletMock {
     /// sample keypair and initiate empty record opening set
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
-        srs: Rc<UniversalParam>,
+        srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
     ) -> SimpleUserWalletMock {
         SimpleUserWalletMock {
             keypair: UserKeyPair::generate(rng),
@@ -1004,7 +1023,7 @@ impl SimpleUserWalletMock {
     }
 
     /// computes spendable funds for given asset code
-    pub fn available_funds(&self, asset_code: &AssetCode) -> Amount {
+    pub fn available_funds(&self, asset_code: &AssetCode<Config>) -> Amount {
         match self.unspent_records.get(asset_code) {
             Some(records) => records.iter().map(|(record, _uid)| record.amount).sum(),
             None => 0u128.into(),
@@ -1012,12 +1031,12 @@ impl SimpleUserWalletMock {
     }
 
     // retrieve public key
-    fn pub_key(&self) -> UserPubKey {
+    fn pub_key(&self) -> UserPubKey<Config> {
         self.keypair.pub_key()
     }
 
     // Add record opening to list of owned records
-    fn add_record_opening(&mut self, record_opening: RecordOpening, uid: u64) {
+    fn add_record_opening(&mut self, record_opening: RecordOpening<Config>, uid: u64) {
         let code = record_opening.asset_def.code;
         self.unspent_records
             .entry(code)
@@ -1026,7 +1045,7 @@ impl SimpleUserWalletMock {
     }
 
     // Set user credential
-    fn set_credential(&mut self, credential: ExpirableCredential) {
+    fn set_credential(&mut self, credential: ExpirableCredential<Config>) {
         self.credential = Some(credential)
     }
 
@@ -1036,10 +1055,10 @@ impl SimpleUserWalletMock {
     /// records before this transaction is added to the ledger
     pub fn scan_txn(
         &mut self,
-        txn_note: &TransactionNote,
+        txn_note: &TransactionNote<Config>,
         receiver_memos: &[ReceiverMemo],
         uid_offset: u64,
-    ) -> Vec<RecordOpening> {
+    ) -> Vec<RecordOpening<Config>> {
         // process output
         let mut recv_record_openings: Vec<_> = vec![];
         let output_commitments = match txn_note {
@@ -1105,7 +1124,7 @@ impl SimpleUserWalletMock {
         block: &MockBlock,
         recv_memos: &[&[ReceiverMemo]],
         uid_offset: u64,
-    ) -> Vec<RecordOpening> {
+    ) -> Vec<RecordOpening<Config>> {
         assert_eq!(block.txns.len(), recv_memos.len());
         let mut uid_offset = uid_offset;
         let mut owned_records_openings = vec![];
@@ -1118,13 +1137,19 @@ impl SimpleUserWalletMock {
         owned_records_openings
     }
 
-    fn get_proving_key(&self, n_inputs: usize, n_outputs: usize) -> Option<&TransferProvingKey> {
+    fn get_proving_key(
+        &self,
+        n_inputs: usize,
+        n_outputs: usize,
+    ) -> Option<&TransferProvingKey<Config>> {
         let description = format!("Xfr_{}_{}", n_inputs, n_outputs);
         self.proving_keys.get(&description)
     }
 
-    fn compute_proving_key(&self, n_inputs: usize, n_outputs: usize) -> TransferProvingKey {
-        let (proving_key, ..) = preprocess(&self.srs, n_inputs, n_outputs, TREE_DEPTH).unwrap();
+    fn compute_proving_key(&self, n_inputs: usize, n_outputs: usize) -> TransferProvingKey<Config> {
+        let (proving_key, ..) =
+            jf_cap::proof::transfer::preprocess(&self.srs, n_inputs, n_outputs, TREE_DEPTH)
+                .unwrap();
         proving_key
     }
 
@@ -1132,7 +1157,7 @@ impl SimpleUserWalletMock {
         &mut self,
         n_inputs: usize,
         n_outputs: usize,
-        proving_key: TransferProvingKey,
+        proving_key: TransferProvingKey<Config>,
     ) {
         let description = format!("Xfr_{}_{}", n_inputs, n_outputs);
         self.proving_keys.insert(description, proving_key);
@@ -1140,7 +1165,7 @@ impl SimpleUserWalletMock {
 
     /// find a record and corresponding uid on the native asset type with enough
     /// funds to pay transaction fee
-    fn find_record_for_fee(&self, fee: Amount) -> Result<(RecordOpening, u64)> {
+    fn find_record_for_fee(&self, fee: Amount) -> Result<(RecordOpening<Config>, u64)> {
         let unspent_native_assets = self
             .unspent_records
             .get(&AssetDefinition::native().code)
@@ -1161,9 +1186,9 @@ impl SimpleUserWalletMock {
     /// between its total value minus the requested `amount`.
     fn find_records(
         &self,
-        asset_code: &AssetCode,
+        asset_code: &AssetCode<Config>,
         amount: Amount,
-    ) -> Result<(Vec<(RecordOpening, u64)>, Amount)> {
+    ) -> Result<(Vec<(RecordOpening<Config>, u64)>, Amount)> {
         let mut result = vec![];
         let mut current_amount: Amount = 0u128.into();
         let unspent_records = self
@@ -1191,10 +1216,14 @@ impl SimpleUserWalletMock {
     pub fn spend_native<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        output_addresses_and_amounts: &[(UserPubKey<Config>, Amount)],
         fee: Amount,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
+    ) -> Result<(
+        TransferNote<Config>,
+        Vec<ReceiverMemo>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         let total_output_amount: Amount = output_addresses_and_amounts
             .iter()
             .fold(0u64.into(), |acc: Amount, (_, amount)| acc + *amount)
@@ -1286,7 +1315,7 @@ impl SimpleUserWalletMock {
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]))
             .collect();
         let recv_memos = recv_memos?;
-        let sig = sign_receiver_memos(&keypair, &recv_memos)?;
+        let sig = sign_receiver_memos::<Config>(&keypair, &recv_memos)?;
         self.unconfirmed_fee_chg_records.insert(fee_change_ro);
         Ok((note, recv_memos, sig))
     }
@@ -1298,11 +1327,15 @@ impl SimpleUserWalletMock {
     pub fn spend_non_native<R: CryptoRng + RngCore>(
         &mut self,
         rng: &mut R,
-        asset_def: &AssetDefinition,
-        output_addresses_and_amounts: &[(UserPubKey, Amount)],
+        asset_def: &AssetDefinition<Config>,
+        output_addresses_and_amounts: &[(UserPubKey<Config>, Amount)],
         fee: Amount,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(TransferNote, Vec<ReceiverMemo>, Signature<CurveParam>)> {
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
+    ) -> Result<(
+        TransferNote<Config>,
+        Vec<ReceiverMemo>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+    )> {
         assert_ne!(
             *asset_def,
             AssetDefinition::native(),
@@ -1433,7 +1466,7 @@ impl SimpleUserWalletMock {
             .map(|ro| ReceiverMemo::from_ro(rng, ro, &[]))
             .collect();
         let recv_memos = recv_memos?;
-        let sig = sign_receiver_memos(&sig_keypair, &recv_memos)?;
+        let sig = sign_receiver_memos::<Config>(&sig_keypair, &recv_memos)?;
 
         // mark unconfirmed spent
         for (nullifier, ro, uid) in to_spend_records {
@@ -1444,13 +1477,18 @@ impl SimpleUserWalletMock {
     }
 
     /// change state of record to unconfirmed spent
-    pub fn mark_unconfirmed_spent(&mut self, nullifier: Nullifier, ro: RecordOpening, uid: u64) {
+    pub fn mark_unconfirmed_spent(
+        &mut self,
+        nullifier: Nullifier<Config>,
+        ro: RecordOpening<Config>,
+        uid: u64,
+    ) {
         self.unconfirmed_spent_records.insert(nullifier, (ro, uid));
     }
 
     /// change state of record to spent
     #[inline]
-    pub fn mark_spent_if_owned(&mut self, nullifier: &Nullifier) {
+    pub fn mark_spent_if_owned(&mut self, nullifier: &Nullifier<Config>) {
         // check unconfirmed_spent
         match self.unconfirmed_spent_records.get(nullifier) {
             Some(record) => {
@@ -1490,15 +1528,19 @@ impl SimpleUserWalletMock {
 pub struct AssetIssuerMock {
     wallet: SimpleUserWalletMock,
     // proving key for generating mint transaction
-    proving_key: MintProvingKey,
+    proving_key: MintProvingKey<Config>,
     // maps defined asset code to asset definition, seed and description of the asset
-    defined_assets: HashMap<AssetCode, (AssetDefinition, AssetCodeSeed, Vec<u8>)>,
+    defined_assets:
+        HashMap<AssetCode<Config>, (AssetDefinition<Config>, AssetCodeSeed<Config>, Vec<u8>)>,
 }
 
 impl AssetIssuerMock {
     /// AssetIssuerMock struct constructor: Generate a user wallet and initiate
     /// set of defined assets
-    pub fn new<R: CryptoRng + RngCore>(rng: &mut R, srs: Rc<UniversalParam>) -> AssetIssuerMock {
+    pub fn new<R: CryptoRng + RngCore>(
+        rng: &mut R,
+        srs: Rc<UniversalSrs<<Config as CapConfig>::PairingCurve>>,
+    ) -> AssetIssuerMock {
         let wallet = SimpleUserWalletMock::generate(rng, srs);
         let (proving_key, ..) = jf_cap::proof::mint::preprocess(&wallet.srs, TREE_DEPTH).unwrap();
 
@@ -1514,8 +1556,8 @@ impl AssetIssuerMock {
         &mut self,
         rng: &mut R,
         description: &[u8],
-        policy: AssetPolicy,
-    ) -> AssetCode {
+        policy: AssetPolicy<Config>,
+    ) -> AssetCode<Config> {
         let seed = AssetCodeSeed::generate(rng);
         let code = AssetCode::new_domestic(seed, description);
         let asset_definition = AssetDefinition::new(code, policy).unwrap();
@@ -1525,7 +1567,7 @@ impl AssetIssuerMock {
     }
 
     /// Retrieve asset definition
-    pub fn asset_defintion(&self, code: &AssetCode) -> Option<AssetDefinition> {
+    pub fn asset_defintion(&self, code: &AssetCode<Config>) -> Option<AssetDefinition<Config>> {
         self.defined_assets.get(code).map(|(def, ..)| def.clone())
     }
 
@@ -1534,11 +1576,15 @@ impl AssetIssuerMock {
         &mut self,
         rng: &mut R,
         fee: Amount,
-        asset_code: &AssetCode,
+        asset_code: &AssetCode<Config>,
         amount: Amount,
-        owner: UserPubKey,
-        merkle_tree_oracle: &MerkleTree<BaseField>,
-    ) -> Result<(MintNote, Signature<CurveParam>, ReceiverMemo)> {
+        owner: UserPubKey<Config>,
+        merkle_tree_oracle: &MerkleTree<<Config as CapConfig>::ScalarField>,
+    ) -> Result<(
+        MintNote<Config>,
+        Signature<<Config as CapConfig>::EmbeddedCurveParam>,
+        ReceiverMemo,
+    )> {
         let (fee_ro, uid) = self.wallet.find_record_for_fee(fee)?;
         let fee_record_nullifier =
             self.wallet
@@ -1577,14 +1623,14 @@ impl AssetIssuerMock {
             &self.proving_key,
         )?;
         self.wallet.unconfirmed_fee_chg_records.insert(fee_chg_ro);
-        let sig = sign_receiver_memos(&sig_key, &mint_recv_memo)?;
+        let sig = sign_receiver_memos::<Config>(&sig_key, &mint_recv_memo)?;
         Ok((min_note, sig, mint_recv_memo[0].clone()))
     }
 
     /// scan transaction to mark spent fee record
     pub fn scan_txn(
         &mut self,
-        txn: &TransactionNote,
+        txn: &TransactionNote<Config>,
         receiver_memos: &[ReceiverMemo],
         uid_offset: u64,
     ) {
@@ -1649,7 +1695,7 @@ pub fn example_native_asset_transfer() {
         .unwrap();
 
     // Bulletin board or users verify receiver memos
-    let txn: TransactionNote = xfr_note.into();
+    let txn: TransactionNote<Config> = xfr_note.into();
     txn.verify_receiver_memos_signature(&recv_memos, &recv_memos_sig)
         .unwrap();
     // 4. receivers: 1 intended receiver, 2 change to sender
@@ -1768,7 +1814,7 @@ pub fn example_non_native_asset_transfer() {
         .unwrap();
 
     // Bulleting board or users verify receiver memos
-    let txn_note: TransactionNote = xfr_note.into();
+    let txn_note: TransactionNote<Config> = xfr_note.into();
     txn_note
         .verify_receiver_memos_signature(&recv_memos, &recv_memos_sig)
         .unwrap();
@@ -1868,7 +1914,7 @@ pub fn example_test_viewed_asset_transfer() {
     assert_eq!(output_visible_data.len(), 1);
 
     // Bulleting board or users verify receiver memos
-    let txn: TransactionNote = xfr_note.into();
+    let txn: TransactionNote<Config> = xfr_note.into();
     txn.verify_receiver_memos_signature(&recv_memos, &recv_memos_sig)
         .unwrap();
 
@@ -2013,7 +2059,7 @@ pub fn example_viewed_non_native_asset_with_credentials() {
     assert_eq!(output_visible_data.len(), 1);
 
     // Bulleting board or users verify receiver memos
-    let txn: TransactionNote = xfr_note.into();
+    let txn: TransactionNote<Config> = xfr_note.into();
     txn.verify_receiver_memos_signature(&recv_memos, &recv_memos_sig)
         .unwrap();
 
@@ -2042,12 +2088,12 @@ pub fn example_viewed_non_native_asset_with_credentials() {
 
 // Only use for testing
 fn check_transfer_visible_data(
-    data: &ViewableData,
-    expected_code: AssetCode,
-    expected_user_address: Option<UserAddress>,
+    data: &ViewableData<Config>,
+    expected_code: AssetCode<Config>,
+    expected_user_address: Option<UserAddress<Config>>,
     expected_amount: Option<Amount>,
-    expected_blind_factor: Option<BlindFactor>,
-    expected_attributes: Vec<Option<IdentityAttribute>>,
+    expected_blind_factor: Option<BlindFactor<Config>>,
+    expected_attributes: Vec<Option<IdentityAttribute<Config>>>,
 ) {
     assert_eq!(data.asset_code, expected_code);
     assert_eq!(data.user_address, expected_user_address);

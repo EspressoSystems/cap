@@ -72,6 +72,13 @@ impl<C: CapConfig> From<&UserAddress<C>> for (C::ScalarField, C::ScalarField) {
     }
 }
 
+impl<C: CapConfig> UserAddress<C> {
+    /// Returns the internal point representation
+    pub fn internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
+        self.0.internal()
+    }
+}
+
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
@@ -148,7 +155,7 @@ impl<C: CapConfig> UserPubKey<C> {
 // private or internal functions
 impl<C: CapConfig> UserPubKey<C> {
     pub(crate) fn address_internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
-        self.address.0.internal()
+        self.address.internal()
     }
 }
 
@@ -530,7 +537,7 @@ impl<C: CapConfig> FreezerKeyPair<C> {
     // asset record and sanity check had been done during asset issuance to
     // avoid malformed user public key.
     pub(crate) fn derive_nullifier_key(&self, address: &UserAddress<C>) -> NullifierKey<C> {
-        compute_nullifier_key(address.0.internal(), &self.sec_key)
+        compute_nullifier_key(address.internal(), &self.sec_key)
     }
 }
 
