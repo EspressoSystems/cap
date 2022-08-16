@@ -55,8 +55,9 @@ pub trait CapConfig: Sized + Clone + Debug + PartialEq {
     /// number of byte can each `identityAttribute` take.
     const PER_ATTR_BYTE_CAPACITY: u32 =
         (<Self::ScalarField as PrimeField>::Params::CAPACITY / 8) - 1;
-    // NOTE: we use function instead of const because there's no const fn API from arkworks
-    // to construct a field element with generic type (field_new! macro is only for concrete type)
+    // NOTE: we use function instead of const because there's no const fn API from
+    // arkworks to construct a field element with generic type (field_new! macro
+    // is only for concrete type)
     /// Native asset code, cannot be 0 as then code is identical to default code
     fn native_asset_code() -> AssetCode<Self> {
         AssetCode(Self::ScalarField::from(1u32))
@@ -69,7 +70,7 @@ pub trait CapConfig: Sized + Clone + Debug + PartialEq {
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bn254")]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config;
 
 #[cfg(feature = "bn254")]
@@ -84,7 +85,7 @@ impl CapConfig for Config {
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bls12_377")]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config;
 
 #[cfg(feature = "bls12_377")]
@@ -99,7 +100,7 @@ impl CapConfig for Config {
 
 /// A concrete instantation of `CapConfig`
 #[cfg(feature = "bls12_381")]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Config;
 
 #[cfg(feature = "bls12_381")]

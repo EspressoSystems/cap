@@ -65,7 +65,7 @@ impl<C: CapConfig> FreezeProvingKey<C> {
 }
 /// Key for verifying the validity of a Freeze note during asset freezing.
 #[derive(
-    Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
+    Debug, Clone, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
 pub struct FreezeVerifyingKey<C: CapConfig> {

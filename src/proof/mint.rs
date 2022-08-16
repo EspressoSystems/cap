@@ -54,7 +54,7 @@ deserialize_canonical_bytes!(MintProvingKey<C: CapConfig>);
 
 /// Key for verifying the validity of a Mint note during asset issuance.
 #[derive(
-    Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
+    Debug, Clone, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
 pub struct MintVerifyingKey<C: CapConfig> {

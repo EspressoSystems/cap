@@ -78,7 +78,7 @@ impl<C: CapConfig> TransferProvingKey<C> {
 
 /// Key for verifying a Transfer note
 #[derive(
-    Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
+    Debug, Clone, PartialEq, Eq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
 /// Verifying key of Transfer note and its attributes

@@ -562,8 +562,8 @@ pub struct FreezerMock {
     proving_keys: HashMap<String, FreezeProvingKey<Config>>,
     // wallet: wallet used to pay fees
     wallet: SimpleUserWalletMock,
-    freezable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, // record + uid
-    releasable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, // record + uid
+    freezable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, /* record + uid */
+    releasable_records: HashMap<UserAddress<Config>, HashSet<(RecordOpening<Config>, u64)>>, /* record + uid */
     // unconfirmed_frozen_records:Frozen records where freeze transaction has been produced, but
     // has not been confirmed by network It store the user address (original record and uid)
     // and frozen record opening Once the nullifier is detected in a validated freeze
@@ -577,7 +577,7 @@ pub struct FreezerMock {
             (RecordOpening<Config>, u64),
             RecordOpening<Config>,
         ),
-    >, /* address, (original record, uid), frozen opening */
+    >, // address, (original record, uid), frozen opening
     // unconfirmed_released_records: Released records where unfreeze transaction has been produced,
     // but has not been confirmed by network It store the user address (frozen record and uid)
     // and released record opening Once the nullifier is detected in a validated unfreeze
@@ -591,7 +591,7 @@ pub struct FreezerMock {
             (RecordOpening<Config>, u64),
             RecordOpening<Config>,
         ),
-    >, /* address, (frozen record, uid), released record opening */
+    >, // address, (frozen record, uid), released record opening
     // user_keys_orable: The user address is detected via viewing memo, but we assume freezer can
     // find out the entirety of user's public key (including the encryption key for ReceiverMemo)
     // either via direct channel with the user, or via public bulletin board.
