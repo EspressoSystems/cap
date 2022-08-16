@@ -19,19 +19,22 @@ use crate::{
     errors::TxnApiError,
     freeze::FreezeNoteInput,
     keys::{FreezerKeyPair, FreezerPubKey, UserKeyPair},
-    proof::UniversalParam,
+    prelude::CapConfig,
     structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
-    AccMemberWitness, BaseField, MerkleTree, NodeValue, PairingEngine, VerKey,
 };
 use ark_serialize::*;
 use ark_std::{format, string::ToString, vec, vec::Vec};
 use jf_plonk::{
     circuit::Circuit,
     proof_system::{
-        structs::{Proof, ProvingKey, VerifyingKey},
+        structs::{Proof, ProvingKey, UniversalSrs, VerifyingKey},
         PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
+};
+use jf_primitives::{
+    merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
+    signatures::schnorr,
 };
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use rand::{CryptoRng, RngCore};
@@ -42,14 +45,14 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct FreezeProvingKey {
-    pub(crate) proving_key: ProvingKey<PairingEngine>,
+pub struct FreezeProvingKey<C: CapConfig> {
+    pub(crate) proving_key: ProvingKey<C::PairingCurve>,
     pub(crate) tree_depth: u8,
     pub(crate) num_input: usize,
 }
-deserialize_canonical_bytes!(FreezeProvingKey);
+deserialize_canonical_bytes!(FreezeProvingKey<C: CapConfig>);
 
-impl FreezeProvingKey {
+impl<C: CapConfig> FreezeProvingKey<C> {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.num_input
@@ -65,14 +68,14 @@ impl FreezeProvingKey {
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct FreezeVerifyingKey {
-    pub(crate) verifying_key: VerifyingKey<PairingEngine>,
+pub struct FreezeVerifyingKey<C: CapConfig> {
+    pub(crate) verifying_key: VerifyingKey<C::PairingCurve>,
     pub(crate) tree_depth: u8,
     pub(crate) num_input: usize,
 }
-deserialize_canonical_bytes!(FreezeVerifyingKey);
+deserialize_canonical_bytes!(FreezeVerifyingKey<C: CapConfig>);
 
-impl FreezeVerifyingKey {
+impl<C: CapConfig> FreezeVerifyingKey<C> {
     /// Getter for number of input (fee input included)
     pub fn num_input(&self) -> usize {
         self.num_input
@@ -84,22 +87,19 @@ impl FreezeVerifyingKey {
     }
 }
 
-/// Proof associated to a Freeze note
-pub type FreezeValidityProof = Proof<PairingEngine>;
-
 /// One-time preprocess of the Freezing transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// asset freezing transaction.
-pub fn preprocess(
-    srs: &UniversalParam,
+pub fn preprocess<C: CapConfig>(
+    srs: &UniversalSrs<C::PairingCurve>,
     num_input: usize,
     tree_depth: u8,
-) -> Result<(FreezeProvingKey, FreezeVerifyingKey, usize), TxnApiError> {
+) -> Result<(FreezeProvingKey<C>, FreezeVerifyingKey<C>, usize), TxnApiError> {
     let (dummy_circuit, n_constraints) =
-        FreezeCircuit::build_for_preprocessing(tree_depth, num_input)?;
+        FreezeCircuit::<C>::build_for_preprocessing(tree_depth, num_input)?;
 
     let (proving_key, verifying_key) =
-        PlonkKzgSnark::<PairingEngine>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
+        PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
             TxnApiError::FailedSnark(format!(
                 "Preprocessing Freeze circuit of {}-depth {}-inputs failed: {}",
                 tree_depth, num_input, e
@@ -122,13 +122,13 @@ pub fn preprocess(
 
 /// Generate a transaction validity proof (a zk-SNARK proof) given the witness
 /// and the proving key.
-pub(crate) fn prove<R>(
+pub(crate) fn prove<R, C: CapConfig>(
     rng: &mut R,
-    proving_key: &FreezeProvingKey,
-    witness: &FreezeWitness,
-    pub_input: &FreezePublicInput,
-    txn_memo_ver_key: &VerKey,
-) -> Result<FreezeValidityProof, TxnApiError>
+    proving_key: &FreezeProvingKey<C>,
+    witness: &FreezeWitness<C>,
+    pub_input: &FreezePublicInput<C>,
+    txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
+) -> Result<Proof<C::PairingCurve>, TxnApiError>
 where
     R: RngCore + CryptoRng,
 {
@@ -148,7 +148,7 @@ where
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(txn_memo_ver_key, &mut ext_msg)?;
 
-    PlonkKzgSnark::<PairingEngine>::prove::<_, _, SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::prove::<_, _, SolidityTranscript>(
         rng,
         &circuit.0,
         &proving_key.proving_key,
@@ -159,15 +159,15 @@ where
 
 /// Verify a transaction validity proof given the public inputs and verifying
 /// key.
-pub(crate) fn verify(
-    verifying_key: &FreezeVerifyingKey,
-    public_inputs: &FreezePublicInput,
-    proof: &FreezeValidityProof,
-    recv_memos_ver_key: &VerKey,
+pub(crate) fn verify<C: CapConfig>(
+    verifying_key: &FreezeVerifyingKey<C>,
+    public_inputs: &FreezePublicInput<C>,
+    proof: &Proof<C::PairingCurve>,
+    recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;
-    PlonkKzgSnark::<PairingEngine>::verify::<SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::verify::<SolidityTranscript>(
         &verifying_key.verifying_key,
         &public_inputs.to_scalars(),
         proof,
@@ -179,27 +179,27 @@ pub(crate) fn verify(
 
 #[derive(Debug, Clone)]
 /// Witness for a Freeze note
-pub(crate) struct FreezeWitness<'a> {
-    pub(crate) input_ros: Vec<RecordOpening>,
-    pub(crate) input_acc_member_witnesses: Vec<AccMemberWitness>,
-    pub(crate) output_ros: Vec<RecordOpening>,
-    pub(crate) fee_keypair: &'a UserKeyPair,
-    pub(crate) freezing_keypairs: Vec<&'a FreezerKeyPair>,
+pub(crate) struct FreezeWitness<'a, C: CapConfig> {
+    pub(crate) input_ros: Vec<RecordOpening<C>>,
+    pub(crate) input_acc_member_witnesses: Vec<AccMemberWitness<C::ScalarField>>,
+    pub(crate) output_ros: Vec<RecordOpening<C>>,
+    pub(crate) fee_keypair: &'a UserKeyPair<C>,
+    pub(crate) freezing_keypairs: Vec<&'a FreezerKeyPair<C>>,
 }
 
-impl<'a> FreezeWitness<'a> {
+impl<'a, C: CapConfig> FreezeWitness<'a, C> {
     pub(crate) fn dummy(
         tree_depth: u8,
         num_input: usize,
-        fee_keypair: &'a UserKeyPair,
-        freezing_keypair: &'a FreezerKeyPair,
+        fee_keypair: &'a UserKeyPair<C>,
+        freezing_keypair: &'a FreezerKeyPair<C>,
     ) -> Self {
         let input_ros = vec![RecordOpening::default(); num_input];
-        let mut mt = MerkleTree::new(tree_depth).unwrap();
+        let mut mt = MerkleTree::<C::ScalarField>::new(tree_depth).unwrap();
         input_ros
             .iter()
             .for_each(|ro| mt.push(ro.derive_record_commitment().to_field_element()));
-        let input_acc_member_witnesses: Vec<AccMemberWitness> = (0..num_input)
+        let input_acc_member_witnesses = (0..num_input)
             .map(|uid| {
                 AccMemberWitness::lookup_from_tree(&mt, uid as u64)
                     .expect_ok().unwrap() // safe unwrap()
@@ -216,9 +216,9 @@ impl<'a> FreezeWitness<'a> {
     }
 
     pub(crate) fn new_unchecked(
-        inputs: Vec<FreezeNoteInput<'a>>,
-        output_ros: &[RecordOpening],
-        txn_fee_info: TxnFeeInfo<'a>,
+        inputs: Vec<FreezeNoteInput<'a, C>>,
+        output_ros: &[RecordOpening<C>],
+        txn_fee_info: TxnFeeInfo<'a, C>,
     ) -> Self {
         let (mut input_ros, mut input_acc_member_witnesses) = (
             vec![txn_fee_info.fee_input.ro],
@@ -244,22 +244,22 @@ impl<'a> FreezeWitness<'a> {
 
 #[derive(Debug, Clone)]
 /// Struct for the public input of a freeze witness
-pub struct FreezePublicInput {
+pub struct FreezePublicInput<C: CapConfig> {
     /// record merkle tree root
-    pub merkle_root: NodeValue,
+    pub merkle_root: NodeValue<C::ScalarField>,
     /// native asset code
-    pub native_asset_code: AssetCode,
+    pub native_asset_code: AssetCode<C>,
     /// transaction fee to pay
     pub fee: Amount,
     /// nullifiers of input records
-    pub input_nullifiers: Vec<Nullifier>,
+    pub input_nullifiers: Vec<Nullifier<C>>,
     /// commitments of output records
-    pub output_commitments: Vec<RecordCommitment>,
+    pub output_commitments: Vec<RecordCommitment<C>>,
 }
 
-impl FreezePublicInput {
+impl<C: CapConfig> FreezePublicInput<C> {
     /// Compute the public input from witness and ledger info
-    pub(crate) fn from_witness(witness: &FreezeWitness) -> Result<Self, TxnApiError> {
+    pub(crate) fn from_witness(witness: &FreezeWitness<C>) -> Result<Self, TxnApiError> {
         if witness.input_ros.len() <= 1 {
             return Err(TxnApiError::InvalidParameter(
                 "freezing: the freezing inputs (excluding fee input) should be non-empty"
@@ -330,11 +330,11 @@ impl FreezePublicInput {
     /// Flatten out all pubic input fields into a vector of BaseFields.
     /// Note that the order matters.
     /// TODO: check order consistency with `FreezePubInputVar`.
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let mut result = vec![
             self.merkle_root.to_scalar(),
             self.native_asset_code.0,
-            BaseField::from(self.fee.0),
+            C::ScalarField::from(self.fee.0),
         ];
         for nullifier in &self.input_nullifiers {
             result.push(nullifier.0);
@@ -352,18 +352,19 @@ mod test {
     use crate::{
         errors::TxnApiError,
         keys::{FreezerKeyPair, UserKeyPair},
+        prelude::Config,
         proof::{freeze, universal_setup_for_staging},
         structs::Amount,
         utils::params_builder::FreezeParamsBuilder,
-        KeyPair,
     };
     use ark_std::vec;
+    use jf_primitives::signatures::schnorr;
     use rand::{Rng, RngCore};
 
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
-        let fee_keypair = UserKeyPair::generate(rng);
+        let fee_keypair = UserKeyPair::<Config>::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
         let fee_input_amount = Amount::from(10u64);
@@ -433,16 +434,16 @@ mod test {
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
         let (proving_key, verifying_key, _) =
-            freeze::preprocess(&universal_param, num_input, tree_depth)?;
+            freeze::preprocess::<Config>(&universal_param, num_input, tree_depth)?;
 
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
         let fee_input_amount = Amount::from(10u64);
         let fee = Amount::from(5u64);
         let fee_keypair = UserKeyPair::generate(rng);
         let freeze_keypair = FreezerKeyPair::generate(rng);
-        let recv_memos_ver_key = KeyPair::generate(rng).ver_key();
+        let recv_memos_ver_key = schnorr::KeyPair::generate(rng).ver_key();
 
         let builder = FreezeParamsBuilder::new(
             tree_depth,
@@ -527,7 +528,7 @@ mod test {
             &verifying_key,
             &pub_input_1,
             &validity_proof_1,
-            &KeyPair::generate(rng).ver_key(),
+            &schnorr::KeyPair::generate(rng).ver_key(),
         )
         .is_err());
 

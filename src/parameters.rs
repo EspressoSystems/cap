@@ -14,12 +14,12 @@
 
 use crate::{
     errors::TxnApiError,
+    prelude::CapConfig,
     proof::{
         self,
         freeze::{self, FreezeProvingKey, FreezeVerifyingKey},
         mint::{self, MintProvingKey, MintVerifyingKey},
         transfer::{self, TransferProvingKey, TransferVerifyingKey},
-        UniversalParam,
     },
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
@@ -32,6 +32,7 @@ use ark_std::{
     vec,
     vec::Vec,
 };
+use jf_plonk::proof_system::structs::UniversalSrs;
 
 const DEFAULT_UNIVERSAL_SRS_FILENAME: &str = "universal_srs";
 
@@ -43,12 +44,12 @@ const DEFAULT_UNIVERSAL_SRS_FILENAME: &str = "universal_srs";
 /// * `max_degree` - the upperbound for polynomial degree, please use
 ///   `utils::compute_universal_param_size` to calculate.
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_universal_parameter_for_demo(
+pub fn store_universal_parameter_for_demo<C: CapConfig>(
     max_degree: usize,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let mut rng = ark_std::test_rng();
-    let universal_param: UniversalParam = proof::universal_setup(max_degree, &mut rng)?;
+    let universal_param = proof::universal_setup::<_, C>(max_degree, &mut rng)?;
     let dest = match dest {
         Some(dest) => dest,
         None => default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"),
@@ -64,7 +65,9 @@ pub fn store_universal_parameter_for_demo(
     Ok(())
 }
 
-fn load_universal_parameters_from_path(src: PathBuf) -> Result<UniversalParam, TxnApiError> {
+fn load_universal_parameters_from_path<C: CapConfig>(
+    src: PathBuf,
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     let now = Instant::now();
     eprint!(
         "Loading universal parameter from: {} ...",
@@ -81,18 +84,21 @@ fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
 }
 
 #[cfg(feature = "bn254")]
-fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
-    crate::proof::load_srs(2usize.pow(17))
+fn load_default_universal_parameters<C: CapConfig>(
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
+    crate::proof::load_srs::<C>(2usize.pow(17))
 }
 
 /// Load universal parameter from a file.
 ///
 /// if `src` is `None`, load from the included SRS (bn254) or the default path
 /// (otherwise).
-pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, TxnApiError> {
+pub fn load_universal_parameter<C: CapConfig>(
+    src: Option<PathBuf>,
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
     match src {
-        Some(src) => load_universal_parameters_from_path(src),
-        None => load_default_universal_parameters(),
+        Some(src) => load_universal_parameters_from_path::<C>(src),
+        None => load_default_universal_parameters::<C>(),
     }
 }
 
@@ -103,15 +109,15 @@ pub fn load_universal_parameter(src: Option<PathBuf>) -> Result<UniversalParam, 
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_transfer_proving_key(
+pub fn store_transfer_proving_key<C: CapConfig>(
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let (proving_key, verifying_key, _) =
-        transfer::preprocess(universal_param, num_input, num_output, tree_depth)?;
+        transfer::preprocess::<C>(universal_param, num_input, num_output, tree_depth)?;
 
     {
         let dest = match dest.clone() {
@@ -148,12 +154,12 @@ pub fn store_transfer_proving_key(
 /// Load the transfer proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_transfer_proving_key(
+pub fn load_transfer_proving_key<C: CapConfig>(
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<TransferProvingKey, TxnApiError> {
+) -> Result<TransferProvingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_transfer_proving_key_path(num_input, num_output, tree_depth),
@@ -180,11 +186,11 @@ pub fn load_transfer_proving_key(
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_transfer_verifying_key(
+pub fn store_transfer_verifying_key<C: CapConfig>(
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let dest = match dest {
@@ -193,7 +199,7 @@ pub fn store_transfer_verifying_key(
     };
 
     let (_, verifying_key, _) =
-        transfer::preprocess(universal_param, num_input, num_output, tree_depth)?;
+        transfer::preprocess::<C>(universal_param, num_input, num_output, tree_depth)?;
 
     let now = Instant::now();
     eprint!(
@@ -208,12 +214,12 @@ pub fn store_transfer_verifying_key(
 /// Load the transfer verifying key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_transfer_verifying_key(
+pub fn load_transfer_verifying_key<C: CapConfig>(
     num_input: usize,
     num_output: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<TransferVerifyingKey, TxnApiError> {
+) -> Result<TransferVerifyingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_transfer_verifying_key_path(num_input, num_output, tree_depth),
@@ -234,12 +240,12 @@ pub fn load_transfer_verifying_key(
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_mint_proving_key(
+pub fn store_mint_proving_key<C: CapConfig>(
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
-    let (proving_key, verifying_key, _) = mint::preprocess(universal_param, tree_depth)?;
+    let (proving_key, verifying_key, _) = mint::preprocess::<C>(universal_param, tree_depth)?;
 
     {
         let dest = match dest.clone() {
@@ -276,10 +282,10 @@ pub fn store_mint_proving_key(
 /// Load the mint proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_mint_proving_key(
+pub fn load_mint_proving_key<C: CapConfig>(
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<MintProvingKey, TxnApiError> {
+) -> Result<MintProvingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_mint_proving_key_path(tree_depth),
@@ -304,9 +310,9 @@ pub fn load_mint_proving_key(
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_mint_verifying_key(
+pub fn store_mint_verifying_key<C: CapConfig>(
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let dest = match dest {
@@ -314,7 +320,7 @@ pub fn store_mint_verifying_key(
         None => default_mint_verifying_key_path(tree_depth),
     };
 
-    let (_, verifying_key, _) = mint::preprocess(universal_param, tree_depth)?;
+    let (_, verifying_key, _) = mint::preprocess::<C>(universal_param, tree_depth)?;
 
     let now = Instant::now();
     eprint!(
@@ -329,10 +335,10 @@ pub fn store_mint_verifying_key(
 /// Load the mint verifying key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_mint_verifying_key(
+pub fn load_mint_verifying_key<C: CapConfig>(
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<MintVerifyingKey, TxnApiError> {
+) -> Result<MintVerifyingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_mint_verifying_key_path(tree_depth),
@@ -354,14 +360,14 @@ pub fn load_mint_verifying_key(
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_freeze_proving_key(
+pub fn store_freeze_proving_key<C: CapConfig>(
     num_input: usize,
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let (proving_key, verifying_key, _) =
-        freeze::preprocess(universal_param, num_input, tree_depth)?;
+        freeze::preprocess::<C>(universal_param, num_input, tree_depth)?;
 
     {
         let dest = match dest.clone() {
@@ -398,11 +404,11 @@ pub fn store_freeze_proving_key(
 /// Load the freeze proving key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_freeze_proving_key(
+pub fn load_freeze_proving_key<C: CapConfig>(
     num_input: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<FreezeProvingKey, TxnApiError> {
+) -> Result<FreezeProvingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_freeze_proving_key_path(num_input, tree_depth),
@@ -428,10 +434,10 @@ pub fn load_freeze_proving_key(
 /// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`
 /// * `universal_param` - the universal parameter
 /// * `dest` - destination file path, save to default path if `None`.
-pub fn store_freeze_verifying_key(
+pub fn store_freeze_verifying_key<C: CapConfig>(
     num_input: usize,
     tree_depth: u8,
-    universal_param: &UniversalParam,
+    universal_param: &UniversalSrs<C::PairingCurve>,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
     let dest = match dest {
@@ -439,7 +445,7 @@ pub fn store_freeze_verifying_key(
         None => default_freeze_verifying_key_path(num_input, tree_depth),
     };
 
-    let (_, verifying_key, _) = freeze::preprocess(universal_param, num_input, tree_depth)?;
+    let (_, verifying_key, _) = freeze::preprocess::<C>(universal_param, num_input, tree_depth)?;
 
     let now = Instant::now();
     eprint!(
@@ -454,11 +460,11 @@ pub fn store_freeze_verifying_key(
 /// Load the freeze verifying key from `src` file
 ///
 /// if `src` is `None`, load from default path.
-pub fn load_freeze_verifying_key(
+pub fn load_freeze_verifying_key<C: CapConfig>(
     num_input: usize,
     tree_depth: u8,
     src: Option<PathBuf>,
-) -> Result<FreezeVerifyingKey, TxnApiError> {
+) -> Result<FreezeVerifyingKey<C>, TxnApiError> {
     let src = match src {
         Some(dest) => dest,
         None => default_freeze_verifying_key_path(num_input, tree_depth),
@@ -587,14 +593,17 @@ fn load_bytes(src: PathBuf) -> Result<Vec<u8>, IoError> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{proof::universal_setup, structs::NoteType, utils::compute_universal_param_size};
+    use crate::{
+        prelude::Config, proof::universal_setup, structs::NoteType,
+        utils::compute_universal_param_size,
+    };
 
     #[test]
     #[ignore = "expensive to run in CI, already tested locally"]
     fn store_and_load_for_universal_param() -> Result<(), TxnApiError> {
-        let max_degree = compute_universal_param_size(NoteType::Transfer, 2, 2, 10)?;
-        store_universal_parameter_for_demo(max_degree, None)?;
-        load_universal_parameter(None)?;
+        let max_degree = compute_universal_param_size::<Config>(NoteType::Transfer, 2, 2, 10)?;
+        store_universal_parameter_for_demo::<Config>(max_degree, None)?;
+        load_universal_parameter::<Config>(None)?;
         Ok(())
     }
 
@@ -605,17 +614,29 @@ mod test {
         let num_input = 2;
         let num_output = 5;
         let tree_depth = 10;
-        let max_degree =
-            compute_universal_param_size(NoteType::Transfer, num_input, num_output, tree_depth)?;
-        let universal_param = universal_setup(max_degree, rng)?;
+        let max_degree = compute_universal_param_size::<Config>(
+            NoteType::Transfer,
+            num_input,
+            num_output,
+            tree_depth,
+        )?;
+        let universal_param = universal_setup::<_, Config>(max_degree, rng)?;
 
-        store_transfer_proving_key(num_input, num_output, tree_depth, &universal_param, None)?;
-        let proving_key = load_transfer_proving_key(num_input, num_output, tree_depth, None)?;
+        store_transfer_proving_key::<Config>(
+            num_input,
+            num_output,
+            tree_depth,
+            &universal_param,
+            None,
+        )?;
+        let proving_key =
+            load_transfer_proving_key::<Config>(num_input, num_output, tree_depth, None)?;
         assert_eq!(proving_key.n_inputs, num_input);
         assert_eq!(proving_key.n_outputs, num_output);
         assert_eq!(proving_key.tree_depth, tree_depth);
 
-        let verifying_key = load_transfer_verifying_key(num_input, num_output, tree_depth, None)?;
+        let verifying_key =
+            load_transfer_verifying_key::<Config>(num_input, num_output, tree_depth, None)?;
         assert_eq!(verifying_key.n_inputs, num_input);
         assert_eq!(verifying_key.n_outputs, num_output);
         assert_eq!(verifying_key.tree_depth, tree_depth);
@@ -627,14 +648,14 @@ mod test {
     fn store_and_load_for_mint_prover_verifier() -> Result<(), TxnApiError> {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 10;
-        let max_degree = compute_universal_param_size(NoteType::Mint, 1, 2, tree_depth)?;
-        let universal_param = universal_setup(max_degree, rng)?;
+        let max_degree = compute_universal_param_size::<Config>(NoteType::Mint, 1, 2, tree_depth)?;
+        let universal_param = universal_setup::<_, Config>(max_degree, rng)?;
 
-        store_mint_proving_key(tree_depth, &universal_param, None)?;
-        let proving_key = load_mint_proving_key(tree_depth, None)?;
+        store_mint_proving_key::<Config>(tree_depth, &universal_param, None)?;
+        let proving_key = load_mint_proving_key::<Config>(tree_depth, None)?;
         assert_eq!(proving_key.tree_depth, tree_depth);
 
-        let verifying_key = load_mint_verifying_key(tree_depth, None)?;
+        let verifying_key = load_mint_verifying_key::<Config>(tree_depth, None)?;
         assert_eq!(verifying_key.tree_depth, tree_depth);
         Ok(())
     }
@@ -645,16 +666,20 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 10;
         let num_inputs = 2;
-        let max_degree =
-            compute_universal_param_size(NoteType::Freeze, num_inputs, num_inputs, tree_depth)?;
-        let universal_param = universal_setup(max_degree, rng)?;
+        let max_degree = compute_universal_param_size::<Config>(
+            NoteType::Freeze,
+            num_inputs,
+            num_inputs,
+            tree_depth,
+        )?;
+        let universal_param = universal_setup::<_, Config>(max_degree, rng)?;
 
-        store_freeze_proving_key(num_inputs, tree_depth, &universal_param, None)?;
-        let proving_key = load_freeze_proving_key(num_inputs, tree_depth, None)?;
+        store_freeze_proving_key::<Config>(num_inputs, tree_depth, &universal_param, None)?;
+        let proving_key = load_freeze_proving_key::<Config>(num_inputs, tree_depth, None)?;
         assert_eq!(proving_key.num_input, num_inputs);
         assert_eq!(proving_key.tree_depth, tree_depth);
 
-        let verifying_key = load_freeze_verifying_key(num_inputs, tree_depth, None)?;
+        let verifying_key = load_freeze_verifying_key::<Config>(num_inputs, tree_depth, None)?;
         assert_eq!(verifying_key.num_input, num_inputs);
         assert_eq!(verifying_key.tree_depth, tree_depth);
         Ok(())
