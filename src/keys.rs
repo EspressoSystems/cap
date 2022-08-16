@@ -368,6 +368,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
     }
 
     /// Open ViewableMemo into input and output vectors ofViewableData struct
+    #[allow(clippy::type_complexity)]
     pub fn open_transfer_viewing_memo(
         &self,
         asset_definition: &AssetDefinition<C>,

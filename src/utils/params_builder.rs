@@ -752,6 +752,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     }
 
     /// Build a transfer note
+    #[allow(clippy::type_complexity)]
     pub fn build_transfer_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
@@ -778,6 +779,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         }
     }
 
+    #[allow(clippy::type_complexity)]
     fn build_transfer_note_native<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
@@ -820,6 +822,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         Ok((note, recv_memos, sig))
     }
 
+    #[allow(clippy::type_complexity)]
     fn build_transfer_note_non_native<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
@@ -1092,6 +1095,7 @@ impl<'a, C: CapConfig> MintParamsBuilder<'a, C> {
     }
 
     /// Build the note given the parameters and a proving key
+    #[allow(clippy::type_complexity)]
     pub fn build_mint_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,
@@ -1363,6 +1367,7 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
     /// Build the note given the parameters, a proving key and a witness
     /// returns Note, signature key pair, fee_chg record opening, and (un)frozen
     /// outputs record openings
+    #[allow(clippy::type_complexity)]
     pub fn build_freeze_note<R: RngCore + CryptoRng>(
         &self,
         rng: &mut R,

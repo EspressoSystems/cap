@@ -112,7 +112,7 @@ impl<'kp, C: CapConfig> Clone for TransferNoteInput<'kp, C> {
         Self {
             ro: self.ro.clone(),
             acc_member_witness: self.acc_member_witness.clone(),
-            owner_keypair: &self.owner_keypair,
+            owner_keypair: self.owner_keypair,
             cred: self.cred.clone(),
         }
     }
@@ -143,6 +143,7 @@ impl<C: CapConfig> TransferNote<C> {
     /// Returns: (transfer note, signature key to bind a message to the transfer
     /// note proof, Record opening of fee change directed at first input
     /// address) tuple on successful generation.
+    #[allow(clippy::type_complexity)]
     pub fn generate_native<R: CryptoRng + RngCore>(
         rng: &mut R,
         inputs: Vec<TransferNoteInput<C>>,
@@ -255,7 +256,7 @@ impl<C: CapConfig> TransferNote<C> {
         check_fee(&fee)?;
         let mut fee_prepended_inputs = vec![fee.fee_input.into()];
         fee_prepended_inputs.extend_from_slice(&inputs[..]);
-        let outputs = [&vec![fee.fee_chg_ro], outputs].concat();
+        let outputs = [&[fee.fee_chg_ro], outputs].concat();
 
         Self::generate(
             rng,

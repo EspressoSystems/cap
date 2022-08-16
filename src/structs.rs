@@ -1674,7 +1674,7 @@ impl<'kp, C: CapConfig> Clone for FeeInput<'kp, C> {
         Self {
             ro: self.ro.clone(),
             acc_member_witness: self.acc_member_witness.clone(),
-            owner_keypair: &self.owner_keypair,
+            owner_keypair: self.owner_keypair,
         }
     }
 }

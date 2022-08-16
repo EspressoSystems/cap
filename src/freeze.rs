@@ -93,6 +93,7 @@ impl<C: CapConfig> FreezeNote<C> {
     /// * `returns`- On success returns the freezing note, receiver memos,
     ///   signature on receiver memos, and vector of output record openings.
     /// On error return TxnApIError.
+    #[allow(clippy::type_complexity)]
     pub fn generate<R: CryptoRng + RngCore>(
         rng: &mut R,
         inputs: Vec<FreezeNoteInput<C>>,
