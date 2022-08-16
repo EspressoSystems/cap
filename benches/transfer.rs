@@ -18,24 +18,20 @@ use jf_cap::{
         compute_sizes, compute_title_simple, get_builder_transfer, get_key_pairs,
         save_result_to_file_simple, GEN, NUM_INPUTS_RANGE, NUM_OUTPUTS_RANGE, TREE_DEPTH, VERIFY,
     },
-    proof::{
-        transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
-        universal_setup,
-    },
-    structs::NoteType,
-    transfer::TransferNote,
+    prelude::*,
+    proof::transfer::{preprocess, TransferProvingKey, TransferVerifyingKey},
     utils::{compute_universal_param_size, params_builder::TransferParamsBuilder},
-    NodeValue,
 };
+use jf_primitives::merkle_tree::NodeValue;
 use rand::rngs::StdRng;
 use std::time::Duration;
 
 fn run_transfer_creation(
     prng: &mut StdRng,
-    transfer_note_builder: &TransferParamsBuilder,
-    proving_key: &TransferProvingKey,
+    transfer_note_builder: &TransferParamsBuilder<Config>,
+    proving_key: &TransferProvingKey<Config>,
     valid_until: u64,
-) -> TransferNote {
+) -> TransferNote<Config> {
     let (transfer_note, ..) = transfer_note_builder
         .build_transfer_note(prng, &proving_key, valid_until, vec![])
         .unwrap();
@@ -43,9 +39,9 @@ fn run_transfer_creation(
 }
 
 fn run_transfer_verification(
-    verifier_key: &TransferVerifyingKey,
-    note: &TransferNote,
-    root: NodeValue,
+    verifier_key: &TransferVerifyingKey<Config>,
+    note: &TransferNote<Config>,
+    root: NodeValue<<Config as CapConfig>::ScalarField>,
     timestamp: u64,
 ) {
     assert!(note.verify(&verifier_key, root, timestamp).is_ok());
@@ -65,14 +61,14 @@ fn run_benchmark_transfer(c: &mut Criterion, filename_list: &mut Vec<String>) {
             let valid_until = 1234;
 
             // Public parameters
-            let domain_size = compute_universal_param_size(
+            let domain_size = compute_universal_param_size::<Config>(
                 NoteType::Transfer,
                 *num_inputs,
                 *num_outputs,
                 TREE_DEPTH,
             )
             .unwrap();
-            let srs = universal_setup(domain_size, &mut prng).unwrap();
+            let srs = universal_setup::<_, Config>(domain_size, &mut prng).unwrap();
             let (proving_key, verifying_key, n_constraints) =
                 preprocess(&srs, *num_inputs, *num_outputs, TREE_DEPTH).unwrap();
 

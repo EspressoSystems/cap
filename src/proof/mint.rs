@@ -14,22 +14,21 @@
 //! * Computing a Minting proof
 //! * Verifying a Minting proof
 
-use super::UniversalParam;
 use crate::{
     circuit::mint::MintCircuit,
     errors::TxnApiError,
     keys::UserKeyPair,
+    prelude::CapConfig,
     structs::{
         Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
         InternalAssetCode, Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
     },
-    BaseField, CurveParam, PairingEngine, ScalarField,
 };
 use ark_serialize::*;
 use ark_std::{format, string::ToString, vec, vec::Vec};
 use jf_plonk::{
     proof_system::{
-        structs::{Proof, ProvingKey, VerifyingKey},
+        structs::{Proof, ProvingKey, UniversalSrs, VerifyingKey},
         PlonkKzgSnark, UniversalSNARK,
     },
     transcript::SolidityTranscript,
@@ -47,37 +46,34 @@ use serde::{Deserialize, Serialize};
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct MintProvingKey {
-    pub(crate) proving_key: ProvingKey<PairingEngine>,
+pub struct MintProvingKey<C: CapConfig> {
+    pub(crate) proving_key: ProvingKey<C::PairingCurve>,
     pub(crate) tree_depth: u8,
 }
-deserialize_canonical_bytes!(MintProvingKey);
+deserialize_canonical_bytes!(MintProvingKey<C: CapConfig>);
 
 /// Key for verifying the validity of a Mint note during asset issuance.
 #[derive(
     Debug, Clone, PartialEq, CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize,
 )]
 #[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
-pub struct MintVerifyingKey {
-    pub(crate) verifying_key: VerifyingKey<PairingEngine>,
+pub struct MintVerifyingKey<C: CapConfig> {
+    pub(crate) verifying_key: VerifyingKey<C::PairingCurve>,
     pub(crate) tree_depth: u8,
 }
-deserialize_canonical_bytes!(MintVerifyingKey);
-
-/// Proof associated to a Mint note
-pub type MintValidityProof = Proof<PairingEngine>;
+deserialize_canonical_bytes!(MintVerifyingKey<C: CapConfig>);
 
 /// One-time preprocess of the Mint transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// mint transaction (a.k.a. Asset Issuance).
-pub fn preprocess(
-    srs: &UniversalParam,
+pub fn preprocess<C: CapConfig>(
+    srs: &UniversalSrs<C::PairingCurve>,
     tree_depth: u8,
-) -> Result<(MintProvingKey, MintVerifyingKey, usize), TxnApiError> {
-    let (dummy_circuit, n_constraints) = MintCircuit::build_for_preprocessing(tree_depth)?;
+) -> Result<(MintProvingKey<C>, MintVerifyingKey<C>, usize), TxnApiError> {
+    let (dummy_circuit, n_constraints) = MintCircuit::<C>::build_for_preprocessing(tree_depth)?;
 
     let (proving_key, verifying_key) =
-        PlonkKzgSnark::<PairingEngine>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
+        PlonkKzgSnark::<C::PairingCurve>::preprocess(srs, &dummy_circuit.0).map_err(|e| {
             TxnApiError::FailedSnark(format!(
                 "Preprocessing Mint circuit of {}-depth failed: {}",
                 tree_depth, e
@@ -98,13 +94,13 @@ pub fn preprocess(
 
 /// Generate a transaction validity proof (a zk-SNARK proof) given the witness
 /// , public inputs, and the proving key.
-pub(crate) fn prove<R>(
+pub(crate) fn prove<R, C: CapConfig>(
     rng: &mut R,
-    proving_key: &MintProvingKey,
-    witness: &MintWitness,
-    public_inputs: &MintPublicInput,
-    txn_memo_ver_key: &schnorr::VerKey<CurveParam>,
-) -> Result<MintValidityProof, TxnApiError>
+    proving_key: &MintProvingKey<C>,
+    witness: &MintWitness<C>,
+    public_inputs: &MintPublicInput<C>,
+    txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
+) -> Result<Proof<C::PairingCurve>, TxnApiError>
 where
     R: RngCore + CryptoRng,
 {
@@ -114,7 +110,7 @@ where
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(txn_memo_ver_key, &mut ext_msg)?;
 
-    PlonkKzgSnark::<PairingEngine>::prove::<_, _, SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::prove::<_, _, SolidityTranscript>(
         rng,
         &circuit.0,
         &proving_key.proving_key,
@@ -125,15 +121,15 @@ where
 
 /// Verify a transaction validity proof given the public inputs and verifying
 /// key.
-pub(crate) fn verify(
-    verifying_key: &MintVerifyingKey,
-    public_inputs: &MintPublicInput,
-    proof: &MintValidityProof,
-    recv_memos_ver_key: &schnorr::VerKey<CurveParam>,
+pub(crate) fn verify<C: CapConfig>(
+    verifying_key: &MintVerifyingKey<C>,
+    public_inputs: &MintPublicInput<C>,
+    proof: &Proof<C::PairingCurve>,
+    recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
     CanonicalSerialize::serialize(recv_memos_ver_key, &mut ext_msg)?;
-    PlonkKzgSnark::<PairingEngine>::verify::<SolidityTranscript>(
+    PlonkKzgSnark::<C::PairingCurve>::verify::<SolidityTranscript>(
         &verifying_key.verifying_key,
         &public_inputs.to_scalars(),
         proof,
@@ -144,19 +140,19 @@ pub(crate) fn verify(
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct MintWitness<'a> {
-    pub(crate) minter_keypair: &'a UserKeyPair,
-    pub(crate) acc_member_witness: AccMemberWitness<BaseField>,
-    pub(crate) fee_ro: RecordOpening,
-    pub(crate) mint_ro: RecordOpening,
-    pub(crate) chg_ro: RecordOpening,
-    pub(crate) ac_seed: AssetCodeSeed,
-    pub(crate) ac_digest: AssetCodeDigest,
-    pub(crate) viewing_memo_enc_rand: ScalarField,
+pub(crate) struct MintWitness<'a, C: CapConfig> {
+    pub(crate) minter_keypair: &'a UserKeyPair<C>,
+    pub(crate) acc_member_witness: AccMemberWitness<C::ScalarField>,
+    pub(crate) fee_ro: RecordOpening<C>,
+    pub(crate) mint_ro: RecordOpening<C>,
+    pub(crate) chg_ro: RecordOpening<C>,
+    pub(crate) ac_seed: AssetCodeSeed<C>,
+    pub(crate) ac_digest: AssetCodeDigest<C>,
+    pub(crate) viewing_memo_enc_rand: C::EmbeddedCurveScalarField,
 }
 
-impl<'a> MintWitness<'a> {
-    pub(crate) fn dummy(tree_depth: u8, minter_keypair: &'a UserKeyPair) -> Self {
+impl<'a, C: CapConfig> MintWitness<'a, C> {
+    pub(crate) fn dummy(tree_depth: u8, minter_keypair: &'a UserKeyPair<C>) -> Self {
         let fee_ro = RecordOpening {
             asset_def: AssetDefinition::native(),
             ..Default::default()
@@ -177,41 +173,41 @@ impl<'a> MintWitness<'a> {
             chg_ro,
             ac_seed: AssetCodeSeed::default(),
             ac_digest: AssetCodeDigest::default(),
-            viewing_memo_enc_rand: ScalarField::default(),
+            viewing_memo_enc_rand: C::EmbeddedCurveScalarField::default(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
 /// Struct for the public input of a mint witness
-pub struct MintPublicInput {
+pub struct MintPublicInput<C: CapConfig> {
     /// record merkle tree root
-    pub merkle_root: NodeValue<BaseField>,
+    pub merkle_root: NodeValue<C::ScalarField>,
     /// native asset code
-    pub native_asset_code: AssetCode,
+    pub native_asset_code: AssetCode<C>,
     /// nullifier of the fee input record
-    pub input_nullifier: Nullifier,
+    pub input_nullifier: Nullifier<C>,
     /// amount of fee to pay
     pub fee: Amount,
     /// commitment of the minted record
-    pub mint_rc: RecordCommitment,
+    pub mint_rc: RecordCommitment<C>,
     /// commitment of the fee change record
-    pub chg_rc: RecordCommitment,
+    pub chg_rc: RecordCommitment<C>,
     /// minted amount
     pub mint_amount: Amount,
     /// minted asset code
-    pub mint_ac: AssetCode,
+    pub mint_ac: AssetCode<C>,
     /// minted internal asset code
-    pub mint_internal_ac: InternalAssetCode,
+    pub mint_internal_ac: InternalAssetCode<C>,
     /// minted asset policy
-    pub mint_policy: AssetPolicy,
+    pub mint_policy: AssetPolicy<C>,
     /// memo for viewer
-    pub viewing_memo: ViewableMemo,
+    pub viewing_memo: ViewableMemo<C>,
 }
 
-impl MintPublicInput {
+impl<C: CapConfig> MintPublicInput<C> {
     /// Compute the public input from witness and ledger info
-    pub(crate) fn from_witness(witness: &MintWitness) -> Result<Self, TxnApiError> {
+    pub(crate) fn from_witness(witness: &MintWitness<C>) -> Result<Self, TxnApiError> {
         if witness.fee_ro.amount < witness.chg_ro.amount {
             return Err(TxnApiError::InvalidParameter(
                 "minting: input amount less than change amount".to_string(),
@@ -263,15 +259,15 @@ impl MintPublicInput {
     /// Note that the order matters.
     /// The order: (root, native_ac, input_nullifier, fee, mint_rc, chg_rc,
     /// mint_amount, mint_ac, mint_policy, viewing_memo)
-    pub(crate) fn to_scalars(&self) -> Vec<BaseField> {
+    pub(crate) fn to_scalars(&self) -> Vec<C::ScalarField> {
         let mut result = vec![
             self.merkle_root.to_scalar(),
             self.native_asset_code.0,
             self.input_nullifier.0,
-            BaseField::from(self.fee.0),
+            C::ScalarField::from(self.fee.0),
             self.mint_rc.0,
             self.chg_rc.0,
-            BaseField::from(self.mint_amount.0),
+            C::ScalarField::from(self.mint_amount.0),
             self.mint_ac.0,
             self.mint_internal_ac.0,
         ];
@@ -285,6 +281,7 @@ impl MintPublicInput {
 mod test {
     use super::MintPublicInput;
     use crate::{
+        config::Config,
         errors::TxnApiError,
         keys::{UserKeyPair, ViewerKeyPair},
         proof::{mint, universal_setup_for_staging},
@@ -301,12 +298,12 @@ mod test {
         let input_amount = Amount::from(30u64);
         let fee = Amount::from(10u64);
         let mint_amount = Amount::from(15u64);
-        let minter_keypair = UserKeyPair::generate(rng);
-        let receiver_keypair = UserKeyPair::generate(rng);
-        let viewer_keypair = ViewerKeyPair::generate(rng);
+        let minter_keypair = UserKeyPair::<Config>::generate(rng);
+        let receiver_keypair = UserKeyPair::<Config>::generate(rng);
+        let viewer_keypair = ViewerKeyPair::<Config>::generate(rng);
 
         // transfer non-native asset type
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,
@@ -324,7 +321,7 @@ mod test {
 
         // negative fee should fail
         let bad_fee = input_amount + Amount::from(1u64);
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,
@@ -349,8 +346,9 @@ mod test {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 10;
         let max_degree = 32770;
-        let universal_param = universal_setup_for_staging(max_degree, rng)?;
-        let (proving_key, verifying_key, _) = mint::preprocess(&universal_param, tree_depth)?;
+        let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
+        let (proving_key, verifying_key, _) =
+            mint::preprocess::<Config>(&universal_param, tree_depth)?;
 
         let input_amount = Amount::from(10u64);
         let fee = Amount::from(4u64);
@@ -360,7 +358,7 @@ mod test {
         let viewer_keypair = ViewerKeyPair::generate(rng);
         let recv_memo_ver_key = schnorr::KeyPair::generate(rng).ver_key();
 
-        let builder = MintParamsBuilder::new(
+        let builder = MintParamsBuilder::<Config>::new(
             rng,
             tree_depth,
             input_amount,

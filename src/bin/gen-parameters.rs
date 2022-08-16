@@ -64,6 +64,7 @@ enum Actions {
 }
 
 fn main() {
+    use jf_cap::prelude::Config;
     use Actions::*;
     let action = Actions::from_args();
     match action {
@@ -75,9 +76,9 @@ fn main() {
             universal_srs_path,
             dest,
         } => {
-            let universal_param = load_universal_parameter(universal_srs_path).unwrap();
+            let universal_param = load_universal_parameter::<Config>(universal_srs_path).unwrap();
             match circuit {
-                Circuit::Transfer => store_transfer_proving_key(
+                Circuit::Transfer => store_transfer_proving_key::<Config>(
                     n_inputs,
                     n_outputs,
                     tree_depth,
@@ -86,14 +87,17 @@ fn main() {
                 )
                 .unwrap(),
                 Circuit::Freezing => {
-                    store_mint_proving_key(tree_depth, &universal_param, dest).unwrap()
+                    store_mint_proving_key::<Config>(tree_depth, &universal_param, dest).unwrap()
                 },
                 Circuit::Mint => {
-                    store_freeze_proving_key(n_inputs, tree_depth, &universal_param, dest).unwrap()
+                    store_freeze_proving_key::<Config>(n_inputs, tree_depth, &universal_param, dest)
+                        .unwrap()
                 },
             }
         },
 
-        UniversalSrs { size, dest } => store_universal_parameter_for_demo(size, dest).unwrap(),
+        UniversalSrs { size, dest } => {
+            store_universal_parameter_for_demo::<Config>(size, dest).unwrap()
+        },
     };
 }

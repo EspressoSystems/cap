@@ -17,25 +17,22 @@ use jf_cap::{
         compute_sizes, compute_title_simple, get_builder_mint, save_result_to_file_simple, GEN,
         TREE_DEPTH, VERIFY,
     },
-    keys::{UserKeyPair, ViewerKeyPair},
-    mint::MintNote,
+    prelude::*,
     proof::{
         mint,
         mint::{MintProvingKey, MintVerifyingKey},
-        universal_setup,
     },
-    structs::NoteType,
     utils::{compute_universal_param_size, params_builder::MintParamsBuilder},
-    NodeValue,
 };
+use jf_primitives::merkle_tree::NodeValue;
 use rand::rngs::StdRng;
 use std::time::Duration;
 
 fn run_mint_creation(
     prng: &mut StdRng,
-    mint_note_builder: &MintParamsBuilder,
-    proving_key: &MintProvingKey,
-) -> MintNote {
+    mint_note_builder: &MintParamsBuilder<Config>,
+    proving_key: &MintProvingKey<Config>,
+) -> MintNote<Config> {
     let (mint_note, ..) = mint_note_builder
         .build_mint_note(prng, &proving_key)
         .unwrap();
@@ -43,7 +40,11 @@ fn run_mint_creation(
     mint_note
 }
 
-fn run_mint_verification(verifier_key: &MintVerifyingKey, note: &MintNote, root: NodeValue) {
+fn run_mint_verification(
+    verifier_key: &MintVerifyingKey<Config>,
+    note: &MintNote<Config>,
+    root: NodeValue<<Config as CapConfig>::ScalarField>,
+) {
     assert!(note.verify(&verifier_key, root).is_ok());
 }
 
@@ -57,8 +58,9 @@ fn run_benchmark_mint(c: &mut Criterion, filename_list: &mut Vec<String>) {
     let mut prng = ark_std::test_rng();
 
     // Public parameters
-    let domain_size = compute_universal_param_size(NoteType::Mint, 0, 0, TREE_DEPTH).unwrap();
-    let srs = universal_setup(domain_size, &mut prng).unwrap();
+    let domain_size =
+        compute_universal_param_size::<Config>(NoteType::Mint, 0, 0, TREE_DEPTH).unwrap();
+    let srs = universal_setup::<_, Config>(domain_size, &mut prng).unwrap();
     let (proving_key, verifying_key, n_constraints) = mint::preprocess(&srs, TREE_DEPTH).unwrap();
 
     let minter_keypair = UserKeyPair::generate(&mut prng);

@@ -17,25 +17,25 @@ use crate::{
     circuit::{freeze::FreezeCircuit, mint::MintCircuit, transfer::TransferCircuit},
     errors::TxnApiError,
     keys::FreezerPubKey,
+    prelude::CapConfig,
     structs::{Amount, AssetDefinition, NoteType, RecordOpening},
-    BaseField,
 };
 use ark_ec::ProjectiveCurve;
 use ark_std::{format, string::ToString};
 use jf_plonk::circuit::Arithmetization;
 pub use params_builder::TxnsParams;
 
-impl From<&FreezerPubKey> for (BaseField, BaseField) {
-    fn from(pk: &FreezerPubKey) -> Self {
+impl<C: CapConfig> From<&FreezerPubKey<C>> for (C::ScalarField, C::ScalarField) {
+    fn from(pk: &FreezerPubKey<C>) -> Self {
         let point = pk.0.into_affine();
         (point.x, point.y)
     }
 }
 
 /// Compute the asset definition being transferred given the input ROs
-pub(crate) fn get_asset_def_in_transfer_txn(
-    input_ros: &[RecordOpening],
-) -> Result<&AssetDefinition, TxnApiError> {
+pub(crate) fn get_asset_def_in_transfer_txn<C: CapConfig>(
+    input_ros: &[RecordOpening<C>],
+) -> Result<&AssetDefinition<C>, TxnApiError> {
     if input_ros.is_empty() {
         return Err(TxnApiError::InternalError("Empty ROs!".to_string()));
     }
@@ -86,7 +86,7 @@ pub(crate) fn safe_sum_amount(elems: &[Amount]) -> Option<Amount> {
 /// * `tree_depth` - depth of the Merkle tree
 /// * `returns` - size of the srs or an error
 // TODO add number of identity attributes as a parameter
-pub fn compute_universal_param_size(
+pub fn compute_universal_param_size<C: CapConfig>(
     note_type: NoteType,
     num_inputs: usize,
     num_outputs: usize,
@@ -94,13 +94,13 @@ pub fn compute_universal_param_size(
 ) -> Result<usize, TxnApiError> {
     let circuit = match note_type {
         NoteType::Transfer => {
-            TransferCircuit::build_for_preprocessing(num_inputs, num_outputs, tree_depth)?
+            TransferCircuit::<C>::build_for_preprocessing(num_inputs, num_outputs, tree_depth)?
                 .0
                  .0
         },
-        NoteType::Mint => MintCircuit::build_for_preprocessing(tree_depth)?.0 .0,
+        NoteType::Mint => MintCircuit::<C>::build_for_preprocessing(tree_depth)?.0 .0,
         NoteType::Freeze => {
-            FreezeCircuit::build_for_preprocessing(tree_depth, num_inputs)?
+            FreezeCircuit::<C>::build_for_preprocessing(tree_depth, num_inputs)?
                 .0
                  .0
         },
@@ -116,6 +116,7 @@ pub fn compute_universal_param_size(
 mod tests {
     use crate::{
         keys::UserKeyPair,
+        prelude::Config,
         structs::{Amount, AssetDefinition, FreezeFlag, NoteType, RecordOpening},
         utils::{compute_universal_param_size, get_asset_def_in_transfer_txn, safe_sum_amount},
     };
@@ -138,56 +139,56 @@ mod tests {
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Transfer, 3, 5, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 3, 5, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             131074,
-            compute_universal_param_size(NoteType::Transfer, 3, 5, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 3, 5, 26).unwrap()
         );
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Transfer, 2, 2, 10).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 2, 2, 10).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Transfer, 2, 2, 10).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Transfer, 2, 2, 10).unwrap()
         );
 
         // Mint
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             16386,
-            compute_universal_param_size(NoteType::Mint, 0, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Mint, 0, 0, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Mint, 0, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Mint, 0, 0, 26).unwrap()
         );
         // Freeze
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             16386,
-            compute_universal_param_size(NoteType::Freeze, 2, 0, 5).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 2, 0, 5).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             32770,
-            compute_universal_param_size(NoteType::Freeze, 2, 0, 5).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 2, 0, 5).unwrap()
         );
 
         #[cfg(not(feature = "bls12_377"))]
         assert_eq!(
             65538,
-            compute_universal_param_size(NoteType::Freeze, 5, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 5, 0, 26).unwrap()
         );
         #[cfg(feature = "bls12_377")]
         assert_eq!(
             131074,
-            compute_universal_param_size(NoteType::Freeze, 5, 0, 26).unwrap()
+            compute_universal_param_size::<Config>(NoteType::Freeze, 5, 0, 26).unwrap()
         );
     }
 
@@ -195,12 +196,12 @@ mod tests {
     fn test_get_asset_def_in_transfer_txn() {
         let mut rng = ark_std::test_rng();
 
-        let asset_def_native = AssetDefinition::native();
-        let asset_def_2 = AssetDefinition::rand_for_test(&mut rng);
-        let asset_def_3 = AssetDefinition::rand_for_test(&mut rng);
-        let user_keypair = UserKeyPair::generate(&mut rng);
+        let asset_def_native = AssetDefinition::<Config>::native();
+        let asset_def_2 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+        let asset_def_3 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+        let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
 
-        let ro_1 = RecordOpening::new(
+        let ro_1 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_native.clone(),
@@ -208,7 +209,7 @@ mod tests {
             FreezeFlag::Unfrozen,
         );
 
-        let ro_2 = RecordOpening::new(
+        let ro_2 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_2.clone(),
@@ -216,16 +217,17 @@ mod tests {
             FreezeFlag::Unfrozen,
         );
 
-        let ro_3 = RecordOpening::new(
+        let ro_3 = RecordOpening::<Config>::new(
             &mut rng,
             23u64.into(),
             asset_def_3.clone(),
             user_keypair.pub_key(),
             FreezeFlag::Unfrozen,
         );
-        let (ro_dummy, _keypair_dummy) = RecordOpening::dummy(&mut rng, FreezeFlag::Unfrozen);
+        let (ro_dummy, _keypair_dummy) =
+            RecordOpening::<Config>::dummy(&mut rng, FreezeFlag::Unfrozen);
 
-        assert!(get_asset_def_in_transfer_txn(&[]).is_err());
+        assert!(get_asset_def_in_transfer_txn::<Config>(&[]).is_err());
         assert_eq!(
             *get_asset_def_in_transfer_txn(&[ro_1.clone()]).unwrap(),
             asset_def_native
@@ -277,14 +279,12 @@ pub(crate) mod txn_helpers {
     use crate::{
         errors::TxnApiError,
         keys::{CredIssuerPubKey, FreezerPubKey},
+        prelude::CapConfig,
         structs::{Amount, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
         transfer::TransferNoteInput,
     };
 
-    use crate::{
-        structs::{ReceiverMemo, TxnFeeInfo},
-        BaseField, NodeValue,
-    };
+    use crate::structs::{ReceiverMemo, TxnFeeInfo};
     use ark_serialize::CanonicalSerialize;
     use ark_std::{
         collections::{BTreeMap, BTreeSet},
@@ -297,8 +297,8 @@ pub(crate) mod txn_helpers {
     use jf_utils::hash_to_field;
     use rand::{CryptoRng, RngCore};
 
-    pub(crate) fn check_distinct_input_nullifiers(
-        nullifiers: &[Nullifier],
+    pub(crate) fn check_distinct_input_nullifiers<C: CapConfig>(
+        nullifiers: &[Nullifier<C>],
     ) -> Result<(), TxnApiError> {
         let mut seen = BTreeSet::new();
         if nullifiers.iter().all(|nf| seen.insert(*nf)) {
@@ -319,9 +319,9 @@ pub(crate) mod txn_helpers {
         };
         use jf_primitives::merkle_tree::AccMemberWitness;
 
-        pub(crate) fn check_proving_key_consistency(
-            proving_key: &MintProvingKey,
-            acc_member_witness: &AccMemberWitness<BaseField>,
+        pub(crate) fn check_proving_key_consistency<C: CapConfig>(
+            proving_key: &MintProvingKey<C>,
+            acc_member_witness: &AccMemberWitness<C::ScalarField>,
         ) -> Result<(), TxnApiError> {
             if acc_member_witness.merkle_path.nodes.len() != proving_key.tree_depth as usize {
                 return Err(TxnApiError::InvalidParameter(
@@ -332,9 +332,9 @@ pub(crate) mod txn_helpers {
             Ok(())
         }
 
-        pub(crate) fn check_input_pub_key(
-            ro_fee: &RecordOpening,
-            minter_keypair: &UserKeyPair,
+        pub(crate) fn check_input_pub_key<C: CapConfig>(
+            ro_fee: &RecordOpening<C>,
+            minter_keypair: &UserKeyPair<C>,
         ) -> Result<(), TxnApiError> {
             if ro_fee.pub_key != minter_keypair.pub_key() {
                 return Err(TxnApiError::InvalidParameter(
@@ -344,10 +344,10 @@ pub(crate) mod txn_helpers {
             Ok(())
         }
 
-        pub(crate) fn check_mint_asset_code(
-            ro_mint: &RecordOpening,
-            ac_seed: AssetCodeSeed,
-            ac_digest: AssetCodeDigest,
+        pub(crate) fn check_mint_asset_code<C: CapConfig>(
+            ro_mint: &RecordOpening<C>,
+            ac_seed: AssetCodeSeed<C>,
+            ac_digest: AssetCodeDigest<C>,
         ) -> Result<(), TxnApiError> {
             if ro_mint.asset_def.code != AssetCode::new_domestic_from_digest(ac_seed, ac_digest) {
                 return Err(TxnApiError::InvalidParameter(
@@ -359,14 +359,16 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod transfer {
+        use jf_primitives::merkle_tree::NodeValue;
+
         use super::*;
         use crate::{
             keys::ViewerPubKey, proof::transfer::TransferProvingKey, structs::AssetDefinition,
         };
 
-        pub(crate) fn check_proving_key_consistency(
-            proving_key: &TransferProvingKey,
-            inputs: &[TransferNoteInput],
+        pub(crate) fn check_proving_key_consistency<C: CapConfig>(
+            proving_key: &TransferProvingKey<C>,
+            inputs: &[TransferNoteInput<C>],
             output_len: usize,
         ) -> Result<(), TxnApiError> {
             if proving_key.n_inputs != inputs.len() {
@@ -393,8 +395,8 @@ pub(crate) mod txn_helpers {
             Ok(())
         }
         /// Check that inputs record opening and keypair matched.
-        pub(crate) fn check_input_pub_keys(
-            inputs: &[TransferNoteInput],
+        pub(crate) fn check_input_pub_keys<C: CapConfig>(
+            inputs: &[TransferNoteInput<C>],
         ) -> Result<(), TxnApiError> {
             let is_pub_key_matched = inputs
                 .iter()
@@ -415,9 +417,9 @@ pub(crate) mod txn_helpers {
         /// 3. when freezer_pk is non-dummy, the viewer_pk must be non-dummy,
         /// since freezing depends on viewer to retrieve record
         /// plaintext data
-        pub(crate) fn check_asset_def(
-            inputs: &[&RecordOpening],
-            outputs: &[&RecordOpening],
+        pub(crate) fn check_asset_def<C: CapConfig>(
+            inputs: &[&RecordOpening<C>],
+            outputs: &[&RecordOpening<C>],
         ) -> Result<(), TxnApiError> {
             assert!(
                 !inputs.is_empty() && !outputs.is_empty(),
@@ -472,9 +474,9 @@ pub(crate) mod txn_helpers {
         /// Check that the merkle roots in input asset records are consistent
         /// Returns the merkle root, or error if inconsistent merkle roots were
         /// found.
-        pub(crate) fn check_and_get_roots(
-            inputs: &[TransferNoteInput],
-        ) -> Result<NodeValue, TxnApiError> {
+        pub(crate) fn check_and_get_roots<C: CapConfig>(
+            inputs: &[TransferNoteInput<C>],
+        ) -> Result<NodeValue<C::ScalarField>, TxnApiError> {
             if inputs.is_empty() {
                 return Err(TxnApiError::InternalError(
                     "Must provide at least 1 input".to_string(),
@@ -498,8 +500,8 @@ pub(crate) mod txn_helpers {
 
         /// Check that input credentials are present and valid when viewing
         /// policy's cred_pk is non-empty
-        pub(crate) fn check_creds(
-            inputs: &[TransferNoteInput],
+        pub(crate) fn check_creds<C: CapConfig>(
+            inputs: &[TransferNoteInput<C>],
             valid_until: u64,
         ) -> Result<(), TxnApiError> {
             for input in inputs {
@@ -518,11 +520,13 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod freeze {
+        use jf_primitives::merkle_tree::NodeValue;
+
         use super::*;
         use crate::{freeze::FreezeNoteInput, proof::freeze::FreezeProvingKey, structs::FeeInput};
 
-        pub(crate) fn check_freezing_policies_are_not_dummy(
-            inputs: &[FreezeNoteInput],
+        pub(crate) fn check_freezing_policies_are_not_dummy<C: CapConfig>(
+            inputs: &[FreezeNoteInput<C>],
         ) -> Result<(), TxnApiError> {
             for (i, input) in inputs.iter().enumerate() {
                 if !input.ro.is_dummy()
@@ -538,10 +542,10 @@ pub(crate) mod txn_helpers {
         }
 
         // `inputs` is guaranteed to be non-empty
-        pub(crate) fn check_and_get_root(
-            fee_input: &FeeInput,
-            inputs: &[FreezeNoteInput],
-        ) -> Result<NodeValue, TxnApiError> {
+        pub(crate) fn check_and_get_root<C: CapConfig>(
+            fee_input: &FeeInput<C>,
+            inputs: &[FreezeNoteInput<C>],
+        ) -> Result<NodeValue<C::ScalarField>, TxnApiError> {
             let assumed_root = fee_input.acc_member_witness.root;
             if inputs
                 .iter()
@@ -565,8 +569,8 @@ pub(crate) mod txn_helpers {
             }
             Ok(())
         }
-        pub(crate) fn check_proving_key_consistency(
-            proving_key: &FreezeProvingKey,
+        pub(crate) fn check_proving_key_consistency<C: CapConfig>(
+            proving_key: &FreezeProvingKey<C>,
             num_input: usize,
             tree_depth: u8,
         ) -> Result<(), TxnApiError> {
@@ -579,10 +583,10 @@ pub(crate) mod txn_helpers {
             Ok(())
         }
 
-        pub(crate) fn get_output_ros<R: RngCore + CryptoRng>(
+        pub(crate) fn get_output_ros<R: RngCore + CryptoRng, C: CapConfig>(
             rng: &mut R,
-            inputs: &[FreezeNoteInput],
-        ) -> Vec<RecordOpening> {
+            inputs: &[FreezeNoteInput<C>],
+        ) -> Vec<RecordOpening<C>> {
             let mut output_ros = vec![];
             for input in inputs.iter() {
                 let flipped_flag = input.ro.freeze_flag.flip();
@@ -595,7 +599,7 @@ pub(crate) mod txn_helpers {
         }
     }
 
-    pub(crate) fn check_fee(fee: &TxnFeeInfo) -> Result<(), TxnApiError> {
+    pub(crate) fn check_fee<C: CapConfig>(fee: &TxnFeeInfo<C>) -> Result<(), TxnApiError> {
         if fee.fee_amount > fee.fee_input.ro.amount {
             return Err(TxnApiError::InvalidParameter(
                 "Specified fee higher than fee record value".to_string(),
@@ -645,9 +649,9 @@ pub(crate) mod txn_helpers {
 
     /// check the sum of inputs equals to sum of output and returns the fee if
     /// balance is preserved.
-    pub(crate) fn check_balance(
-        inputs: &[&RecordOpening],
-        outputs: &[&RecordOpening],
+    pub(crate) fn check_balance<C: CapConfig>(
+        inputs: &[&RecordOpening<C>],
+        outputs: &[&RecordOpening<C>],
     ) -> Result<Amount, TxnApiError> {
         let fee = derive_fee(inputs, outputs)?;
         check_asset_amount(inputs, outputs, fee)?;
@@ -657,9 +661,9 @@ pub(crate) mod txn_helpers {
     /// Compute fee amount from inputs and outputs;
     /// returns error if the computed amount is non-positive;
     /// `inputs` and `outputs` are guaranteed to be non-empty;
-    fn derive_fee(
-        inputs: &[&RecordOpening],
-        outputs: &[&RecordOpening],
+    fn derive_fee<C: CapConfig>(
+        inputs: &[&RecordOpening<C>],
+        outputs: &[&RecordOpening<C>],
     ) -> Result<Amount, TxnApiError> {
         // if transfer asset code != native_asset_code, fee = inputs[0].amount -
         // outputs[0].amount, else fee = (\sum_{i=0...} inputs[i].amount) -
@@ -689,9 +693,9 @@ pub(crate) mod txn_helpers {
     }
 
     /// Check that all inputs and outputs are unfrozen
-    pub(crate) fn check_unfrozen(
-        inputs: &[&RecordOpening],
-        outputs: &[&RecordOpening],
+    pub(crate) fn check_unfrozen<C: CapConfig>(
+        inputs: &[&RecordOpening<C>],
+        outputs: &[&RecordOpening<C>],
     ) -> Result<(), TxnApiError> {
         if inputs
             .iter()
@@ -707,9 +711,9 @@ pub(crate) mod txn_helpers {
 
     /// Check that for each asset code `total input amount == total output
     /// amount`
-    fn check_asset_amount(
-        inputs: &[&RecordOpening],
-        outputs: &[&RecordOpening],
+    fn check_asset_amount<C: CapConfig>(
+        inputs: &[&RecordOpening<C>],
+        outputs: &[&RecordOpening<C>],
         fee: Amount,
     ) -> Result<(), TxnApiError> {
         let mut balances = BTreeMap::new();
@@ -749,7 +753,9 @@ pub(crate) mod txn_helpers {
 
     /// Check that a) first input is not dummy, and b) dummy inputs records have
     /// zero amount value
-    pub(crate) fn check_dummy_inputs(inputs: &[&RecordOpening]) -> Result<(), TxnApiError> {
+    pub(crate) fn check_dummy_inputs<C: CapConfig>(
+        inputs: &[&RecordOpening<C>],
+    ) -> Result<(), TxnApiError> {
         if inputs[0].is_dummy() {
             return Err(TxnApiError::InvalidParameter(
                 "First input cannot be dummy".to_string(),
@@ -769,9 +775,9 @@ pub(crate) mod txn_helpers {
     }
 
     // Returns the hash digest of all serialized receiver memos
-    pub(crate) fn get_receiver_memos_digest(
+    pub(crate) fn get_receiver_memos_digest<C: CapConfig>(
         receiver_memos: &[ReceiverMemo],
-    ) -> Result<BaseField, TxnApiError> {
+    ) -> Result<C::ScalarField, TxnApiError> {
         if receiver_memos.is_empty() {
             return Err(TxnApiError::InternalError(
                 "Internal error: receiver_memo list should NOT be empty!".to_string(),
@@ -790,6 +796,7 @@ pub(crate) mod txn_helpers {
     mod tests {
         use crate::{
             keys::{UserKeyPair, ViewerPubKey},
+            prelude::Config,
             structs::{AssetDefinition, FreezeFlag, Nullifier, RecordOpening},
             utils::txn_helpers::{
                 check_distinct_input_nullifiers, derive_fee, transfer::check_asset_def,
@@ -801,7 +808,7 @@ pub(crate) mod txn_helpers {
         fn test_derive_fee() {
             let mut rng = ark_std::test_rng();
 
-            let asset_def_native = AssetDefinition::native();
+            let asset_def_native = AssetDefinition::<Config>::native();
             let asset_def_non_native = AssetDefinition::rand_for_test(&mut rng);
             let user_keypair = UserKeyPair::generate(&mut rng);
 
@@ -888,8 +895,8 @@ pub(crate) mod txn_helpers {
         #[test]
         fn test_distinct_input_nullifier() {
             let rng = &mut test_rng();
-            let nullifier1 = Nullifier::random_for_test(rng);
-            let nullifier2 = Nullifier::random_for_test(rng);
+            let nullifier1 = Nullifier::<Config>::random_for_test(rng);
+            let nullifier2 = Nullifier::<Config>::random_for_test(rng);
             assert!(check_distinct_input_nullifiers(&[nullifier1]).is_ok());
             assert!(check_distinct_input_nullifiers(&[nullifier1, nullifier1]).is_err());
             assert!(check_distinct_input_nullifiers(&[nullifier1, nullifier2]).is_ok());
@@ -899,9 +906,9 @@ pub(crate) mod txn_helpers {
         fn test_check_asset_def() {
             let mut rng = ark_std::test_rng();
 
-            let asset_def_native = AssetDefinition::native();
-            let asset_def_non_native_1 = AssetDefinition::rand_for_test(&mut rng);
-            let asset_def_non_native_2 = AssetDefinition::rand_for_test(&mut rng);
+            let asset_def_native = AssetDefinition::<Config>::native();
+            let asset_def_non_native_1 = AssetDefinition::<Config>::rand_for_test(&mut rng);
+            let asset_def_non_native_2 = AssetDefinition::<Config>::rand_for_test(&mut rng);
             let mut asset_def_freezer_key_non_null_viewer_key_null = asset_def_non_native_2.clone();
             asset_def_freezer_key_non_null_viewer_key_null
                 .policy

@@ -19,19 +19,17 @@ use jf_cap::{
         get_key_pairs, save_result_to_file_batch, BATCH_VERIF, NUM_INPUTS_RANGE, NUM_OUTPUTS_RANGE,
         TREE_DEPTH,
     },
-    keys::{FreezerKeyPair, UserKeyPair, ViewerKeyPair},
-    proof::{freeze, mint, transfer, universal_setup},
-    structs::NoteType,
-    txn_batch_verify,
+    prelude::*,
+    proof::{freeze, mint, transfer},
     utils::compute_universal_param_size,
-    NodeValue, TransactionNote, TransactionVerifyingKey,
 };
+use jf_primitives::merkle_tree::NodeValue;
 use std::{cmp::max, time::Duration};
 
 fn run_batch_verification(
-    verify_keys: &[TransactionVerifyingKey],
-    notes: &[TransactionNote],
-    roots: &[NodeValue],
+    verify_keys: &[TransactionVerifyingKey<Config>],
+    notes: &[TransactionNote<Config>],
+    roots: &[NodeValue<<Config as CapConfig>::ScalarField>],
     timestamp: u64,
 ) {
     let verify_keys: Vec<_> = verify_keys.iter().map(|x| x).collect();
@@ -57,14 +55,14 @@ fn run_benchmark_batch_verification(c: &mut Criterion, filename_list: &mut Vec<S
                 // Public parameters
                 ///////////////////////////////////////////////////////////////////////////////
 
-                let domain_size_transfer = compute_universal_param_size(
+                let domain_size_transfer = compute_universal_param_size::<Config>(
                     NoteType::Transfer,
                     *num_inputs,
                     *num_outputs,
                     TREE_DEPTH,
                 )
                 .unwrap();
-                let domain_size_mint = compute_universal_param_size(
+                let domain_size_mint = compute_universal_param_size::<Config>(
                     NoteType::Mint,
                     *num_inputs,
                     *num_outputs,
@@ -72,7 +70,7 @@ fn run_benchmark_batch_verification(c: &mut Criterion, filename_list: &mut Vec<S
                 )
                 .unwrap();
 
-                let domain_size_freeze = compute_universal_param_size(
+                let domain_size_freeze = compute_universal_param_size::<Config>(
                     NoteType::Freeze,
                     *num_inputs,
                     *num_outputs,
@@ -84,7 +82,7 @@ fn run_benchmark_batch_verification(c: &mut Criterion, filename_list: &mut Vec<S
                     .iter()
                     .fold(domain_size_transfer, |acc, &x| max(acc, x));
 
-                let srs = universal_setup(domain_size, &mut prng).unwrap();
+                let srs = universal_setup::<_, Config>(domain_size, &mut prng).unwrap();
 
                 let (proving_key_transfer, verifying_key_transfer, _) =
                     transfer::preprocess(&srs, *num_inputs, *num_outputs, TREE_DEPTH).unwrap();

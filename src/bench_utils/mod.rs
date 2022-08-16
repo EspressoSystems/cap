@@ -12,6 +12,7 @@
 #![allow(missing_docs)]
 use crate::{
     keys::{FreezerKeyPair, UserKeyPair, ViewerKeyPair},
+    prelude::CapConfig,
     structs::Amount,
     utils::params_builder::{FreezeParamsBuilder, MintParamsBuilder, TransferParamsBuilder},
 };
@@ -129,7 +130,7 @@ where
     )
 }
 
-pub fn get_key_pairs(num_inputs: usize) -> Vec<UserKeyPair> {
+pub fn get_key_pairs<C: CapConfig>(num_inputs: usize) -> Vec<UserKeyPair<C>> {
     let mut prng = ark_std::test_rng();
     let mut user_keypairs = vec![];
     for _ in 0..num_inputs {
@@ -269,12 +270,12 @@ pub fn save_result_to_file_batch(
     save_results_to_file(&headers, list, note_description, &build_csv_records_batch)
 }
 
-pub fn get_builder_freeze<'a>(
-    fee_keypair: &'a UserKeyPair,
-    freeze_keypairs: Vec<&'a FreezerKeyPair>,
+pub fn get_builder_freeze<'a, C: CapConfig>(
+    fee_keypair: &'a UserKeyPair<C>,
+    freeze_keypairs: Vec<&'a FreezerKeyPair<C>>,
     num_inputs: usize,
     tree_depth: u8,
-) -> FreezeParamsBuilder<'a> {
+) -> FreezeParamsBuilder<'a, C> {
     let input_amounts = vec![Amount::from(15_u128); num_inputs - 1];
     let fee_input_amount = Amount::from(10u64);
     let fee = Amount::from(5u64);
@@ -289,13 +290,13 @@ pub fn get_builder_freeze<'a>(
     )
 }
 
-pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
+pub fn get_builder_mint<'a, R: RngCore + CryptoRng, C: CapConfig>(
     rng: &mut R,
-    minter_keypair: &'a UserKeyPair,
-    receiver_keypair: &'a UserKeyPair,
-    viewer_keypair: &'a ViewerKeyPair,
+    minter_keypair: &'a UserKeyPair<C>,
+    receiver_keypair: &'a UserKeyPair<C>,
+    viewer_keypair: &'a ViewerKeyPair<C>,
     tree_depth: u8,
-) -> MintParamsBuilder<'a> {
+) -> MintParamsBuilder<'a, C> {
     let input_amount = Amount::from(10u64);
     let fee = Amount::from(4u64);
     let mint_amount = Amount::from(35u64);
@@ -312,12 +313,12 @@ pub fn get_builder_mint<'a, R: RngCore + CryptoRng>(
     )
 }
 
-pub fn get_builder_transfer(
-    user_keypairs: &[UserKeyPair],
+pub fn get_builder_transfer<C: CapConfig>(
+    user_keypairs: &[UserKeyPair<C>],
     num_inputs: usize,
     num_outputs: usize,
     tree_depth: u8,
-) -> TransferParamsBuilder {
+) -> TransferParamsBuilder<C> {
     let cred_expiry = 9999;
 
     let amount_input = Amount::from(1u64);
