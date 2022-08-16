@@ -200,6 +200,7 @@ fn build_csv_records_batch(
     ]
 }
 
+#[allow(clippy::type_complexity)]
 pub fn save_results_to_file(
     headers: &[&str],
     list: Vec<String>,
