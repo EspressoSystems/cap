@@ -55,10 +55,16 @@ pub trait CapConfig: Sized + Clone + Debug + PartialEq {
     /// number of byte can each `identityAttribute` take.
     const PER_ATTR_BYTE_CAPACITY: u32 =
         (<Self::ScalarField as PrimeField>::Params::CAPACITY / 8) - 1;
+    // NOTE: we use function instead of const because there's no const fn API from arkworks
+    // to construct a field element with generic type (field_new! macro is only for concrete type)
     /// Native asset code, cannot be 0 as then code is identical to default code
-    const NATIVE_ASSET_CODE: AssetCode<Self> = AssetCode(Self::ScalarField::from(1u32));
+    fn native_asset_code() -> AssetCode<Self> {
+        AssetCode(Self::ScalarField::from(1u32))
+    }
     /// Dummy asset code, cannot be 0 (default) or 1(native)
-    const DUMMY_ASSET_CODE: AssetCode<Self> = AssetCode(Self::ScalarField::from(2u32));
+    fn dummy_asset_code() -> AssetCode<Self> {
+        AssetCode(Self::ScalarField::from(2u32))
+    }
 }
 
 /// A concrete instantation of `CapConfig`

@@ -236,13 +236,13 @@ pub struct AssetCode<C: CapConfig>(pub(crate) C::ScalarField);
 
 impl<C: CapConfig> AssetCode<C> {
     /// Return the AssetCode assigned for the native asset
-    pub const fn native() -> Self {
-        C::NATIVE_ASSET_CODE
+    pub fn native() -> Self {
+        C::native_asset_code()
     }
 
     /// Return the AssetCode assigned for a dummy record
-    pub const fn dummy() -> Self {
-        C::DUMMY_ASSET_CODE
+    pub fn dummy() -> Self {
+        C::dummy_asset_code()
     }
 
     /// Generate a random asset code

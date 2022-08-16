@@ -188,7 +188,8 @@ impl RecordOpeningVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
     ) -> Result<BoolVar, PlonkError> {
-        let zero_if_dummy = circuit.add_constant(self.asset_code, &C::DUMMY_ASSET_CODE.0.neg())?;
+        let zero_if_dummy =
+            circuit.add_constant(self.asset_code, &C::dummy_asset_code().0.neg())?;
         circuit.check_is_zero(zero_if_dummy)
     }
 }
