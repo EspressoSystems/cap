@@ -45,15 +45,32 @@ use jf_primitives::{
     prf::{PrfKey, PRF},
     signatures::{
         schnorr,
-        schnorr::{SchnorrSignatureScheme, Signature, VerKey},
+        schnorr::{SchnorrSignatureScheme, Signature},
         SignatureScheme,
     },
 };
 use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
+use serde::{Deserialize, Serialize};
 
 /// Public address for a user to send assets to/from.
-pub type UserAddress<C: CapConfig> = schnorr::VerKey<C::EmbeddedCurveParam>;
+#[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
+#[derivative(
+    Debug(bound = "C: CapConfig"),
+    Clone(bound = "C: CapConfig"),
+    Default(bound = "C: CapConfig"),
+    PartialEq(bound = "C: CapConfig"),
+    Eq(bound = "C: CapConfig"),
+    Hash(bound = "C: CapConfig")
+)]
+#[serde(bound = "C: CapConfig")]
+pub struct UserAddress<C: CapConfig>(pub(crate) schnorr::VerKey<C::EmbeddedCurveParam>);
+
+impl<C: CapConfig> From<&UserAddress<C>> for (C::ScalarField, C::ScalarField) {
+    fn from(addr: &UserAddress<C>) -> Self {
+        (&addr.0).into()
+    }
+}
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
@@ -114,6 +131,7 @@ impl<C: CapConfig> UserPubKey<C> {
     ) -> Result<(), TxnApiError> {
         let bls_scalars = hash_to_field::<_, C::ScalarField>(msg);
         self.address
+            .0
             .verify(
                 &[bls_scalars],
                 sig,
@@ -130,7 +148,7 @@ impl<C: CapConfig> UserPubKey<C> {
 // private or internal functions
 impl<C: CapConfig> UserPubKey<C> {
     pub(crate) fn address_internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
-        self.address.internal()
+        self.address.0.internal()
     }
 }
 
@@ -170,7 +188,7 @@ impl<C: CapConfig> UserKeyPair<C> {
 
     /// Getter for public address
     pub fn address(&self) -> UserAddress<C> {
-        self.addr_keypair.ver_key()
+        UserAddress(self.addr_keypair.ver_key())
     }
 
     /// Getter for the reference to the address secret key
@@ -387,7 +405,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
             let visible_data =
                 ViewableData::from_xfr_data_and_asset(asset_definition, chunk, InOrOut::In)?;
             if visible_data.user_address.is_none()
-                || visible_data.user_address.as_ref().unwrap() != &VerKey::default()
+                || visible_data.user_address.as_ref().unwrap() != &UserAddress::default()
             {
                 visible_data_input.push(visible_data);
             }
@@ -511,7 +529,7 @@ impl<C: CapConfig> FreezerKeyPair<C> {
     // asset record and sanity check had been done during asset issuance to
     // avoid malformed user public key.
     pub(crate) fn derive_nullifier_key(&self, address: &UserAddress<C>) -> NullifierKey<C> {
-        compute_nullifier_key(address.internal(), &self.sec_key)
+        compute_nullifier_key(address.0.internal(), &self.sec_key)
     }
 }
 

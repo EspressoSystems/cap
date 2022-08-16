@@ -14,9 +14,7 @@
 use crate::{
     errors::TxnApiError,
     prelude::CapConfig,
-    proof::mint::{
-        self, MintProvingKey, MintPublicInput, MintValidityProof, MintVerifyingKey, MintWitness,
-    },
+    proof::mint::{self, MintProvingKey, MintPublicInput, MintVerifyingKey, MintWitness},
     structs::{
         Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode,
         Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
@@ -26,6 +24,7 @@ use crate::{
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Read, SerializationError, Write};
 use ark_std::{string::ToString, vec, UniformRand};
+use jf_plonk::proof_system::structs::Proof;
 use jf_primitives::signatures::schnorr;
 use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -53,7 +52,7 @@ pub struct MintNote<C: CapConfig> {
     /// the asset code
     pub mint_internal_asset_code: InternalAssetCode<C>,
     /// the validity proof of this note
-    pub proof: MintValidityProof<C>,
+    pub proof: Proof<C::PairingCurve>,
     /// memo for policy compliance specified for the designated viewer
     pub viewing_memo: ViewableMemo<C>,
     /// auxiliary information

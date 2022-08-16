@@ -15,8 +15,7 @@ use crate::{
     keys::UserKeyPair,
     prelude::CapConfig,
     proof::transfer::{
-        TransferProvingKey, TransferPublicInput, TransferValidityProof, TransferVerifyingKey,
-        TransferWitness,
+        TransferProvingKey, TransferPublicInput, TransferVerifyingKey, TransferWitness,
     },
     structs::{
         Amount, AssetCode, AssetDefinition, ExpirableCredential, FeeInput, FreezeFlag, Nullifier,
@@ -35,6 +34,7 @@ use ark_std::{
     vec,
     vec::Vec,
 };
+use jf_plonk::proof_system::structs::Proof;
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, NodeValue},
     signatures::schnorr,
@@ -57,7 +57,7 @@ pub struct TransferNote<C: CapConfig> {
     /// generated output commitments
     pub output_commitments: Vec<RecordCommitment<C>>,
     /// proof of spending and policy compliance
-    pub proof: TransferValidityProof<C>,
+    pub proof: Proof<C::PairingCurve>,
     /// Memo generated for policy compliance
     pub viewing_memo: ViewableMemo<C>,
     /// Auxiliary information (merkle root, native asset, fee, valid max time,

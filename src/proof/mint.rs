@@ -63,9 +63,6 @@ pub struct MintVerifyingKey<C: CapConfig> {
 }
 deserialize_canonical_bytes!(MintVerifyingKey<C: CapConfig>);
 
-/// Proof associated to a Mint note
-pub type MintValidityProof<C: CapConfig> = Proof<C::PairingCurve>;
-
 /// One-time preprocess of the Mint transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// mint transaction (a.k.a. Asset Issuance).
@@ -103,7 +100,7 @@ pub(crate) fn prove<R, C: CapConfig>(
     witness: &MintWitness<C>,
     public_inputs: &MintPublicInput<C>,
     txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
-) -> Result<MintValidityProof<C>, TxnApiError>
+) -> Result<Proof<C::PairingCurve>, TxnApiError>
 where
     R: RngCore + CryptoRng,
 {
@@ -127,7 +124,7 @@ where
 pub(crate) fn verify<C: CapConfig>(
     verifying_key: &MintVerifyingKey<C>,
     public_inputs: &MintPublicInput<C>,
-    proof: &MintValidityProof<C>,
+    proof: &Proof<C::PairingCurve>,
     recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();

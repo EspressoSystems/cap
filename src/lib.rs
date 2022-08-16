@@ -161,11 +161,9 @@ pub mod freeze;
 pub mod keys;
 pub mod mint;
 pub mod parameters;
-pub mod prelude;
 pub mod proof;
 pub mod structs;
 pub mod transfer;
-// mod types;
 pub mod utils;
 
 #[cfg(feature = "test_apis")]
@@ -600,7 +598,7 @@ pub fn sign_receiver_memos<C: CapConfig>(
 }
 
 /// crate prelude consisting important traits and structs
-pub mod preclude {
+pub mod prelude {
     pub use super::{
         calculate_fee, derive_txns_fee_records, sign_receiver_memos, TransactionNote,
         TransactionVerifyingKey,

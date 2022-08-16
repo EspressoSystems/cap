@@ -14,10 +14,7 @@ use crate::{
     errors::TxnApiError,
     keys::FreezerKeyPair,
     prelude::CapConfig,
-    proof::freeze::{
-        self, FreezeProvingKey, FreezePublicInput, FreezeValidityProof, FreezeVerifyingKey,
-        FreezeWitness,
-    },
+    proof::freeze::{self, FreezeProvingKey, FreezePublicInput, FreezeVerifyingKey, FreezeWitness},
     structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
     utils::txn_helpers::{freeze::*, *},
     NodeValue,
@@ -28,6 +25,7 @@ use ark_std::{
     string::ToString,
     vec::Vec,
 };
+use jf_plonk::proof_system::structs::Proof;
 use jf_primitives::{merkle_tree::AccMemberWitness, signatures::schnorr};
 use serde::{Deserialize, Serialize};
 
@@ -46,7 +44,7 @@ pub struct FreezeNote<C: CapConfig> {
     /// generated output commitments
     pub output_commitments: Vec<RecordCommitment<C>>,
     /// proof of freezing
-    pub proof: FreezeValidityProof<C>,
+    pub proof: Proof<C::PairingCurve>,
     /// Auxiliary information (merkle root, fee)
     pub aux_info: FreezeAuxInfo<C>,
 }

@@ -118,9 +118,6 @@ impl<C: CapConfig> From<&TransferProvingKey<C>> for TransferVerifyingKey<C> {
     }
 }
 
-/// Proof associated to a Transfer note
-pub type TransferValidityProof<C: CapConfig> = Proof<C::PairingCurve>;
-
 /// One-time preprocess of the Transfer transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// transfer transaction.
@@ -166,7 +163,7 @@ pub(crate) fn prove<R: RngCore + CryptoRng, C: CapConfig>(
     public_inputs: &TransferPublicInput<C>,
     txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
     extra_proof_bound_data: &[u8],
-) -> Result<TransferValidityProof<C>, TxnApiError> {
+) -> Result<Proof<C::PairingCurve>, TxnApiError> {
     let (circuit, _) = TransferCircuit::build(witness, public_inputs)
         .map_err(|e| TxnApiError::FailedSnark(format!("{:?}", e)))?;
     circuit
@@ -195,7 +192,7 @@ pub(crate) fn prove<R: RngCore + CryptoRng, C: CapConfig>(
 pub(crate) fn verify<C: CapConfig>(
     transfer_verifying_key: &TransferVerifyingKey<C>,
     public_inputs: &TransferPublicInput<C>,
-    proof: &TransferValidityProof<C>,
+    proof: &Proof<C::PairingCurve>,
     recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
     extra_proof_bound_data: &[u8],
 ) -> Result<(), TxnApiError> {

@@ -87,9 +87,6 @@ impl<C: CapConfig> FreezeVerifyingKey<C> {
     }
 }
 
-/// Proof associated to a Freeze note
-pub type FreezeValidityProof<C: CapConfig> = Proof<C::PairingCurve>;
-
 /// One-time preprocess of the Freezing transaction circuit, proving key and
 /// verifying key should be reused for proving/verifying future instances of
 /// asset freezing transaction.
@@ -131,7 +128,7 @@ pub(crate) fn prove<R, C: CapConfig>(
     witness: &FreezeWitness<C>,
     pub_input: &FreezePublicInput<C>,
     txn_memo_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
-) -> Result<FreezeValidityProof<C>, TxnApiError>
+) -> Result<Proof<C::PairingCurve>, TxnApiError>
 where
     R: RngCore + CryptoRng,
 {
@@ -165,7 +162,7 @@ where
 pub(crate) fn verify<C: CapConfig>(
     verifying_key: &FreezeVerifyingKey<C>,
     public_inputs: &FreezePublicInput<C>,
-    proof: &FreezeValidityProof<C>,
+    proof: &Proof<C::PairingCurve>,
     recv_memos_ver_key: &schnorr::VerKey<C::EmbeddedCurveParam>,
 ) -> Result<(), TxnApiError> {
     let mut ext_msg = Vec::new();
