@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/parameters.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>parameters.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script src="../../crates.js"></script><script defer src="../../main.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/parameters.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>parameters.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../jf_cap/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../jf_cap/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -665,6 +666,31 @@
 <span id="660">660</span>
 <span id="661">661</span>
 <span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -681,12 +707,12 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">errors::TxnApiError</span>,
+    <span class="ident">prelude::CapConfig</span>,
     <span class="ident">proof</span>::{
         <span class="self">self</span>,
         <span class="ident">freeze</span>::{<span class="self">self</span>, <span class="ident">FreezeProvingKey</span>, <span class="ident">FreezeVerifyingKey</span>},
         <span class="ident">mint</span>::{<span class="self">self</span>, <span class="ident">MintProvingKey</span>, <span class="ident">MintVerifyingKey</span>},
         <span class="ident">transfer</span>::{<span class="self">self</span>, <span class="ident">TransferProvingKey</span>, <span class="ident">TransferVerifyingKey</span>},
-        <span class="ident">UniversalParam</span>,
     },
 };
 <span class="kw">use</span> <span class="ident">ark_serialize</span>::{<span class="ident">CanonicalDeserialize</span>, <span class="ident">CanonicalSerialize</span>};
@@ -699,6 +725,7 @@
     <span class="ident">vec</span>,
     <span class="ident">vec::Vec</span>,
 };
+<span class="kw">use</span> <span class="ident">jf_plonk::proof_system::structs::UniversalSrs</span>;
 
 <span class="kw">const</span> <span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;universal_srs&quot;</span>;
 
@@ -710,12 +737,12 @@
 <span class="doccomment">/// * `max_degree` - the upperbound for polynomial degree, please use</span>
 <span class="doccomment">///   `utils::compute_universal_param_size` to calculate.</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_universal_parameter_for_demo</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_universal_parameter_for_demo</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-    <span class="kw">let</span> <span class="ident">universal_param</span>: <span class="ident">UniversalParam</span> <span class="op">=</span> <span class="ident">proof::universal_setup</span>(<span class="ident">max_degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">proof::universal_setup</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="kw-2">&amp;mut</span> <span class="ident">rng</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_path</span>(<span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>, <span class="string">&quot;bin&quot;</span>),
@@ -731,7 +758,9 @@
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">fn</span> <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">src</span>: <span class="ident">PathBuf</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+<span class="kw">fn</span> <span class="ident">load_universal_parameters_from_path</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+    <span class="ident">src</span>: <span class="ident">PathBuf</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">eprint!</span>(
         <span class="string">&quot;Loading universal parameter from: {} ...&quot;</span>,
@@ -748,18 +777,21 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
-<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-    <span class="ident"><span class="kw">crate</span>::proof::load_srs</span>(<span class="number">2usize</span>.<span class="ident">pow</span>(<span class="number">17</span>))
+<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="ident"><span class="kw">crate</span>::proof::load_srs</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="number">2usize</span>.<span class="ident">pow</span>(<span class="number">17</span>))
 }
 
 <span class="doccomment">/// Load universal parameter from a file.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from the included SRS (bn254) or the default path</span>
 <span class="doccomment">/// (otherwise).</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_universal_parameter</span>(<span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_universal_parameter</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+    <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="ident">src</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">src</span>) =&gt; <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">src</span>),
-        <span class="prelude-val">None</span> =&gt; <span class="ident">load_default_universal_parameters</span>(),
+        <span class="prelude-val">Some</span>(<span class="ident">src</span>) =&gt; <span class="ident">load_universal_parameters_from_path</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">src</span>),
+        <span class="prelude-val">None</span> =&gt; <span class="ident">load_default_universal_parameters</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(),
     }
 }
 
@@ -770,15 +802,15 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_transfer_proving_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_transfer_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">num_output</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">proving_key</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span>
-        <span class="ident">transfer::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+        <span class="ident">transfer::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     {
         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span>.<span class="ident">clone</span>() {
@@ -815,12 +847,12 @@
 <span class="doccomment">/// Load the transfer proving key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_transfer_proving_key</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_transfer_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">num_output</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_transfer_proving_key_path</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>),
@@ -847,11 +879,11 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_transfer_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_transfer_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">num_output</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span> {
@@ -860,7 +892,7 @@
     };
 
     <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span>
-        <span class="ident">transfer::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+        <span class="ident">transfer::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">eprint!</span>(
@@ -875,12 +907,12 @@
 <span class="doccomment">/// Load the transfer verifying key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_transfer_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_transfer_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">num_output</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferVerifyingKey</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_transfer_verifying_key_path</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>),
@@ -901,12 +933,12 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_mint_proving_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_mint_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> (<span class="ident">proving_key</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">mint::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="ident">proving_key</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">mint::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     {
         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span>.<span class="ident">clone</span>() {
@@ -943,10 +975,10 @@
 <span class="doccomment">/// Load the mint proving key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_mint_proving_key</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_mint_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MintProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MintProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_mint_proving_key_path</span>(<span class="ident">tree_depth</span>),
@@ -971,9 +1003,9 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_mint_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_mint_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span> {
@@ -981,7 +1013,7 @@
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_mint_verifying_key_path</span>(<span class="ident">tree_depth</span>),
     };
 
-    <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">mint::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">mint::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">eprint!</span>(
@@ -996,10 +1028,10 @@
 <span class="doccomment">/// Load the mint verifying key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_mint_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_mint_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MintVerifyingKey</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MintVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_mint_verifying_key_path</span>(<span class="ident">tree_depth</span>),
@@ -1021,14 +1053,14 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_freeze_proving_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_freeze_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">proving_key</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span>
-        <span class="ident">freeze::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+        <span class="ident">freeze::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     {
         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span>.<span class="ident">clone</span>() {
@@ -1065,11 +1097,11 @@
 <span class="doccomment">/// Load the freeze proving key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_freeze_proving_key</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_freeze_proving_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FreezeProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FreezeProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_freeze_proving_key_path</span>(<span class="ident">num_input</span>, <span class="ident">tree_depth</span>),
@@ -1095,10 +1127,10 @@
 <span class="doccomment">/// * `tree_depth` - depth of merkle tree for accumulating `RecordCommitment`</span>
 <span class="doccomment">/// * `universal_param` - the universal parameter</span>
 <span class="doccomment">/// * `dest` - destination file path, save to default path if `None`.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_freeze_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">store_freeze_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+    <span class="ident">universal_param</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">dest</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">dest</span> {
@@ -1106,7 +1138,7 @@
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_freeze_verifying_key_path</span>(<span class="ident">num_input</span>, <span class="ident">tree_depth</span>),
     };
 
-    <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">freeze::preprocess</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">verifying_key</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">freeze::preprocess</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
     <span class="macro">eprint!</span>(
@@ -1121,11 +1153,11 @@
 <span class="doccomment">/// Load the freeze verifying key from `src` file</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// if `src` is `None`, load from default path.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_freeze_verifying_key</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_freeze_verifying_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">num_input</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
     <span class="ident">src</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FreezeVerifyingKey</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">FreezeVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">src</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">src</span> {
         <span class="prelude-val">Some</span>(<span class="ident">dest</span>) =&gt; <span class="ident">dest</span>,
         <span class="prelude-val">None</span> =&gt; <span class="ident">default_freeze_verifying_key_path</span>(<span class="ident">num_input</span>, <span class="ident">tree_depth</span>),
@@ -1254,14 +1286,17 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">proof::universal_setup</span>, <span class="ident">structs::NoteType</span>, <span class="ident">utils::compute_universal_param_size</span>};
+    <span class="kw">use</span> <span class="kw">crate</span>::{
+        <span class="ident">prelude::Config</span>, <span class="ident">proof::universal_setup</span>, <span class="ident">structs::NoteType</span>,
+        <span class="ident">utils::compute_universal_param_size</span>,
+    };
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="attribute">#[<span class="ident">ignore</span> <span class="op">=</span> <span class="string">&quot;expensive to run in CI, already tested locally&quot;</span>]</span>
     <span class="kw">fn</span> <span class="ident">store_and_load_for_universal_param</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>(<span class="ident">NoteType::Transfer</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">10</span>)<span class="question-mark">?</span>;
-        <span class="ident">store_universal_parameter_for_demo</span>(<span class="ident">max_degree</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="ident">load_universal_parameter</span>(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">NoteType::Transfer</span>, <span class="number">2</span>, <span class="number">2</span>, <span class="number">10</span>)<span class="question-mark">?</span>;
+        <span class="ident">store_universal_parameter_for_demo</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="ident">load_universal_parameter</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -1272,17 +1307,29 @@
         <span class="kw">let</span> <span class="ident">num_input</span> <span class="op">=</span> <span class="number">2</span>;
         <span class="kw">let</span> <span class="ident">num_output</span> <span class="op">=</span> <span class="number">5</span>;
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">10</span>;
-        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span>
-            <span class="ident">compute_universal_param_size</span>(<span class="ident">NoteType::Transfer</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(
+            <span class="ident">NoteType::Transfer</span>,
+            <span class="ident">num_input</span>,
+            <span class="ident">num_output</span>,
+            <span class="ident">tree_depth</span>,
+        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">store_transfer_proving_key</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span> <span class="ident">load_transfer_proving_key</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="ident">store_transfer_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(
+            <span class="ident">num_input</span>,
+            <span class="ident">num_output</span>,
+            <span class="ident">tree_depth</span>,
+            <span class="kw-2">&amp;</span><span class="ident">universal_param</span>,
+            <span class="prelude-val">None</span>,
+        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span>
+            <span class="ident">load_transfer_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">n_inputs</span>, <span class="ident">num_input</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">n_outputs</span>, <span class="ident">num_output</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
 
-        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span> <span class="ident">load_transfer_verifying_key</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span>
+            <span class="ident">load_transfer_verifying_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">n_inputs</span>, <span class="ident">num_input</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">n_outputs</span>, <span class="ident">num_output</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
@@ -1294,14 +1341,14 @@
     <span class="kw">fn</span> <span class="ident">store_and_load_for_mint_prover_verifier</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">10</span>;
-        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>(<span class="ident">NoteType::Mint</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">NoteType::Mint</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">store_mint_proving_key</span>(<span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span> <span class="ident">load_mint_proving_key</span>(<span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="ident">store_mint_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span> <span class="ident">load_mint_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
 
-        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span> <span class="ident">load_mint_verifying_key</span>(<span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span> <span class="ident">load_mint_verifying_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
         <span class="prelude-val">Ok</span>(())
     }
@@ -1312,21 +1359,25 @@
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">10</span>;
         <span class="kw">let</span> <span class="ident">num_inputs</span> <span class="op">=</span> <span class="number">2</span>;
-        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span>
-            <span class="ident">compute_universal_param_size</span>(<span class="ident">NoteType::Freeze</span>, <span class="ident">num_inputs</span>, <span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">max_degree</span> <span class="op">=</span> <span class="ident">compute_universal_param_size</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(
+            <span class="ident">NoteType::Freeze</span>,
+            <span class="ident">num_inputs</span>,
+            <span class="ident">num_inputs</span>,
+            <span class="ident">tree_depth</span>,
+        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">store_freeze_proving_key</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span> <span class="ident">load_freeze_proving_key</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="ident">store_freeze_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">proving_key</span> <span class="op">=</span> <span class="ident">load_freeze_proving_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">num_input</span>, <span class="ident">num_inputs</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">proving_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
 
-        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span> <span class="ident">load_freeze_verifying_key</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">verifying_key</span> <span class="op">=</span> <span class="ident">load_freeze_verifying_key</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">num_inputs</span>, <span class="ident">tree_depth</span>, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">num_input</span>, <span class="ident">num_inputs</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">verifying_key</span>.<span class="ident">tree_depth</span>, <span class="ident">tree_depth</span>);
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
 </body></html>

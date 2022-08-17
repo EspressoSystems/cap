@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/proof/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/proof/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -144,10 +145,6 @@
 <span id="139">139</span>
 <span id="140">140</span>
 <span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -194,40 +191,36 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">mint</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">transfer</span>;
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">errors::TxnApiError</span>, <span class="ident">PairingEngine</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">errors::TxnApiError</span>, <span class="ident">prelude::CapConfig</span>};
 <span class="kw">use</span> <span class="ident">ark_std</span>::{
     <span class="ident">rand</span>::{<span class="ident">CryptoRng</span>, <span class="ident">RngCore</span>},
     <span class="ident">string::ToString</span>,
 };
-<span class="kw">use</span> <span class="ident">jf_plonk::proof_system::structs::UniversalSrs</span>;
-
-<span class="doccomment">/// The universal parameters (Structured Reference String) for proving/verifying</span>
-<span class="doccomment">/// transaction validity of any type. Generate only once during a multi-party</span>
-<span class="doccomment">/// setup. For testing purpose, use `universal_setup()` for a one-time</span>
-<span class="doccomment">/// generation.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">UniversalParam</span> <span class="op">=</span> <span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span>;
+<span class="kw">use</span> <span class="ident">jf_plonk::proof_system</span>::{<span class="ident">structs::UniversalSrs</span>, <span class="ident">UniversalSNARK</span>};
 
 <span class="doccomment">/// One-time universal setup for parameters to be used in proving validity of</span>
 <span class="doccomment">/// all transactions, regardless of the transaction type.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// NOTE: this API is reserved for production usage. For now, in testing or</span>
 <span class="doccomment">/// staging environment, please use `universal_setup_for_test()` instead!</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">use</span> <span class="ident">jf_plonk::proof_system::PlonkKzgSnark</span>;
 
     <span class="comment">// either pass degree upperbound as an input parameter</span>
     <span class="comment">// or directly access a fixed constant</span>
-    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span><span class="ident">::universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)
+    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span><span class="ident">::universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">TxnApiError::FailedSnark</span>(<span class="string">&quot;Failed to generate universal SRS&quot;</span>.<span class="ident">to_string</span>()))
 }
 
 <span class="doccomment">/// Use Common Reference String parameters from Aztec&#39;s MPC ceremony in proving</span>
 <span class="doccomment">/// validity of all transactions, regardless of the transaction type.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_srs</span>(<span class="ident">max_degree</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">load_srs</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+    <span class="ident">max_degree</span>: <span class="ident">usize</span>,
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">use</span> <span class="ident">hex_literal::hex</span>;
     <span class="kw">use</span> <span class="ident">sha2</span>::{<span class="ident">Digest</span>, <span class="ident">Sha256</span>};
 
@@ -272,11 +265,11 @@
 <span class="doccomment">///   Ceremony.</span>
 <span class="doccomment">/// - otherwise: we generates fresh SRS on the spot (not secure for production</span>
 <span class="doccomment">///   use! toxic waste not thrown away).</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">_rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-    <span class="ident">load_srs</span>(<span class="ident">max_degree</span>)
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="ident">load_srs</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>)
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>))]</span>
@@ -287,12 +280,12 @@
 <span class="doccomment">///   Ceremony.</span>
 <span class="doccomment">/// - otherwise: we generates fresh SRS on the spot (not secure for production</span>
 <span class="doccomment">///   use! toxic waste not thrown away).</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">universal_setup_for_staging</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">max_degree</span>: <span class="ident">usize</span>,
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="ident">universal_setup</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
 </body></html>

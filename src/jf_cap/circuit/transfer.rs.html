@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/circuit/transfer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transfer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/circuit/transfer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transfer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -780,6 +781,26 @@
 <span id="775">775</span>
 <span id="776">776</span>
 <span id="777">777</span>
+<span id="778">778</span>
+<span id="779">779</span>
+<span id="780">780</span>
+<span id="781">781</span>
+<span id="782">782</span>
+<span id="783">783</span>
+<span id="784">784</span>
+<span id="785">785</span>
+<span id="786">786</span>
+<span id="787">787</span>
+<span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -801,21 +822,21 @@
     <span class="ident">constants</span>::{<span class="ident">AMOUNT_LEN</span>, <span class="ident">ASSET_TRACING_MAP_LEN</span>, <span class="ident">VIEWABLE_DATA_LEN</span>},
     <span class="ident">errors::TxnApiError</span>,
     <span class="ident">keys::UserKeyPair</span>,
+    <span class="ident">prelude::CapConfig</span>,
     <span class="ident">proof::transfer</span>::{<span class="ident">InputSecret</span>, <span class="ident">TransferPublicInput</span>, <span class="ident">TransferWitness</span>},
-    <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>,
 };
 <span class="kw">use</span> <span class="ident">ark_ff::Zero</span>;
 <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">format</span>, <span class="ident">string::ToString</span>, <span class="ident">vec</span>, <span class="ident">vec::Vec</span>};
 <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-    <span class="ident">circuit</span>::{<span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>},
+    <span class="ident">circuit</span>::{<span class="ident">BoolVar</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>},
     <span class="ident">errors</span>::{<span class="ident">CircuitError::InternalError</span>, <span class="ident">PlonkError</span>},
 };
 <span class="kw">use</span> <span class="ident">jf_primitives::circuit::merkle_tree::AccMemberWitnessVar</span>;
 <span class="kw">use</span> <span class="ident">jf_utils::fr_to_fq</span>;
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransferCircuit</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>);
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransferCircuit</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span> <span class="ident">TransferCircuit</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransferCircuit</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Build a circuit during preprocessing for derivation of proving key and</span>
     <span class="doccomment">/// verifying key.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build_for_preprocessing</span>(
@@ -836,8 +857,8 @@
     <span class="doccomment">/// Build the circuit given a satisfiable assignment of</span>
     <span class="doccomment">/// secret witness and public inputs.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">build</span>(
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span>,
-        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">usize</span>), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="ident">witness</span>.<span class="ident">input_secrets</span>.<span class="ident">is_empty</span>() {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">PlonkError::CircuitError</span>(<span class="ident">InternalError</span>(
@@ -861,9 +882,9 @@
             .<span class="ident">enumerate</span>()
         {
             <span class="comment">// The input is not frozen.</span>
-            <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">freeze_flag</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">C::ScalarField::zero</span>())<span class="question-mark">?</span>;
             <span class="comment">// check if record is dummy</span>
-            <span class="kw">let</span> <span class="ident">is_dummy_record</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">check_asset_code_dummy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">is_dummy_record</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">check_asset_code_dummy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">is_zero_amount</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_is_zero</span>(<span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">amount</span>)<span class="question-mark">?</span>;
             <span class="comment">// if records is dummy, then amount must be zero</span>
             <span class="comment">// That is, check that either record is not dummy or the amount is zero</span>
@@ -873,21 +894,22 @@
             <span class="comment">// The first input is with native asset code and is for txn fees.</span>
             <span class="kw">if</span> <span class="ident">i</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
-                <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">enforce_dummy_policy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+                <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">enforce_dummy_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             } <span class="kw">else</span> {
                 <span class="comment">// if asset type code is dummy, then policy must be dummy</span>
-                <span class="kw">let</span> <span class="ident">is_dummy_policy</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_policy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">is_dummy_policy</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
                 <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">not_dummy_record</span>, <span class="ident">is_dummy_policy</span>)<span class="question-mark">?</span>;
                 <span class="comment">// if asset type code is not dummy, then policy must be the transfers note</span>
                 <span class="comment">// policy</span>
                 <span class="kw">let</span> <span class="ident">is_equal_policy</span> <span class="op">=</span> <span class="ident">input</span>
                     .<span class="ident">ro</span>
                     .<span class="ident">policy</span>
-                    .<span class="ident">check_equal_policy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
+                    .<span class="ident">check_equal_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
                 <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">is_dummy_record</span>, <span class="ident">is_equal_policy</span>)<span class="question-mark">?</span>;
             }
 
-            <span class="kw">let</span> (<span class="ident">nullifier</span>, <span class="ident">root</span>) <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">prove_spend</span>(
+            <span class="kw">let</span> (<span class="ident">nullifier</span>, <span class="ident">root</span>) <span class="op">=</span> <span class="ident">TransactionGadgets</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::prove_spend</span>(
+                <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">ro</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">acc_member_witness</span>,
                 <span class="ident">input</span>.<span class="ident">addr_secret</span>,
@@ -901,8 +923,10 @@
             <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">is_dummy_record</span>, <span class="ident">is_correct_root</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// Check credential if credential creator&#39;s cred_pk is present.</span>
-            <span class="kw">let</span> <span class="ident">b_dummy_cred_pk</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_cred_pk</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">b_cred_vfy</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">cred</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">pub_input</span>.<span class="ident">valid_until</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">b_dummy_cred_pk</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_cred_pk</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">b_cred_vfy</span> <span class="op">=</span> <span class="ident">input</span>
+                .<span class="ident">cred</span>
+                .<span class="ident">verify</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">pub_input</span>.<span class="ident">valid_until</span>)<span class="question-mark">?</span>;
             <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">b_dummy_cred_pk</span>, <span class="ident">b_cred_vfy</span>)<span class="question-mark">?</span>;
         }
 
@@ -913,20 +937,20 @@
             .<span class="ident">enumerate</span>()
         {
             <span class="comment">// The output is not frozen.</span>
-            <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">output_ro</span>.<span class="ident">freeze_flag</span>, <span class="ident">BaseField::zero</span>())<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">output_ro</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">C::ScalarField::zero</span>())<span class="question-mark">?</span>;
             <span class="comment">// The first output is with native asset code and is for txn fees</span>
             <span class="kw">if</span> <span class="ident">i</span> <span class="op">==</span> <span class="number">0</span> {
                 <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">output_ro</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
-                <span class="ident">output_ro</span>.<span class="ident">policy</span>.<span class="ident">enforce_dummy_policy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+                <span class="ident">output_ro</span>.<span class="ident">policy</span>.<span class="ident">enforce_dummy_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             } <span class="kw">else</span> {
                 <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">output_ro</span>.<span class="ident">asset_code</span>, <span class="ident">witness</span>.<span class="ident">asset_code</span>)<span class="question-mark">?</span>;
                 <span class="ident">output_ro</span>
                     .<span class="ident">policy</span>
-                    .<span class="ident">enforce_equal_policy</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
+                    .<span class="ident">enforce_equal_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
             }
 
             <span class="comment">// commitment</span>
-            <span class="kw">let</span> <span class="ident">rc_out</span> <span class="op">=</span> <span class="ident">output_ro</span>.<span class="ident">compute_record_commitment</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">rc_out</span> <span class="op">=</span> <span class="ident">output_ro</span>.<span class="ident">compute_record_commitment</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
             <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">rc_out</span>, <span class="ident">expected_rc</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// Range-check `amount`</span>
@@ -949,7 +973,8 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">ro</span>.<span class="ident">amount</span>)
             .<span class="ident">collect</span>();
 
-        <span class="kw">let</span> <span class="ident">transfer_amount</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">preserve_balance</span>(
+        <span class="kw">let</span> <span class="ident">transfer_amount</span> <span class="op">=</span> <span class="ident">TransactionGadgets</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::preserve_balance</span>(
+            <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
             <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>,
             <span class="ident">witness</span>.<span class="ident">asset_code</span>,
             <span class="ident">pub_input</span>.<span class="ident">fee</span>,
@@ -961,7 +986,7 @@
         <span class="comment">// `transfer_amount &gt; asset_policy.reveal_threshold`</span>
         <span class="kw">let</span> <span class="ident">amount_diff</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">sub</span>(<span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">reveal_threshold</span>, <span class="ident">transfer_amount</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">b_under_limit</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_in_range</span>(<span class="ident">amount_diff</span>, <span class="ident">AMOUNT_LEN</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">b_dummy_viewing_pk</span> <span class="op">=</span> <span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_viewing_pk</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">b_dummy_viewing_pk</span> <span class="op">=</span> <span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">is_dummy_viewing_pk</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">under_limit_or_dummy_viewing_pk</span> <span class="op">=</span>
             <span class="ident">circuit</span>.<span class="ident">logic_or</span>(<span class="ident">b_under_limit</span>, <span class="ident">b_dummy_viewing_pk</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">b_correct_viewing_memo</span> <span class="op">=</span>
@@ -976,19 +1001,19 @@
     <span class="doccomment">/// Check whether a transfer viewing memo has encrypted the correct data,</span>
     <span class="doccomment">/// returns &quot;one&quot; variable if valid, &quot;zero&quot; otherwise</span>
     <span class="kw">fn</span> <span class="ident">is_correct_viewing_memo</span>(
-        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
+        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitnessVar</span>,
         <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPubInputVar</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">BoolVar</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="comment">// 1. Prepare message to be encrypted</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Variable</span><span class="op">&gt;</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">witness</span>.<span class="ident">asset_code</span>];
-        <span class="kw">let</span> <span class="ident">reveal_map_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Variable</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">unpack</span>(<span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>, <span class="ident">VIEWABLE_DATA_LEN</span>)<span class="question-mark">?</span>
+        <span class="kw">let</span> <span class="ident">reveal_map_vars</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BoolVar</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">unpack</span>(<span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">reveal_map</span>, <span class="ident">VIEWABLE_DATA_LEN</span>)<span class="question-mark">?</span>
                                             .<span class="ident">into_iter</span>()
                                             .<span class="ident">rev</span>() <span class="comment">// unpack is in little endian</span>
                                             .<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="ident">dummy_key</span> <span class="op">=</span> <span class="ident">UserAddressVar::dummy</span>(<span class="ident">circuit</span>);
         <span class="kw">for</span> <span class="ident">input</span> <span class="kw">in</span> <span class="ident">witness</span>.<span class="ident">input_secrets</span>.<span class="ident">iter</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
-            <span class="kw">let</span> <span class="ident">is_dummy_record</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">check_asset_code_dummy</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">is_dummy_record</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">ro</span>.<span class="ident">check_asset_code_dummy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
             <span class="comment">// if record is dummy, then add dummy key to audit memo so that auditor can</span>
             <span class="comment">// recognize dummy records by looking at the key</span>
             <span class="kw">let</span> <span class="ident">addr_x</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">conditional_select</span>(
@@ -1021,7 +1046,14 @@
             <span class="ident">bit_map_vars</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">actual_reveal_bit</span>;
             <span class="ident">bit_map_vars</span>[<span class="number">1</span>] <span class="op">=</span> <span class="ident">actual_reveal_bit</span>;
 
-            <span class="kw">let</span> <span class="ident">revealed_vals</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">hadamard_product</span>(<span class="kw-2">&amp;</span><span class="ident">bit_map_vars</span>, <span class="kw-2">&amp;</span><span class="ident">vals</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">revealed_vals</span> <span class="op">=</span> <span class="ident">TransactionGadgets</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::hadamard_product</span>(
+                <span class="ident">circuit</span>,
+                <span class="kw-2">&amp;</span><span class="ident">bit_map_vars</span>
+                    .<span class="ident">iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">into</span>())
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Variable</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+                <span class="kw-2">&amp;</span><span class="ident">vals</span>,
+            )<span class="question-mark">?</span>;
             <span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">revealed_vals</span>[..]);
         }
         <span class="kw">for</span> <span class="ident">output_ro</span> <span class="kw">in</span> <span class="ident">witness</span>.<span class="ident">output_record_openings</span>.<span class="ident">iter</span>().<span class="ident">skip</span>(<span class="number">1</span>) {
@@ -1033,13 +1065,19 @@
                 <span class="ident">output_ro</span>.<span class="ident">blind</span>,
             ];
 
-            <span class="kw">let</span> <span class="ident">revealed_vals</span> <span class="op">=</span>
-                <span class="ident">circuit</span>.<span class="ident">hadamard_product</span>(<span class="kw-2">&amp;</span><span class="ident">reveal_map_vars</span>[..<span class="ident">ASSET_TRACING_MAP_LEN</span>], <span class="kw-2">&amp;</span><span class="ident">vals</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">revealed_vals</span> <span class="op">=</span> <span class="ident">TransactionGadgets</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::hadamard_product</span>(
+                <span class="ident">circuit</span>,
+                <span class="kw-2">&amp;</span><span class="ident">reveal_map_vars</span>[..<span class="ident">ASSET_TRACING_MAP_LEN</span>]
+                    .<span class="ident">iter</span>()
+                    .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">v</span><span class="op">|</span> <span class="ident">v</span>.<span class="ident">into</span>())
+                    .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Variable</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+                <span class="kw-2">&amp;</span><span class="ident">vals</span>,
+            )<span class="question-mark">?</span>;
             <span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">revealed_vals</span>[..]);
         }
 
         <span class="comment">// 2. Derive viewing memo.</span>
-        <span class="kw">let</span> <span class="ident">derived_viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemoVar::derive</span>(
+        <span class="kw">let</span> <span class="ident">derived_viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemoVar::derive</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(
             <span class="ident">circuit</span>,
             <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">policy</span>.<span class="ident">viewer_pk</span>,
             <span class="kw-2">&amp;</span><span class="ident">message</span>,
@@ -1049,7 +1087,7 @@
         <span class="comment">// 3. Compare derived viewing_memo with that in the public input.</span>
         <span class="ident">pub_input</span>
             .<span class="ident">viewing_memo</span>
-            .<span class="ident">check_equal</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">derived_viewing_memo</span>)
+            .<span class="ident">check_equal</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">derived_viewing_memo</span>)
     }
 }
 
@@ -1064,9 +1102,9 @@
 
 <span class="kw">impl</span> <span class="ident">TransferWitnessVar</span> {
     <span class="doccomment">/// Create a variable for a transfer witness</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">asset_code</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">witness</span>.<span class="ident">asset_def</span>.<span class="ident">code</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">policy</span> <span class="op">=</span> <span class="ident">AssetPolicyVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
@@ -1080,8 +1118,9 @@
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="ident">ro</span>))
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span>
-            <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">viewing_memo_enc_rand</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(
+            <span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">viewing_memo_enc_rand</span>),
+        )<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">asset_code</span>,
             <span class="ident">policy</span>,
@@ -1105,14 +1144,15 @@
 
 <span class="kw">impl</span> <span class="ident">TransferPubInputVar</span> {
     <span class="doccomment">/// Create a transfer public input variable.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
-        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
+        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">pub_input</span>.<span class="ident">merkle_root</span>.<span class="ident">to_scalar</span>())<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">native_asset_code</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">BaseField::from</span>(<span class="ident">pub_input</span>.<span class="ident">valid_until</span>))<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">BaseField::from</span>(<span class="ident">pub_input</span>.<span class="ident">fee</span>.<span class="number">0</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span>
+            <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">C::ScalarField::from</span>(<span class="ident">pub_input</span>.<span class="ident">valid_until</span>))<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">C::ScalarField::from</span>(<span class="ident">pub_input</span>.<span class="ident">fee</span>.<span class="number">0</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">input_nullifiers</span> <span class="op">=</span> <span class="ident">pub_input</span>
             .<span class="ident">input_nullifiers</span>
             .<span class="ident">iter</span>()
@@ -1124,7 +1164,7 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">rc</span><span class="op">|</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">rc</span>.<span class="number">0</span>))
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemoVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>.<span class="ident">viewing_memo</span>)<span class="question-mark">?</span>;
-        <span class="ident">viewing_memo</span>.<span class="ident">set_public</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
+        <span class="ident">viewing_memo</span>.<span class="ident">set_public</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">circuit</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">root</span>,
             <span class="ident">native_asset_code</span>,
@@ -1147,17 +1187,19 @@
 
 <span class="kw">impl</span> <span class="ident">InputSecretVar</span> {
     <span class="doccomment">/// Create a variable for a transfer input secret.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span>(
-        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
-        <span class="ident">input_secret</span>: <span class="kw-2">&amp;</span><span class="ident">InputSecret</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+        <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
+        <span class="ident">input_secret</span>: <span class="kw-2">&amp;</span><span class="ident">InputSecret</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">addr_secret</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(
+        <span class="kw">let</span> <span class="ident">addr_secret</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(
             <span class="ident">input_secret</span>.<span class="ident">owner_keypair</span>.<span class="ident">address_secret_ref</span>(),
         ))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">ro</span> <span class="op">=</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">input_secret</span>.<span class="ident">ro</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">cred</span> <span class="op">=</span> <span class="ident">ExpirableCredVar::new</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">input_secret</span>.<span class="ident">cred</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">acc_member_witness</span> <span class="op">=</span>
-            <span class="ident">AccMemberWitnessVar::new</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">input_secret</span>.<span class="ident">acc_member_witness</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">acc_member_witness</span> <span class="op">=</span> <span class="ident">AccMemberWitnessVar::new</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(
+            <span class="ident">circuit</span>,
+            <span class="kw-2">&amp;</span><span class="ident">input_secret</span>.<span class="ident">acc_member_witness</span>,
+        )<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">addr_secret</span>,
             <span class="ident">ro</span>,
@@ -1172,12 +1214,12 @@
     <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">TransferCircuit</span>, <span class="ident">TransferPubInputVar</span>, <span class="ident">TransferPublicInput</span>, <span class="ident">TransferWitness</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">keys::UserKeyPair</span>,
+        <span class="ident">prelude</span>::{<span class="ident">CapConfig</span>, <span class="ident">Config</span>},
         <span class="ident">structs</span>::{
             <span class="ident">Amount</span>, <span class="ident">AssetCode</span>, <span class="ident">AssetCodeSeed</span>, <span class="ident">AssetDefinition</span>, <span class="ident">AssetPolicy</span>, <span class="ident">ExpirableCredential</span>,
             <span class="ident">FreezeFlag</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordCommitment</span>, <span class="ident">RecordOpening</span>, <span class="ident">ViewableMemo</span>,
         },
         <span class="ident">utils::params_builder::TransferParamsBuilder</span>,
-        <span class="ident">BaseField</span>, <span class="ident">ScalarField</span>,
     };
     <span class="kw">use</span> <span class="ident">ark_ff::Zero</span>;
     <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">vec</span>, <span class="ident">vec::Vec</span>, <span class="ident">UniformRand</span>};
@@ -1187,20 +1229,23 @@
     };
     <span class="kw">use</span> <span class="ident">jf_primitives::merkle_tree</span>::{<span class="ident">MerklePathNode</span>, <span class="ident">NodeValue</span>};
 
+    <span class="kw">type</span> <span class="ident">F</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::ScalarField</span>;
+    <span class="kw">type</span> <span class="ident">Fj</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::EmbeddedCurveScalarField</span>;
+
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_pub_input_to_scalars_order_consistency</span>() {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input_ros</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">RecordOpening::rand_for_test</span>(<span class="ident">rng</span>); <span class="number">5</span>];
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">input_ros</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">RecordOpening</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::rand_for_test</span>(<span class="ident">rng</span>); <span class="number">5</span>];
         <span class="ident">input_ros</span>[<span class="number">0</span>].<span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::native</span>();
         <span class="kw">let</span> <span class="ident">output_ros</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">RecordOpening::rand_for_test</span>(<span class="ident">rng</span>); <span class="number">4</span>];
         <span class="kw">let</span> <span class="ident">input_creds</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">ExpirableCredential::dummy_unexpired</span>().<span class="ident">unwrap</span>(); <span class="number">5</span>];
-        <span class="kw">let</span> <span class="ident">randomizer</span> <span class="op">=</span> <span class="ident">ScalarField::rand</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">randomizer</span> <span class="op">=</span> <span class="ident">Fj::rand</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">pub_input</span> <span class="op">=</span> <span class="ident">TransferPublicInput</span> {
-            <span class="ident">merkle_root</span>: <span class="ident">NodeValue::from_scalar</span>(<span class="ident">BaseField::from</span>(<span class="number">10u8</span>)),
+            <span class="ident">merkle_root</span>: <span class="ident">NodeValue::from_scalar</span>(<span class="ident">F::from</span>(<span class="number">10u8</span>)),
             <span class="ident">native_asset_code</span>: <span class="ident">AssetCode::native</span>(),
             <span class="ident">valid_until</span>: <span class="number">123u64</span>,
             <span class="ident">fee</span>: <span class="ident">Amount::from</span>(<span class="number">8u64</span>),
-            <span class="ident">input_nullifiers</span>: <span class="macro">vec!</span>[<span class="ident">Nullifier</span>(<span class="ident">BaseField::from</span>(<span class="number">2u8</span>)); <span class="number">5</span>],
+            <span class="ident">input_nullifiers</span>: <span class="macro">vec!</span>[<span class="ident">Nullifier</span>(<span class="ident">F::from</span>(<span class="number">2u8</span>)); <span class="number">5</span>],
             <span class="ident">output_commitments</span>: <span class="macro">vec!</span>[<span class="ident">RecordCommitment::from</span>(<span class="kw-2">&amp;</span><span class="ident">output_ros</span>[<span class="number">0</span>]); <span class="number">4</span>],
             <span class="ident">viewing_memo</span>: <span class="ident">ViewableMemo::new_for_transfer_note</span>(
                 <span class="kw-2">&amp;</span><span class="ident">input_ros</span>,
@@ -1399,7 +1444,7 @@
 
         <span class="comment">// bad path: wrong output commitment</span>
         <span class="kw">let</span> (<span class="ident">witness</span>, <span class="kw-2">mut</span> <span class="ident">pub_input</span>) <span class="op">=</span> <span class="ident">create_witness_and_pub_input</span>(<span class="kw-2">&amp;</span><span class="ident">builder</span>);
-        <span class="ident">pub_input</span>.<span class="ident">output_commitments</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">RecordCommitment</span>(<span class="ident">BaseField::zero</span>());
+        <span class="ident">pub_input</span>.<span class="ident">output_commitments</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">RecordCommitment</span>(<span class="ident">F::zero</span>());
         <span class="ident">check_transfer_circuit</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// bad path: wrong merkle root</span>
@@ -1409,7 +1454,7 @@
 
         <span class="comment">// bad path: wrong input nullifier</span>
         <span class="kw">let</span> (<span class="ident">witness</span>, <span class="kw-2">mut</span> <span class="ident">pub_input</span>) <span class="op">=</span> <span class="ident">create_witness_and_pub_input</span>(<span class="kw-2">&amp;</span><span class="ident">builder</span>);
-        <span class="ident">pub_input</span>.<span class="ident">input_nullifiers</span>[<span class="number">0</span>].<span class="number">0</span> <span class="op">=</span> <span class="ident">BaseField::zero</span>();
+        <span class="ident">pub_input</span>.<span class="ident">input_nullifiers</span>[<span class="number">0</span>].<span class="number">0</span> <span class="op">=</span> <span class="ident">F::zero</span>();
         <span class="ident">check_transfer_circuit</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// bad path: wrong txn fee</span>
@@ -1436,13 +1481,9 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">secret</span><span class="op">|</span> <span class="ident">secret</span>.<span class="ident">cred</span>.<span class="ident">clone</span>())
             .<span class="ident">collect</span>();
         <span class="comment">// replace with an viewing memo encrypted with a wrong randomizer</span>
-        <span class="ident">pub_input</span>.<span class="ident">viewing_memo</span> <span class="op">=</span> <span class="ident">ViewableMemo::new_for_transfer_note</span>(
-            <span class="kw-2">&amp;</span><span class="ident">input_ros</span>,
-            <span class="kw-2">&amp;</span><span class="ident">output_ros</span>,
-            <span class="kw-2">&amp;</span><span class="ident">input_creds</span>,
-            <span class="ident">ScalarField::zero</span>(),
-        )
-        .<span class="ident">unwrap</span>(); <span class="comment">// safe unwrap</span>
+        <span class="ident">pub_input</span>.<span class="ident">viewing_memo</span> <span class="op">=</span>
+            <span class="ident">ViewableMemo::new_for_transfer_note</span>(<span class="kw-2">&amp;</span><span class="ident">input_ros</span>, <span class="kw-2">&amp;</span><span class="ident">output_ros</span>, <span class="kw-2">&amp;</span><span class="ident">input_creds</span>, <span class="ident">Fj::zero</span>())
+                .<span class="ident">unwrap</span>(); <span class="comment">// safe unwrap</span>
         <span class="ident">check_transfer_circuit</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>, <span class="kw-2">&amp;</span><span class="ident">pub_input</span>, <span class="bool-val">false</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(())
@@ -1528,8 +1569,8 @@
     }
 
     <span class="kw">fn</span> <span class="ident">create_witness_and_pub_input</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
-        <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TransferParamsBuilder</span>,
-    ) -&gt; (<span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>, <span class="ident">TransferPublicInput</span>) {
+        <span class="ident">builder</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TransferParamsBuilder</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
+    ) -&gt; (<span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Config</span><span class="op">&gt;</span>, <span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">witness</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">build_witness</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span> <span class="number">1234u64</span>;
@@ -1538,8 +1579,8 @@
     }
 
     <span class="kw">fn</span> <span class="ident">check_transfer_circuit</span>(
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span>,
-        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
+        <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
         <span class="ident">witness_is_valid</span>: <span class="ident">bool</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pub_input_vec</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">to_scalars</span>();
@@ -1558,5 +1599,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
 </body></html>

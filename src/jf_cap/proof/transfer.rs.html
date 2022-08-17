@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/proof/transfer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transfer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/proof/transfer.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>transfer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -757,6 +758,13 @@
 <span id="752">752</span>
 <span id="753">753</span>
 <span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -773,18 +781,17 @@
 <span class="doccomment">//! * Computing a Transfer proof</span>
 <span class="doccomment">//! * Verifying a Transfer proof</span>
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::UniversalParam</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">circuit::transfer::TransferCircuit</span>,
     <span class="ident">errors::TxnApiError</span>,
     <span class="ident">keys</span>::{<span class="ident">CredIssuerPubKey</span>, <span class="ident">UserKeyPair</span>},
+    <span class="ident">prelude::CapConfig</span>,
     <span class="ident">structs</span>::{
         <span class="ident">Amount</span>, <span class="ident">AssetCode</span>, <span class="ident">AssetDefinition</span>, <span class="ident">ExpirableCredential</span>, <span class="ident">Nullifier</span>, <span class="ident">RecordCommitment</span>,
         <span class="ident">RecordOpening</span>, <span class="ident">ViewableMemo</span>,
     },
     <span class="ident">transfer::TransferNoteInput</span>,
     <span class="ident">utils::safe_sum_amount</span>,
-    <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>, <span class="ident">PairingEngine</span>, <span class="ident">ScalarField</span>,
 };
 <span class="kw">use</span> <span class="ident">ark_serialize</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">ark_std</span>::{
@@ -799,8 +806,8 @@
 <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
     <span class="ident">circuit::Circuit</span>,
     <span class="ident">proof_system</span>::{
-        <span class="ident">structs</span>::{<span class="ident">Proof</span>, <span class="ident">ProvingKey</span>, <span class="ident">VerifyingKey</span>},
-        <span class="ident">PlonkKzgSnark</span>, <span class="ident">Snark</span>,
+        <span class="ident">structs</span>::{<span class="ident">Proof</span>, <span class="ident">ProvingKey</span>, <span class="ident">UniversalSrs</span>, <span class="ident">VerifyingKey</span>},
+        <span class="ident">PlonkKzgSnark</span>, <span class="ident">UniversalSNARK</span>,
     },
     <span class="ident">transcript::SolidityTranscript</span>,
 };
@@ -816,15 +823,15 @@
     <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">CanonicalSerialize</span>, <span class="ident">CanonicalDeserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>,
 )]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">from</span> <span class="op">=</span> <span class="string">&quot;CanonicalBytes&quot;</span>, <span class="ident">into</span> <span class="op">=</span> <span class="string">&quot;CanonicalBytes&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">proving_key</span>: <span class="ident">ProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">PairingEngine</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">proving_key</span>: <span class="ident">ProvingKey</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">n_inputs</span>: <span class="ident">usize</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">n_outputs</span>: <span class="ident">usize</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
 }
-<span class="macro">deserialize_canonical_bytes!</span>(<span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>);
+<span class="macro">deserialize_canonical_bytes!</span>(<span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Getter for number of input (fee input included)</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">n_inputs</span>
@@ -838,21 +845,24 @@
 
 <span class="doccomment">/// Key for verifying a Transfer note</span>
 <span class="attribute">#[<span class="ident">derive</span>(
-    <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">CanonicalSerialize</span>, <span class="ident">CanonicalDeserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>,
+    <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">CanonicalSerialize</span>, <span class="ident">CanonicalDeserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>,
 )]</span>
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">from</span> <span class="op">=</span> <span class="string">&quot;CanonicalBytes&quot;</span>, <span class="ident">into</span> <span class="op">=</span> <span class="string">&quot;CanonicalBytes&quot;</span>)]</span>
 <span class="doccomment">/// Verifying key of Transfer note and its attributes</span>
 <span class="doccomment">/// (n_inputs,n_outputs,tree_depth)</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransferVerifyingKey</span> {
-    <span class="doccomment">/// key</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">verifying_key</span>: <span class="ident">VerifyingKey</span><span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">n_inputs</span>: <span class="ident">usize</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">n_outputs</span>: <span class="ident">usize</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// SNARK verification key</span>
+    <span class="kw">pub</span> <span class="ident">verifying_key</span>: <span class="ident">VerifyingKey</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// num of inputs (incl. fee input)</span>
+    <span class="kw">pub</span> <span class="ident">n_inputs</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// num of outputs (incl. fee change output)</span>
+    <span class="kw">pub</span> <span class="ident">n_outputs</span>: <span class="ident">usize</span>,
+    <span class="doccomment">/// record merkle tree depth</span>
+    <span class="kw">pub</span> <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
 }
-<span class="macro">deserialize_canonical_bytes!</span>(<span class="ident">TransferVerifyingKey</span>);
+<span class="macro">deserialize_canonical_bytes!</span>(<span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span> <span class="ident">TransferVerifyingKey</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Getter for number of input (fee input included)</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">num_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="self">self</span>.<span class="ident">n_inputs</span>
@@ -864,8 +874,8 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransferVerifyingKey</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">pk</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">pk</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">verifying_key</span>: <span class="ident">pk</span>.<span class="ident">proving_key</span>.<span class="ident">vk</span>.<span class="ident">clone</span>(),
             <span class="ident">n_inputs</span>: <span class="ident">pk</span>.<span class="ident">n_inputs</span>,
@@ -875,22 +885,19 @@
     }
 }
 
-<span class="doccomment">/// Proof associated to a Transfer note</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">TransferValidityProof</span> <span class="op">=</span> <span class="ident">Proof</span><span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span>;
-
 <span class="doccomment">/// One-time preprocess of the Transfer transaction circuit, proving key and</span>
 <span class="doccomment">/// verifying key should be reused for proving/verifying future instances of</span>
 <span class="doccomment">/// transfer transaction.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">preprocess</span>(
-    <span class="ident">srs</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalParam</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">preprocess</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+    <span class="ident">srs</span>: <span class="kw-2">&amp;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
     <span class="ident">n_inputs</span>: <span class="ident">usize</span>,
     <span class="ident">n_outputs</span>: <span class="ident">usize</span>,
     <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferProvingKey</span>, <span class="ident">TransferVerifyingKey</span>, <span class="ident">usize</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="ident">usize</span>), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">dummy_circuit</span>, <span class="ident">n_constraints</span>) <span class="op">=</span>
-        <span class="ident">TransferCircuit::build_for_preprocessing</span>(<span class="ident">n_inputs</span>, <span class="ident">n_outputs</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
+        <span class="ident">TransferCircuit</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::build_for_preprocessing</span>(<span class="ident">n_inputs</span>, <span class="ident">n_outputs</span>, <span class="ident">tree_depth</span>)<span class="question-mark">?</span>;
     <span class="kw">let</span> (<span class="ident">proving_key</span>, <span class="ident">verifying_key</span>) <span class="op">=</span>
-        <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span><span class="ident">::preprocess</span>(<span class="ident">srs</span>, <span class="kw-2">&amp;</span><span class="ident">dummy_circuit</span>.<span class="number">0</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
+        <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span><span class="ident">::preprocess</span>(<span class="ident">srs</span>, <span class="kw-2">&amp;</span><span class="ident">dummy_circuit</span>.<span class="number">0</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> {
             <span class="ident">TxnApiError::FailedSnark</span>(<span class="macro">format!</span>(
                 <span class="string">&quot;Preprocessing Transfer circuit of {}-in-{}-out-{}-depth failed: {:?}&quot;</span>,
                 <span class="ident">n_inputs</span>, <span class="ident">n_outputs</span>, <span class="ident">tree_depth</span>, <span class="ident">e</span>
@@ -916,14 +923,14 @@
 
 <span class="doccomment">/// Generate a transaction validity proof (a zk-SNARK proof) given the witness</span>
 <span class="doccomment">/// , public inputs, and the proving key.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">prove</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">prove</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
     <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-    <span class="ident">transfer_proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>,
-    <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span>,
-    <span class="ident">public_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span>,
-    <span class="ident">txn_memo_ver_key</span>: <span class="kw-2">&amp;</span><span class="ident">schnorr::VerKey</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>,
+    <span class="ident">transfer_proving_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferProvingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">public_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">txn_memo_ver_key</span>: <span class="kw-2">&amp;</span><span class="ident">schnorr::VerKey</span><span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>,
     <span class="ident">extra_proof_bound_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TransferValidityProof</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Proof</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> (<span class="ident">circuit</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">TransferCircuit::build</span>(<span class="ident">witness</span>, <span class="ident">public_inputs</span>)
         .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">TxnApiError::FailedSnark</span>(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>)))<span class="question-mark">?</span>;
     <span class="ident">circuit</span>
@@ -938,7 +945,7 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ext_msg</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
     <span class="ident">CanonicalSerialize::serialize</span>(<span class="ident">txn_memo_ver_key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">ext_msg</span>)<span class="question-mark">?</span>;
     <span class="ident">ext_msg</span>.<span class="ident">extend_from_slice</span>(<span class="ident">extra_proof_bound_data</span>);
-    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span><span class="ident">::prove</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">SolidityTranscript</span><span class="op">&gt;</span>(
+    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span><span class="ident">::prove</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span>, <span class="ident">SolidityTranscript</span><span class="op">&gt;</span>(
         <span class="ident">rng</span>,
         <span class="kw-2">&amp;</span><span class="ident">circuit</span>.<span class="number">0</span>,
         <span class="kw-2">&amp;</span><span class="ident">transfer_proving_key</span>.<span class="ident">proving_key</span>,
@@ -949,17 +956,17 @@
 
 <span class="doccomment">/// Verify a transaction validity proof given the public inputs and verifying</span>
 <span class="doccomment">/// key.</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span>(
-    <span class="ident">transfer_verifying_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferVerifyingKey</span>,
-    <span class="ident">public_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span>,
-    <span class="ident">proof</span>: <span class="kw-2">&amp;</span><span class="ident">TransferValidityProof</span>,
-    <span class="ident">recv_memos_ver_key</span>: <span class="kw-2">&amp;</span><span class="ident">schnorr::VerKey</span><span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">verify</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+    <span class="ident">transfer_verifying_key</span>: <span class="kw-2">&amp;</span><span class="ident">TransferVerifyingKey</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">public_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="ident">proof</span>: <span class="kw-2">&amp;</span><span class="ident">Proof</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>,
+    <span class="ident">recv_memos_ver_key</span>: <span class="kw-2">&amp;</span><span class="ident">schnorr::VerKey</span><span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>,
     <span class="ident">extra_proof_bound_data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>],
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ext_msg</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
     <span class="ident">CanonicalSerialize::serialize</span>(<span class="ident">recv_memos_ver_key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">ext_msg</span>)<span class="question-mark">?</span>;
     <span class="ident">ext_msg</span>.<span class="ident">extend_from_slice</span>(<span class="ident">extra_proof_bound_data</span>);
-    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">PairingEngine</span><span class="op">&gt;</span><span class="ident">::verify</span>::<span class="op">&lt;</span><span class="ident">SolidityTranscript</span><span class="op">&gt;</span>(
+    <span class="ident">PlonkKzgSnark</span>::<span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span><span class="ident">::verify</span>::<span class="op">&lt;</span><span class="ident">SolidityTranscript</span><span class="op">&gt;</span>(
         <span class="kw-2">&amp;</span><span class="ident">transfer_verifying_key</span>.<span class="ident">verifying_key</span>,
         <span class="kw-2">&amp;</span><span class="ident">public_inputs</span>.<span class="ident">to_scalars</span>(),
         <span class="ident">proof</span>,
@@ -973,19 +980,19 @@
 
 <span class="doccomment">/// Secret witness required to construct a SNARK proof for transfer transaction</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">input_secrets</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">InputSecret</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">output_record_openings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">viewing_memo_enc_rand</span>: <span class="ident">ScalarField</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">asset_def</span>: <span class="ident">AssetDefinition</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">input_secrets</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">InputSecret</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">output_record_openings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordOpening</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">viewing_memo_enc_rand</span>: <span class="ident">C::EmbeddedCurveScalarField</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">dummy</span>(
         <span class="ident">num_input</span>: <span class="ident">usize</span>,
         <span class="ident">num_output</span>: <span class="ident">usize</span>,
         <span class="ident">tree_depth</span>: <span class="ident">u8</span>,
-        <span class="ident">user_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
+        <span class="ident">user_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     ) -&gt; <span class="self">Self</span> {
         <span class="kw">let</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::native</span>();
         <span class="kw">let</span> <span class="ident">input_secret</span> <span class="op">=</span> {
@@ -1012,7 +1019,7 @@
         };
         <span class="kw">let</span> <span class="ident">output_ro</span> <span class="op">=</span> <span class="ident">RecordOpening::default</span>();
 
-        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span> <span class="ident">ScalarField::default</span>();
+        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span> <span class="ident">C::EmbeddedCurveScalarField::default</span>();
         <span class="self">Self</span> {
             <span class="ident">asset_def</span>,
             <span class="ident">input_secrets</span>: <span class="macro">vec!</span>[<span class="ident">input_secret</span>; <span class="ident">num_input</span>],
@@ -1028,8 +1035,8 @@
     <span class="doccomment">/// parameters is unchecked.</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new_unchecked</span><span class="op">&lt;</span><span class="ident">R</span>: <span class="ident">RngCore</span> <span class="op">+</span> <span class="ident">CryptoRng</span><span class="op">&gt;</span>(
         <span class="ident">rng</span>: <span class="kw-2">&amp;mut</span> <span class="ident">R</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransferNoteInput</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">output_ros</span>: <span class="kw-2">&amp;</span>[<span class="ident">RecordOpening</span>],
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransferNoteInput</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">output_ros</span>: <span class="kw-2">&amp;</span>[<span class="ident">RecordOpening</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>],
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">asset_def</span> <span class="op">=</span> <span class="ident">AssetDefinition::native</span>();
         <span class="kw">for</span> <span class="ident">input</span> <span class="kw">in</span> <span class="ident">inputs</span>.<span class="ident">iter</span>() {
@@ -1054,7 +1061,7 @@
             )
         }).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">output_record_openings</span> <span class="op">=</span> <span class="ident">output_ros</span>.<span class="ident">to_owned</span>();
-        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span> <span class="ident">ScalarField::rand</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">viewing_memo_enc_rand</span> <span class="op">=</span> <span class="ident">C::EmbeddedCurveScalarField::rand</span>(<span class="ident">rng</span>);
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">asset_def</span>,
@@ -1066,30 +1073,37 @@
 }
 <span class="doccomment">/// Secret witness of an input asset record</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">InputSecret</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">owner_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">ro</span>: <span class="ident">RecordOpening</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">acc_member_witness</span>: <span class="ident">AccMemberWitness</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">cred</span>: <span class="ident">ExpirableCredential</span>,
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">InputSecret</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">owner_keypair</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">UserKeyPair</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">ro</span>: <span class="ident">RecordOpening</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">acc_member_witness</span>: <span class="ident">AccMemberWitness</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">cred</span>: <span class="ident">ExpirableCredential</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Public inputs of a transfer transaction</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="doccomment">/// Struct for the public input of a transfer witness</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">TransferPublicInput</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">merkle_root</span>: <span class="ident">NodeValue</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">native_asset_code</span>: <span class="ident">AssetCode</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">valid_until</span>: <span class="ident">u64</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">fee</span>: <span class="ident">Amount</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">input_nullifiers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Nullifier</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">output_commitments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordCommitment</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">viewing_memo</span>: <span class="ident">ViewableMemo</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// record merkle tree root</span>
+    <span class="kw">pub</span> <span class="ident">merkle_root</span>: <span class="ident">NodeValue</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// native asset code</span>
+    <span class="kw">pub</span> <span class="ident">native_asset_code</span>: <span class="ident">AssetCode</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// expiry of credentials</span>
+    <span class="kw">pub</span> <span class="ident">valid_until</span>: <span class="ident">u64</span>,
+    <span class="doccomment">/// transaction fee to pay</span>
+    <span class="kw">pub</span> <span class="ident">fee</span>: <span class="ident">Amount</span>,
+    <span class="doccomment">/// nullifiers of input records</span>
+    <span class="kw">pub</span> <span class="ident">input_nullifiers</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Nullifier</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// commitments of output commitments</span>
+    <span class="kw">pub</span> <span class="ident">output_commitments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">RecordCommitment</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// memo for viewer</span>
+    <span class="kw">pub</span> <span class="ident">viewing_memo</span>: <span class="ident">ViewableMemo</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">TransferPublicInput</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransferPublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Compute the public input from witness and ledger info</span>
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_witness</span>(
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">TransferWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">valid_until</span>: <span class="ident">u64</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">merkle_root</span> <span class="op">=</span> <span class="ident">witness</span>
@@ -1193,12 +1207,12 @@
 
     <span class="doccomment">/// Flatten out all pubic input fields into a vector of BaseFields.</span>
     <span class="doccomment">/// Note that the order matters.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_scalars</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_scalars</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">result</span> <span class="op">=</span> <span class="macro">vec!</span>[
             <span class="self">self</span>.<span class="ident">merkle_root</span>.<span class="ident">to_scalar</span>(),
             <span class="self">self</span>.<span class="ident">native_asset_code</span>.<span class="number">0</span>,
-            <span class="ident">BaseField::from</span>(<span class="self">self</span>.<span class="ident">valid_until</span>),
-            <span class="ident">BaseField::from</span>(<span class="self">self</span>.<span class="ident">fee</span>.<span class="number">0</span>),
+            <span class="ident">C::ScalarField::from</span>(<span class="self">self</span>.<span class="ident">valid_until</span>),
+            <span class="ident">C::ScalarField::from</span>(<span class="self">self</span>.<span class="ident">fee</span>.<span class="number">0</span>),
         ];
         <span class="kw">for</span> <span class="ident">nullifier</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">input_nullifiers</span> {
             <span class="ident">result</span>.<span class="ident">push</span>(<span class="ident">nullifier</span>.<span class="number">0</span>);
@@ -1218,6 +1232,7 @@
         <span class="ident">constants::MAX_TIMESTAMP_LEN</span>,
         <span class="ident">errors::TxnApiError</span>,
         <span class="ident">keys</span>::{<span class="ident">CredIssuerPubKey</span>, <span class="ident">UserAddress</span>, <span class="ident">UserKeyPair</span>},
+        <span class="ident">prelude</span>::{<span class="ident">CapConfig</span>, <span class="ident">Config</span>},
         <span class="ident">proof::universal_setup_for_staging</span>,
         <span class="ident">structs</span>::{<span class="ident">Amount</span>, <span class="ident">AssetDefinition</span>, <span class="ident">ExpirableCredential</span>},
         <span class="ident">utils::params_builder::TransferParamsBuilder</span>,
@@ -1225,11 +1240,11 @@
     <span class="kw">use</span> <span class="ident">ark_std::vec</span>;
     <span class="kw">use</span> <span class="ident">jf_primitives::signatures::schnorr</span>;
 
-    <span class="kw">impl</span> <span class="ident">ExpirableCredential</span> {
+    <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">ExpirableCredential</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> {
         <span class="doccomment">/// Return a bit indicating whether the credential is a dummy, unexpired</span>
         <span class="doccomment">/// one. This function only used in test.</span>
         <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">is_dummy_unexpired</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-            <span class="self">self</span>.<span class="ident">user_addr</span> <span class="op">==</span> <span class="ident">UserAddress::default</span>()
+            <span class="self">self</span>.<span class="ident">user_addr</span> <span class="op">==</span> <span class="ident">UserAddress</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="ident">::default</span>()
                 <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">creator_pk</span> <span class="op">==</span> <span class="ident">CredIssuerPubKey::default</span>()
                 <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">is_expired</span>(<span class="number">2u64</span>.<span class="ident">pow</span>(<span class="ident">MAX_TIMESTAMP_LEN</span> <span class="kw">as</span> <span class="ident">u32</span>) <span class="op">-</span> <span class="number">2</span>)
         }
@@ -1239,10 +1254,10 @@
     <span class="kw">fn</span> <span class="ident">test_transfer_witness_creation</span>() {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">cred_expiry</span> <span class="op">=</span> <span class="number">9998u64</span>;
-        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">user_keypairs</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">user_keypair</span>; <span class="number">2</span>];
         <span class="comment">// transfer non-native asset type</span>
-        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder::new_non_native</span>(<span class="number">2</span>, <span class="number">6</span>, <span class="prelude-val">None</span>, <span class="ident">user_keypairs</span>)
+        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::new_non_native</span>(<span class="number">2</span>, <span class="number">6</span>, <span class="prelude-val">None</span>, <span class="ident">user_keypairs</span>)
             .<span class="ident">set_input_amounts</span>(<span class="number">30u64</span>.<span class="ident">into</span>(), <span class="kw-2">&amp;</span>[<span class="number">25u64</span>.<span class="ident">into</span>()])
             .<span class="ident">set_output_amounts</span>(<span class="number">19u64</span>.<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">Amount::from_vec</span>(<span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>])[..])
             .<span class="ident">set_input_creds</span>(<span class="ident">cred_expiry</span>);
@@ -1281,7 +1296,7 @@
         <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">output_record_openings</span>[<span class="number">1</span>..], <span class="kw-2">&amp;</span><span class="ident">builder</span>.<span class="ident">output_ros</span>);
 
         <span class="comment">// tranfer native asset type</span>
-        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">user_keypairs</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">user_keypair</span>; <span class="number">2</span>];
         <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder::new_native</span>(<span class="number">2</span>, <span class="number">3</span>, <span class="prelude-val">None</span>, <span class="ident">user_keypairs</span>)
             .<span class="ident">set_input_amounts</span>(<span class="number">20u64</span>.<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">Amount::from_vec</span>(<span class="kw-2">&amp;</span>[<span class="number">10</span>])[..])
@@ -1298,10 +1313,10 @@
         <span class="kw">let</span> <span class="ident">cred_expiry</span> <span class="op">=</span> <span class="number">9998u64</span>;
         <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span> <span class="number">1234u64</span>;
 
-        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);
+        <span class="kw">let</span> <span class="ident">user_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="ident">rng</span>);
         <span class="kw">let</span> <span class="ident">user_keypairs</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="kw-2">&amp;</span><span class="ident">user_keypair</span>; <span class="number">2</span>];
         <span class="comment">// transfer non-native asset type</span>
-        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder::new_non_native</span>(<span class="number">2</span>, <span class="number">3</span>, <span class="prelude-val">None</span>, <span class="ident">user_keypairs</span>)
+        <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">TransferParamsBuilder</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::new_non_native</span>(<span class="number">2</span>, <span class="number">3</span>, <span class="prelude-val">None</span>, <span class="ident">user_keypairs</span>)
             .<span class="ident">set_input_amounts</span>(<span class="number">30u64</span>.<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">Amount::from_vec</span>(<span class="kw-2">&amp;</span>[<span class="number">10</span>])[..])
             .<span class="ident">set_output_amounts</span>(<span class="number">19u64</span>.<span class="ident">into</span>(), <span class="kw-2">&amp;</span><span class="ident">Amount::from_vec</span>(<span class="kw-2">&amp;</span>[<span class="number">4</span>, <span class="number">6</span>])[..])
             .<span class="ident">set_input_creds</span>(<span class="ident">cred_expiry</span>);
@@ -1357,9 +1372,9 @@
         <span class="kw">let</span> <span class="ident">num_input</span> <span class="op">=</span> <span class="number">2</span>;
         <span class="kw">let</span> <span class="ident">num_output</span> <span class="op">=</span> <span class="number">6</span>;
         <span class="kw">let</span> <span class="ident">depth</span> <span class="op">=</span> <span class="number">10</span>;
-        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup_for_staging</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">universal_param</span> <span class="op">=</span> <span class="ident">universal_setup_for_staging</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Config</span><span class="op">&gt;</span>(<span class="ident">max_degree</span>, <span class="ident">rng</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> (<span class="ident">proving_key_1</span>, <span class="ident">verifying_key_1</span>, <span class="kw">_</span>) <span class="op">=</span>
-            <span class="ident"><span class="kw">super</span>::preprocess</span>(<span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">depth</span>)<span class="question-mark">?</span>;
+            <span class="ident"><span class="kw">super</span>::preprocess</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">universal_param</span>, <span class="ident">num_input</span>, <span class="ident">num_output</span>, <span class="ident">depth</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">cred_expiry</span> <span class="op">=</span> <span class="number">9998u64</span>;
         <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span> <span class="number">1234u64</span>;
@@ -1512,5 +1527,5 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
 </body></html>

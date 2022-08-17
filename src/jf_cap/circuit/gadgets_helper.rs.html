@@ -1,9 +1,10 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/circuit/gadgets_helper.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>gadgets_helper.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script src="../../../crates.js"></script><script defer src="../../../main.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script>
-    <noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/circuit/gadgets_helper.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>gadgets_helper.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
         </a><h2 class="location"></h2>
     </nav>
     <nav class="sidebar"><a class="sidebar-logo" href="../../../jf_cap/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
-        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><div class="theme-picker hidden"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu" title="themes"><img width="22" height="22" alt="Pick another theme!" src="../../../brush.svg"></button><div id="theme-choices" role="menu"></div></div><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><a id="settings-menu" href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../jf_cap/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><button type="button" id="help-button" title="help">?</button><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -215,6 +216,29 @@
 <span id="210">210</span>
 <span id="211">211</span>
 <span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -226,7 +250,7 @@
 <span class="comment">// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more</span>
 <span class="comment">// details. You should have received a copy of the GNU General Public License along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">circuit::structs::UserAddressVar</span>, <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">circuit::structs::UserAddressVar</span>, <span class="ident">prelude::CapConfig</span>};
 <span class="kw">use</span> <span class="ident">ark_ec</span>::{<span class="ident">twisted_edwards_extended::GroupAffine</span>, <span class="ident">AffineCurve</span>};
 <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
     <span class="ident">circuit</span>::{
@@ -237,7 +261,7 @@
 };
 <span class="kw">use</span> <span class="ident">jf_primitives::circuit::prf::PrfGadget</span>;
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">TransactionGadgetsHelper</span> {
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">TransactionGadgetsHelper</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">derive_internal_asset_code</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">seed</span>: <span class="ident">Variable</span>,
@@ -257,7 +281,7 @@
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">TransactionGadgetsHelper</span> <span class="kw">for</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransactionGadgetsHelper</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">derive_internal_asset_code</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">seed</span>: <span class="ident">Variable</span>,
@@ -267,7 +291,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">derive_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">secret_key</span>: <span class="ident">Variable</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UserAddressVar</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="ident">GroupAffine</span>::<span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span><span class="ident">::prime_subgroup_generator</span>();
+        <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="ident">GroupAffine</span>::<span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span><span class="ident">::prime_subgroup_generator</span>();
         <span class="kw">let</span> <span class="ident">address_var</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">fixed_base_scalar_mul</span>(<span class="ident">secret_key</span>, <span class="kw-2">&amp;</span><span class="ident">base</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">UserAddressVar</span>(<span class="ident">address_var</span>))
     }
@@ -277,11 +301,12 @@
         <span class="ident">secret_key</span>: <span class="ident">Variable</span>,
         <span class="ident">public_key</span>: <span class="kw-2">&amp;</span><span class="ident">PointVariable</span>,
     ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">shared_key</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">variable_base_scalar_mul</span>::<span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="ident">secret_key</span>, <span class="ident">public_key</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">shared_key</span> <span class="op">=</span>
+            <span class="self">self</span>.<span class="ident">variable_base_scalar_mul</span>::<span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">secret_key</span>, <span class="ident">public_key</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">zero</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">zero</span>();
         <span class="kw">let</span> <span class="ident">derived_key</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">rescue_sponge_no_padding</span>(<span class="kw-2">&amp;</span>[<span class="ident">shared_key</span>.<span class="ident">get_x</span>(), <span class="ident">shared_key</span>.<span class="ident">get_y</span>(), <span class="ident">zero</span>], <span class="number">1</span>)<span class="question-mark">?</span>[<span class="number">0</span>];
-        <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">is_neutral_point</span>::<span class="op">&lt;</span><span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="ident">public_key</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">bit</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">is_neutral_point</span>::<span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">public_key</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">conditional_select</span>(<span class="ident">bit</span>, <span class="ident">derived_key</span>, <span class="ident">secret_key</span>)
     }
 
@@ -300,8 +325,8 @@
     <span class="kw">use</span> <span class="kw">crate</span>::{
         <span class="ident">circuit::gadgets_helper::TransactionGadgetsHelper</span>,
         <span class="ident">keys</span>::{<span class="ident">FreezerKeyPair</span>, <span class="ident">NullifierKey</span>},
+        <span class="ident">prelude</span>::{<span class="ident">CapConfig</span>, <span class="ident">Config</span>},
         <span class="ident">structs</span>::{<span class="ident">AssetCodeDigest</span>, <span class="ident">AssetCodeSeed</span>, <span class="ident">InternalAssetCode</span>, <span class="ident">RecordCommitment</span>},
-        <span class="ident">BaseField</span>, <span class="ident">CurveParam</span>, <span class="ident">ScalarField</span>,
     };
     <span class="kw">use</span> <span class="ident">ark_ec::ProjectiveCurve</span>;
     <span class="kw">use</span> <span class="ident">ark_ff::One</span>;
@@ -312,25 +337,33 @@
     };
     <span class="kw">use</span> <span class="ident">jf_utils::fr_to_fq</span>;
 
+    <span class="kw">type</span> <span class="ident">F</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::ScalarField</span>;
+    <span class="kw">type</span> <span class="ident">Fj</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::EmbeddedCurveScalarField</span>;
+    <span class="kw">type</span> <span class="ident">EmbeddedCurveParam</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::EmbeddedCurveParam</span>;
+
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_internal_asset_code</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit::new_turbo_plonk</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
 
-        <span class="kw">let</span> <span class="ident">asset_code_seed</span> <span class="op">=</span> <span class="ident">AssetCodeSeed::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
+        <span class="kw">let</span> <span class="ident">asset_code_seed</span> <span class="op">=</span> <span class="ident">AssetCodeSeed</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
         <span class="kw">let</span> <span class="ident">aux</span> <span class="op">=</span> <span class="ident">AssetCodeDigest::from_description</span>(<span class="string">b&quot;some description&quot;</span>);
         <span class="kw">let</span> <span class="ident">internal_asset_code</span> <span class="op">=</span> <span class="ident">InternalAssetCode::new_internal</span>(<span class="ident">asset_code_seed</span>, <span class="ident">aux</span>);
 
         <span class="kw">let</span> <span class="ident">seed_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">asset_code_seed</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">aux_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">aux</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">asset_code_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">derive_internal_asset_code</span>(<span class="ident">seed_var</span>, <span class="ident">aux_var</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">asset_code_var</span> <span class="op">=</span> <span class="ident">TransactionGadgetsHelper</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::derive_internal_asset_code</span>(
+            <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
+            <span class="ident">seed_var</span>,
+            <span class="ident">aux_var</span>,
+        )<span class="question-mark">?</span>;
 
         <span class="comment">// Check asset_code consistency</span>
         <span class="macro">assert_eq!</span>(<span class="ident">internal_asset_code</span>.<span class="number">0</span>, <span class="ident">circuit</span>.<span class="ident">witness</span>(<span class="ident">asset_code_var</span>)<span class="question-mark">?</span>);
 
         <span class="comment">// Check constraints</span>
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());
-        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">asset_code_var</span>) <span class="op">=</span> <span class="ident">internal_asset_code</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">BaseField::one</span>();
+        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">asset_code_var</span>) <span class="op">=</span> <span class="ident">internal_asset_code</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">F::one</span>();
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_err</span>());
         <span class="prelude-val">Ok</span>(())
     }
@@ -338,21 +371,22 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_user_address</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
-        <span class="kw">let</span> <span class="ident">key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
+        <span class="kw">let</span> <span class="ident">key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
 
-        <span class="kw">let</span> <span class="ident">spend_key</span> <span class="op">=</span> <span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="ident">key_pair</span>.<span class="ident">address_secret_ref</span>());
+        <span class="kw">let</span> <span class="ident">spend_key</span> <span class="op">=</span> <span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">key_pair</span>.<span class="ident">address_secret_ref</span>());
         <span class="kw">let</span> <span class="ident">spend_key_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">spend_key</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">address_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">derive_user_address</span>(<span class="ident">spend_key_var</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">address_var</span> <span class="op">=</span>
+            <span class="ident">TransactionGadgetsHelper</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::derive_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">spend_key_var</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Check address consistency</span>
-        <span class="kw">let</span> (<span class="ident">address_x</span>, <span class="ident">address_y</span>): (<span class="ident">BaseField</span>, <span class="ident">BaseField</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="ident">key_pair</span>.<span class="ident">address</span>()).<span class="ident">into</span>();
+        <span class="kw">let</span> (<span class="ident">address_x</span>, <span class="ident">address_y</span>): (<span class="ident">F</span>, <span class="ident">F</span>) <span class="op">=</span> (<span class="kw-2">&amp;</span><span class="ident">key_pair</span>.<span class="ident">address</span>()).<span class="ident">into</span>();
         <span class="macro">assert_eq!</span>(<span class="ident">address_x</span>, <span class="ident">circuit</span>.<span class="ident">witness</span>(<span class="ident">address_var</span>.<span class="number">0</span>.<span class="ident">get_x</span>())<span class="question-mark">?</span>);
         <span class="macro">assert_eq!</span>(<span class="ident">address_y</span>, <span class="ident">circuit</span>.<span class="ident">witness</span>(<span class="ident">address_var</span>.<span class="number">0</span>.<span class="ident">get_y</span>())<span class="question-mark">?</span>);
 
         <span class="comment">// Check constraints</span>
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());
-        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">address_var</span>.<span class="number">0</span>.<span class="ident">get_x</span>()) <span class="op">=</span> <span class="ident">address_x</span> <span class="op">+</span> <span class="ident">BaseField::one</span>();
+        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">address_var</span>.<span class="number">0</span>.<span class="ident">get_x</span>()) <span class="op">=</span> <span class="ident">address_x</span> <span class="op">+</span> <span class="ident">F::one</span>();
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_err</span>());
         <span class="prelude-val">Ok</span>(())
     }
@@ -360,17 +394,21 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_nullifier_key</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
-        <span class="kw">let</span> <span class="ident">user_key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
+        <span class="kw">let</span> <span class="ident">user_key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
         <span class="kw">let</span> <span class="ident">user_public_key</span> <span class="op">=</span> <span class="ident">user_key_pair</span>.<span class="ident">pub_key</span>();
-        <span class="kw">let</span> <span class="ident">spend_key</span> <span class="op">=</span> <span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="ident">user_key_pair</span>.<span class="ident">address_secret_ref</span>());
+        <span class="kw">let</span> <span class="ident">spend_key</span> <span class="op">=</span> <span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">user_key_pair</span>.<span class="ident">address_secret_ref</span>());
         <span class="kw">let</span> <span class="ident">freezer_keypair</span> <span class="op">=</span> <span class="ident">FreezerKeyPair::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
         <span class="kw">let</span> <span class="ident">freezer_public_key</span> <span class="op">=</span> <span class="ident">freezer_keypair</span>.<span class="ident">pub_key</span>().<span class="number">0</span>.<span class="ident">into_affine</span>();
 
         <span class="comment">// Check derivation from freezer secret key</span>
         <span class="kw">let</span> <span class="ident">spend_key_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">spend_key</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">freezer_pk_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_point_variable</span>(<span class="ident">Point::from</span>(<span class="ident">freezer_public_key</span>))<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">nullifier_key_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">derive_nullifier_key</span>(<span class="ident">spend_key_var</span>, <span class="kw-2">&amp;</span><span class="ident">freezer_pk_var</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">nullifier_key_var</span> <span class="op">=</span> <span class="ident">TransactionGadgetsHelper</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::derive_nullifier_key</span>(
+            <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
+            <span class="ident">spend_key_var</span>,
+            <span class="kw-2">&amp;</span><span class="ident">freezer_pk_var</span>,
+        )<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">nullifier_key</span> <span class="op">=</span> <span class="ident">freezer_keypair</span>.<span class="ident">derive_nullifier_key</span>(<span class="kw-2">&amp;</span><span class="ident">user_public_key</span>.<span class="ident">address</span>());
 
         <span class="comment">// Check address consistency</span>
@@ -378,17 +416,21 @@
 
         <span class="comment">// Check constraints</span>
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());
-        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_key_var</span>) <span class="op">=</span> <span class="ident">nullifier_key</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">BaseField::one</span>();
+        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_key_var</span>) <span class="op">=</span> <span class="ident">nullifier_key</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">F::one</span>();
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_err</span>());
 
         <span class="comment">// Check derivation from user secret key</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">BaseField</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">freezer_key_var</span> <span class="op">=</span>
-            <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">CurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">freezer_keypair</span>.<span class="ident">sec_key</span>))<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">freezer_keypair</span>.<span class="ident">sec_key</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">user_pk_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_point_variable</span>(<span class="ident">Point::from</span>(
             <span class="ident">user_public_key</span>.<span class="ident">address_internal</span>().<span class="ident">into_affine</span>(),
         ))<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">nullifier_key_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">derive_nullifier_key</span>(<span class="ident">freezer_key_var</span>, <span class="kw-2">&amp;</span><span class="ident">user_pk_var</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">nullifier_key_var</span> <span class="op">=</span> <span class="ident">TransactionGadgetsHelper</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::derive_nullifier_key</span>(
+            <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
+            <span class="ident">freezer_key_var</span>,
+            <span class="kw-2">&amp;</span><span class="ident">user_pk_var</span>,
+        )<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">nullifier_key_2</span> <span class="op">=</span> <span class="ident">user_key_pair</span>.<span class="ident">derive_nullifier_key</span>(<span class="kw-2">&amp;</span><span class="ident">freezer_keypair</span>.<span class="ident">pub_key</span>());
         <span class="macro">assert_eq!</span>(<span class="ident">nullifier_key</span>, <span class="ident">nullifier_key_2</span>);
 
@@ -397,7 +439,7 @@
 
         <span class="comment">// Check constraints</span>
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());
-        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_key_var</span>) <span class="op">=</span> <span class="ident">nullifier_key_2</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">BaseField::one</span>();
+        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_key_var</span>) <span class="op">=</span> <span class="ident">nullifier_key_2</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">F::one</span>();
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_err</span>());
         <span class="prelude-val">Ok</span>(())
     }
@@ -405,16 +447,21 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_nullifier</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
-        <span class="kw">let</span> <span class="ident">nullifier_key</span> <span class="op">=</span> <span class="ident">NullifierKey::from</span>(<span class="kw-2">&amp;</span><span class="ident">ScalarField::rand</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>));
+        <span class="kw">let</span> <span class="ident">nullifier_key</span> <span class="op">=</span> <span class="ident">NullifierKey</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="kw-2">&amp;</span><span class="ident">Fj::rand</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>));
         <span class="kw">let</span> <span class="ident">uid</span> <span class="op">=</span> <span class="number">10u64</span>;
-        <span class="kw">let</span> <span class="ident">uid_scalar</span> <span class="op">=</span> <span class="ident">BaseField::from</span>(<span class="number">10u8</span>);
-        <span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">BaseField::from</span>(<span class="number">1234u64</span>);
+        <span class="kw">let</span> <span class="ident">uid_scalar</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">10u8</span>);
+        <span class="kw">let</span> <span class="ident">commitment</span> <span class="op">=</span> <span class="ident">F::from</span>(<span class="number">1234u64</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">key_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">nullifier_key</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">uid_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">uid_scalar</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">commitment_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">commitment</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">nullifier_var</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">nullify</span>(<span class="ident">key_var</span>, <span class="ident">uid_var</span>, <span class="ident">commitment_var</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">nullifier_var</span> <span class="op">=</span> <span class="ident">TransactionGadgetsHelper</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::nullify</span>(
+            <span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>,
+            <span class="ident">key_var</span>,
+            <span class="ident">uid_var</span>,
+            <span class="ident">commitment_var</span>,
+        )<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="ident">nullifier</span> <span class="op">=</span> <span class="ident">nullifier_key</span>.<span class="ident">nullify</span>(<span class="ident">uid</span>, <span class="kw-2">&amp;</span><span class="ident">RecordCommitment</span>(<span class="ident">commitment</span>));
         <span class="comment">// Check nullifier consistency</span>
@@ -422,11 +469,11 @@
 
         <span class="comment">// Check constraints</span>
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_ok</span>());
-        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_var</span>) <span class="op">=</span> <span class="ident">nullifier</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">BaseField::one</span>();
+        <span class="kw-2">*</span><span class="ident">circuit</span>.<span class="ident">witness_mut</span>(<span class="ident">nullifier_var</span>) <span class="op">=</span> <span class="ident">nullifier</span>.<span class="number">0</span> <span class="op">+</span> <span class="ident">F::one</span>();
         <span class="macro">assert!</span>(<span class="ident">circuit</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span>[]).<span class="ident">is_err</span>());
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.62.0 (a8314ef7d 2022-06-27)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="jf_cap" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.63.0 (4b91a6ea7 2022-08-08)" ></div>
 </body></html>

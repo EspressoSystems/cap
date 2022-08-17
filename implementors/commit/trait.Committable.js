@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["jf_cap"] = [{"text":"impl Committable for <a class=\"enum\" href=\"jf_cap/enum.TransactionNote.html\" title=\"enum jf_cap::TransactionNote\">TransactionNote</a>","synthetic":false,"types":["jf_cap::TransactionNote"]}];
+implementors["jf_cap"] = [{"text":"impl&lt;C:&nbsp;<a class=\"trait\" href=\"jf_cap/config/trait.CapConfig.html\" title=\"trait jf_cap::config::CapConfig\">CapConfig</a>&gt; Committable for <a class=\"enum\" href=\"jf_cap/enum.TransactionNote.html\" title=\"enum jf_cap::TransactionNote\">TransactionNote</a>&lt;C&gt;","synthetic":false,"types":["jf_cap::TransactionNote"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

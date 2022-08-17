@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["DeserializationError","Errors from deserialization."],["TxnApiError","All possible categories of error from Transaction API"]]});
+window.SIDEBAR_ITEMS = {"enum":[["DeserializationError","Errors from deserialization."],["TxnApiError","All possible categories of error from Transaction API"]]};
