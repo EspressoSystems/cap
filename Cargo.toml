@@ -22,7 +22,7 @@ jf-plonk = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = 
 jf-relation = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
 jf-primitives = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
 jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
-sha2 = { version = "0.9.5", default-features = false }
+sha2 = { version = "0.10.2", default-features = false }
 structopt = { version = "0.3.22", default-features = false }
 rand = { version = "0.8.4", default-features = false, features = [ "alloc" ] }
 rand_chacha = { version = "0.3.1" }
