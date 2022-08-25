@@ -37,9 +37,9 @@ use jf_primitives::{
     elgamal,
     merkle_tree::{AccMemberWitness, NodeValue},
     prf::{PrfKey, PRF},
+    rescue::Permutation,
     signatures::schnorr::{self, Signature},
 };
-use jf_rescue::Permutation;
 use jf_utils::{deserialize_canonical_bytes, hash_to_field, tagged_blob, CanonicalBytes};
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;

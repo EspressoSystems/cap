@@ -16,8 +16,8 @@ use ark_ec::{
 };
 use ark_ff::{FpParameters, PrimeField, SquareRootField};
 use ark_std::fmt::Debug;
-use jf_plonk::circuit::customized::ecc::SWToTEConParam;
-use jf_rescue::RescueParameter;
+use jf_primitives::rescue::RescueParameter;
+use jf_relation::gadgets::ecc::SWToTEConParam;
 
 use crate::structs::AssetCode;
 

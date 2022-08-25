@@ -24,11 +24,8 @@ use crate::{
 };
 use ark_ff::Zero;
 use ark_std::{format, string::ToString, vec, vec::Vec};
-use jf_plonk::{
-    circuit::{BoolVar, Circuit, PlonkCircuit, Variable},
-    errors::{CircuitError::InternalError, PlonkError},
-};
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
+use jf_relation::{errors::CircuitError, BoolVar, Circuit, PlonkCircuit, Variable};
 use jf_utils::fr_to_fq;
 
 pub(crate) struct TransferCircuit<C: CapConfig>(pub(crate) PlonkCircuit<C::ScalarField>);
@@ -56,16 +53,16 @@ impl<C: CapConfig> TransferCircuit<C> {
     pub(crate) fn build(
         witness: &TransferWitness<C>,
         pub_input: &TransferPublicInput<C>,
-    ) -> Result<(Self, usize), PlonkError> {
+    ) -> Result<(Self, usize), CircuitError> {
         if witness.input_secrets.is_empty() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::InternalError(
                 "the number of transfer inputs cannot be zero".to_string(),
-            )));
+            ));
         }
         if witness.output_record_openings.is_empty() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::InternalError(
                 "the number of transfer outputs cannot be zero".to_string(),
-            )));
+            ));
         }
 
         let mut circuit = PlonkCircuit::new_turbo_plonk();
@@ -79,10 +76,10 @@ impl<C: CapConfig> TransferCircuit<C> {
             .enumerate()
         {
             // The input is not frozen.
-            circuit.constant_gate(input.ro.freeze_flag.into(), C::ScalarField::zero())?;
+            circuit.enforce_constant(input.ro.freeze_flag.into(), C::ScalarField::zero())?;
             // check if record is dummy
             let is_dummy_record = input.ro.check_asset_code_dummy::<C>(&mut circuit)?;
-            let is_zero_amount = circuit.check_is_zero(input.ro.amount)?;
+            let is_zero_amount = PlonkCircuit::is_zero(&mut circuit, input.ro.amount)?;
             // if records is dummy, then amount must be zero
             // That is, check that either record is not dummy or the amount is zero
             let not_dummy_record = circuit.logic_neg(is_dummy_record)?;
@@ -90,7 +87,7 @@ impl<C: CapConfig> TransferCircuit<C> {
 
             // The first input is with native asset code and is for txn fees.
             if i == 0 {
-                circuit.equal_gate(input.ro.asset_code, pub_input.native_asset_code)?;
+                circuit.enforce_equal(input.ro.asset_code, pub_input.native_asset_code)?;
                 input.ro.policy.enforce_dummy_policy::<C>(&mut circuit)?;
             } else {
                 // if asset type code is dummy, then policy must be dummy
@@ -113,9 +110,9 @@ impl<C: CapConfig> TransferCircuit<C> {
                 Spender::User,
             )?;
 
-            circuit.equal_gate(nullifier, expected_nl)?;
+            circuit.enforce_equal(nullifier, expected_nl)?;
 
-            let is_correct_root = circuit.check_equal(root, pub_input.root)?;
+            let is_correct_root = circuit.is_equal(root, pub_input.root)?;
             // if dummy, root is allowed to be incorrect
             circuit.logic_or_gate(is_dummy_record, is_correct_root)?;
 
@@ -134,13 +131,13 @@ impl<C: CapConfig> TransferCircuit<C> {
             .enumerate()
         {
             // The output is not frozen.
-            circuit.constant_gate(output_ro.freeze_flag.into(), C::ScalarField::zero())?;
+            circuit.enforce_constant(output_ro.freeze_flag.into(), C::ScalarField::zero())?;
             // The first output is with native asset code and is for txn fees
             if i == 0 {
-                circuit.equal_gate(output_ro.asset_code, pub_input.native_asset_code)?;
+                circuit.enforce_equal(output_ro.asset_code, pub_input.native_asset_code)?;
                 output_ro.policy.enforce_dummy_policy::<C>(&mut circuit)?;
             } else {
-                circuit.equal_gate(output_ro.asset_code, witness.asset_code)?;
+                circuit.enforce_equal(output_ro.asset_code, witness.asset_code)?;
                 output_ro
                     .policy
                     .enforce_equal_policy::<C>(&mut circuit, &witness.policy)?;
@@ -148,14 +145,14 @@ impl<C: CapConfig> TransferCircuit<C> {
 
             // commitment
             let rc_out = output_ro.compute_record_commitment::<C>(&mut circuit)?;
-            circuit.equal_gate(rc_out, expected_rc)?;
+            circuit.enforce_equal(rc_out, expected_rc)?;
 
             // Range-check `amount`
             // Note we don't need to range-check inputs' `amount`, because those amounts are
             // bound to inputs' accumulated ars, whose underlying amounts have
             // already been range-checked in the transactions that created the
             // inputs' ars.
-            circuit.range_gate(output_ro.amount, AMOUNT_LEN)?;
+            circuit.enforce_in_range(output_ro.amount, AMOUNT_LEN)?;
         }
 
         // The amount balance is preserved
@@ -182,7 +179,7 @@ impl<C: CapConfig> TransferCircuit<C> {
         // Viewer memo is correctly constructed when `viewer_pk` is not null and
         // `transfer_amount > asset_policy.reveal_threshold`
         let amount_diff = circuit.sub(witness.policy.reveal_threshold, transfer_amount)?;
-        let b_under_limit = circuit.check_in_range(amount_diff, AMOUNT_LEN)?;
+        let b_under_limit = circuit.is_in_range(amount_diff, AMOUNT_LEN)?;
         let b_dummy_viewing_pk = witness.policy.is_dummy_viewing_pk::<C>(&mut circuit)?;
         let under_limit_or_dummy_viewing_pk =
             circuit.logic_or(b_under_limit, b_dummy_viewing_pk)?;
@@ -201,7 +198,7 @@ impl<C: CapConfig> TransferCircuit<C> {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &TransferWitnessVar,
         pub_input: &TransferPubInputVar,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         // 1. Prepare message to be encrypted
         let mut message: Vec<Variable> = vec![witness.asset_code];
         let reveal_map_vars: Vec<BoolVar> = circuit.unpack(witness.policy.reveal_map, VIEWABLE_DATA_LEN)?
@@ -302,19 +299,19 @@ impl TransferWitnessVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &TransferWitness<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let asset_code = circuit.create_variable(witness.asset_def.code.0)?;
         let policy = AssetPolicyVar::new(circuit, &witness.asset_def.policy)?;
         let input_secrets = witness
             .input_secrets
             .iter()
             .map(|input_secret| InputSecretVar::new(circuit, input_secret))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let output_record_openings = witness
             .output_record_openings
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let viewing_memo_enc_rand = circuit.create_variable(
             fr_to_fq::<_, C::EmbeddedCurveParam>(&witness.viewing_memo_enc_rand),
         )?;
@@ -344,7 +341,7 @@ impl TransferPubInputVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         pub_input: &TransferPublicInput<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
         let valid_until =
@@ -354,12 +351,12 @@ impl TransferPubInputVar {
             .input_nullifiers
             .iter()
             .map(|&nl| circuit.create_public_variable(nl.0))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let output_commitments = pub_input
             .output_commitments
             .iter()
             .map(|rc| circuit.create_public_variable(rc.0))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let viewing_memo = ViewableMemoVar::new(circuit, &pub_input.viewing_memo)?;
         viewing_memo.set_public::<C>(circuit)?;
         Ok(Self {
@@ -387,7 +384,7 @@ impl InputSecretVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         input_secret: &InputSecret<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let addr_secret = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             input_secret.owner_keypair.address_secret_ref(),
         ))?;
@@ -419,12 +416,9 @@ mod tests {
         utils::params_builder::TransferParamsBuilder,
     };
     use ark_ff::Zero;
-    use ark_std::{vec, vec::Vec, UniformRand};
-    use jf_plonk::{
-        circuit::{Circuit, PlonkCircuit},
-        errors::PlonkError,
-    };
+    use ark_std::{string::ToString, vec, vec::Vec, UniformRand};
     use jf_primitives::merkle_tree::{MerklePathNode, NodeValue};
+    use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit};
 
     type F = <Config as CapConfig>::ScalarField;
     type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
@@ -465,7 +459,7 @@ mod tests {
     }
 
     #[test]
-    fn test_threshold_policy() -> Result<(), PlonkError> {
+    fn test_threshold_policy() -> Result<(), CircuitError> {
         let rng = &mut ark_std::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
@@ -569,7 +563,7 @@ mod tests {
         Ok(())
     }
     #[test]
-    fn test_transfer_circuit_build() -> Result<(), PlonkError> {
+    fn test_transfer_circuit_build() -> Result<(), CircuitError> {
         let rng = &mut ark_std::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
@@ -687,7 +681,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transfer_circuit_build_with_dummy_records() -> Result<(), PlonkError> {
+    fn test_transfer_circuit_build_with_dummy_records() -> Result<(), CircuitError> {
         let rng = &mut ark_std::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
@@ -779,14 +773,14 @@ mod tests {
         witness: &TransferWitness<Config>,
         pub_input: &TransferPublicInput<Config>,
         witness_is_valid: bool,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let pub_input_vec = pub_input.to_scalars();
         let (circuit, _) = TransferCircuit::build(witness, pub_input)?;
         let verify = circuit.0.check_circuit_satisfiability(&pub_input_vec[..]);
 
         if !witness_is_valid {
             if verify.is_ok() {
-                Err(PlonkError::WrongProof) // some error
+                Err(CircuitError::InternalError("UNSAT witness".to_string())) // some error
             } else {
                 Ok(())
             }

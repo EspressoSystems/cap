@@ -25,7 +25,6 @@ use crate::{
 use ark_serialize::*;
 use ark_std::{format, string::ToString, vec, vec::Vec};
 use jf_plonk::{
-    circuit::Circuit,
     proof_system::{
         structs::{Proof, ProvingKey, UniversalSrs, VerifyingKey},
         PlonkKzgSnark, UniversalSNARK,
@@ -36,6 +35,7 @@ use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
     signatures::schnorr,
 };
+use jf_relation::Circuit;
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use rand::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};

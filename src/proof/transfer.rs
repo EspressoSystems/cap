@@ -37,7 +37,6 @@ use ark_std::{
     UniformRand,
 };
 use jf_plonk::{
-    circuit::Circuit,
     proof_system::{
         structs::{Proof, ProvingKey, UniversalSrs, VerifyingKey},
         PlonkKzgSnark, UniversalSNARK,
@@ -48,6 +47,7 @@ use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerklePath, MerklePathNode, MerkleTree, NodeValue},
     signatures::schnorr,
 };
+use jf_relation::Circuit;
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use serde::{Deserialize, Serialize};
 

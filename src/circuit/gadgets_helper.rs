@@ -11,33 +11,33 @@
 
 use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
 use ark_ec::{twisted_edwards_extended::GroupAffine, AffineCurve};
-use jf_plonk::{
-    circuit::{
-        customized::{ecc::PointVariable, rescue::RescueGadget},
-        Circuit, PlonkCircuit, Variable,
-    },
-    errors::PlonkError,
+use jf_primitives::circuit::{prf::PrfGadget, rescue::RescueGadget};
+use jf_relation::{
+    errors::CircuitError, gadgets::ecc::PointVariable, Circuit, PlonkCircuit, Variable,
 };
-use jf_primitives::circuit::prf::PrfGadget;
 
 pub(crate) trait TransactionGadgetsHelper<C: CapConfig> {
     fn derive_internal_asset_code(
         &mut self,
         seed: Variable,
         aux: Variable,
-    ) -> Result<Variable, PlonkError>;
-    fn derive_user_address(&mut self, secret_key: Variable) -> Result<UserAddressVar, PlonkError>;
+    ) -> Result<Variable, CircuitError>;
+
+    fn derive_user_address(&mut self, secret_key: Variable)
+        -> Result<UserAddressVar, CircuitError>;
+
     fn derive_nullifier_key(
         &mut self,
         secret_key: Variable,
         public_key: &PointVariable,
-    ) -> Result<Variable, PlonkError>;
+    ) -> Result<Variable, CircuitError>;
+
     fn nullify(
         &mut self,
         key: Variable,
         uid: Variable,
         commitment: Variable,
-    ) -> Result<Variable, PlonkError>;
+    ) -> Result<Variable, CircuitError>;
 }
 
 impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> {
@@ -45,11 +45,14 @@ impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> 
         &mut self,
         seed: Variable,
         aux: Variable,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<Variable, CircuitError> {
         self.eval_prf(seed, &[aux])
     }
 
-    fn derive_user_address(&mut self, secret_key: Variable) -> Result<UserAddressVar, PlonkError> {
+    fn derive_user_address(
+        &mut self,
+        secret_key: Variable,
+    ) -> Result<UserAddressVar, CircuitError> {
         let base = GroupAffine::<C::EmbeddedCurveParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
@@ -59,7 +62,7 @@ impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> 
         &mut self,
         secret_key: Variable,
         public_key: &PointVariable,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<Variable, CircuitError> {
         let shared_key =
             self.variable_base_scalar_mul::<C::EmbeddedCurveParam>(secret_key, public_key)?;
         let zero = self.zero();
@@ -74,7 +77,7 @@ impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> 
         key: Variable,
         uid: Variable,
         commitment: Variable,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<Variable, CircuitError> {
         self.eval_prf(key, &[uid, commitment])
     }
 }
@@ -90,10 +93,7 @@ mod tests {
     use ark_ec::ProjectiveCurve;
     use ark_ff::One;
     use ark_std::UniformRand;
-    use jf_plonk::{
-        circuit::{customized::ecc::Point, Circuit, PlonkCircuit},
-        errors::PlonkError,
-    };
+    use jf_relation::{errors::CircuitError, gadgets::ecc::Point, Circuit, PlonkCircuit};
     use jf_utils::fr_to_fq;
 
     type F = <Config as CapConfig>::ScalarField;
@@ -101,7 +101,7 @@ mod tests {
     type EmbeddedCurveParam = <Config as CapConfig>::EmbeddedCurveParam;
 
     #[test]
-    fn test_internal_asset_code() -> Result<(), PlonkError> {
+    fn test_internal_asset_code() -> Result<(), CircuitError> {
         let mut prng = ark_std::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
 
@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_user_address() -> Result<(), PlonkError> {
+    fn test_user_address() -> Result<(), CircuitError> {
         let mut prng = ark_std::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn test_nullifier_key() -> Result<(), PlonkError> {
+    fn test_nullifier_key() -> Result<(), CircuitError> {
         let mut prng = ark_std::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let user_key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
@@ -204,7 +204,7 @@ mod tests {
     }
 
     #[test]
-    fn test_nullifier() -> Result<(), PlonkError> {
+    fn test_nullifier() -> Result<(), CircuitError> {
         let mut prng = ark_std::test_rng();
         let nullifier_key = NullifierKey::<Config>::from(&Fj::rand(&mut prng));
         let uid = 10u64;

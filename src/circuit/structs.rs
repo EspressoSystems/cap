@@ -17,17 +17,15 @@ use crate::{
 use ark_ec::ProjectiveCurve;
 use ark_ff::{One, PrimeField, Zero};
 use ark_std::{format, ops::Neg, string::ToString, vec, vec::Vec};
-use jf_plonk::{
-    circuit::{
-        customized::ecc::{Point, PointVariable},
-        BoolVar, Circuit, PlonkCircuit, Variable,
-    },
-    errors::{CircuitError::InternalError, PlonkError},
-};
 use jf_primitives::circuit::{
     commitment::CommitmentGadget,
     elgamal::{ElGamalEncryptionGadget, ElGamalHybridCtxtVars, EncKeyVars},
     signature::schnorr::{SignatureGadget, SignatureVar, VerKeyVar},
+};
+use jf_relation::{
+    errors::CircuitError,
+    gadgets::ecc::{Point, PointVariable},
+    BoolVar, Circuit, PlonkCircuit, Variable,
 };
 
 #[derive(Debug)]
@@ -38,7 +36,7 @@ impl ViewableMemoVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemo<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let ctxts = circuit.create_ciphertext_variable(&viewing_memo.0)?;
         Ok(Self(ctxts))
     }
@@ -47,7 +45,7 @@ impl ViewableMemoVar {
     pub(crate) fn set_public<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         circuit.set_variable_public(self.0.ephemeral.get_x())?;
         circuit.set_variable_public(self.0.ephemeral.get_y())?;
         for &ctxt_var in self.0.symm_ctxts.iter() {
@@ -62,21 +60,21 @@ impl ViewableMemoVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         viewing_memo: &ViewableMemoVar,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         if viewing_memo.0.symm_ctxts.len() != self.0.symm_ctxts.len() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::ParameterError(
                 "the compared viewing memo has different ciphertext length".to_string(),
-            )));
+            ));
         }
         let mut check_equal =
-            circuit.check_equal_point(&self.0.ephemeral, &viewing_memo.0.ephemeral)?;
+            circuit.is_point_equal(&self.0.ephemeral, &viewing_memo.0.ephemeral)?;
         for (&left, &right) in self
             .0
             .symm_ctxts
             .iter()
             .zip(viewing_memo.0.symm_ctxts.iter())
         {
-            let flag = circuit.check_equal(left, right)?;
+            let flag = circuit.is_equal(left, right)?;
             check_equal = circuit.logic_and(check_equal, flag)?;
         }
         Ok(check_equal)
@@ -88,7 +86,7 @@ impl ViewableMemoVar {
         viewer_pk: &EncKeyVars,
         data: &[Variable],
         enc_rand: Variable,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         Ok(Self(
             ElGamalEncryptionGadget::<_, C::EmbeddedCurveParam>::elgamal_encrypt(
                 circuit, viewer_pk, data, enc_rand,
@@ -121,7 +119,7 @@ impl RecordOpeningVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         ro: &RecordOpening<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let amount = circuit.create_variable(C::ScalarField::from(ro.amount.0))?;
         let asset_code = circuit.create_variable(ro.asset_def.code.0)?;
         let owner_addr = UserAddressVar(
@@ -146,7 +144,7 @@ impl RecordOpeningVar {
     pub(crate) fn compute_record_commitment<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<Variable, CircuitError> {
         // To minimize the number of Rescue calls, combine `reveal_map` and
         // `freeze_flag` to a single variable `reveal_and_freeze := reveal_map << 1 +
         // freeze_flag`
@@ -187,10 +185,10 @@ impl RecordOpeningVar {
     pub(crate) fn check_asset_code_dummy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         let zero_if_dummy =
             circuit.add_constant(self.asset_code, &C::dummy_asset_code().0.neg())?;
-        circuit.check_is_zero(zero_if_dummy)
+        circuit.is_zero(zero_if_dummy)
     }
 }
 #[derive(Debug)]
@@ -208,7 +206,7 @@ impl AssetPolicyVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicy<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let reveal_map = circuit.create_variable(policy.reveal_map.to_scalar::<C>())?;
         let viewer_pk = circuit.create_enc_key_variable(&policy.viewer_pk.0)?;
         let cred_pk = circuit.create_signature_vk_variable(&policy.cred_pk.0)?;
@@ -231,7 +229,7 @@ impl AssetPolicyVar {
     pub(crate) fn set_public<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         circuit.set_variable_public(self.reveal_map)?;
         circuit.set_variable_public(self.viewer_pk.0.get_x())?;
         circuit.set_variable_public(self.viewer_pk.0.get_y())?;
@@ -247,13 +245,13 @@ impl AssetPolicyVar {
     pub(crate) fn enforce_dummy_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let neutral_point = circuit.neutral_point_variable();
-        circuit.point_equal_gate(&self.viewer_pk.0, &neutral_point)?;
-        circuit.point_equal_gate(&self.cred_pk.0, &neutral_point)?;
-        circuit.point_equal_gate(&self.freezer_pk, &neutral_point)?;
-        circuit.constant_gate(self.reveal_map, C::ScalarField::zero())?;
-        circuit.constant_gate(self.reveal_threshold, C::ScalarField::zero())?;
+        circuit.enforce_point_equal(&self.viewer_pk.0, &neutral_point)?;
+        circuit.enforce_point_equal(&self.cred_pk.0, &neutral_point)?;
+        circuit.enforce_point_equal(&self.freezer_pk, &neutral_point)?;
+        circuit.enforce_constant(self.reveal_map, C::ScalarField::zero())?;
+        circuit.enforce_constant(self.reveal_threshold, C::ScalarField::zero())?;
         Ok(())
     }
 
@@ -261,7 +259,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_policy<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         let dummy_viewer = self.is_dummy_viewing_pk::<C>(circuit)?;
         let dummy_cred_pk = self.is_dummy_cred_pk::<C>(circuit)?;
         let dummy_freezer_pk = self.is_dummy_freezer_pk::<C>(circuit)?;
@@ -269,9 +267,7 @@ impl AssetPolicyVar {
         let reveal_map_plus_reveal_threshold =
             circuit.add(self.reveal_map, self.reveal_threshold)?;
         let no_reveal_map_or_reveal_threshold =
-            circuit.check_is_zero(reveal_map_plus_reveal_threshold)?;
-        // TODO: implement LogicAnd gate for more than 2 variables after adding the new
-        // selector for TurboPlonk CS
+            circuit.is_zero(reveal_map_plus_reveal_threshold)?;
         circuit.logic_and_all(&[
             dummy_viewer,
             dummy_cred_pk,
@@ -285,12 +281,12 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
-    ) -> Result<(), PlonkError> {
-        circuit.equal_gate(self.reveal_map, policy.reveal_map)?;
-        circuit.equal_gate(self.reveal_threshold, policy.reveal_threshold)?;
-        circuit.point_equal_gate(&self.viewer_pk.0, &policy.viewer_pk.0)?;
-        circuit.point_equal_gate(&self.cred_pk.0, &policy.cred_pk.0)?;
-        circuit.point_equal_gate(&self.freezer_pk, &policy.freezer_pk)?;
+    ) -> Result<(), CircuitError> {
+        circuit.enforce_equal(self.reveal_map, policy.reveal_map)?;
+        circuit.enforce_equal(self.reveal_threshold, policy.reveal_threshold)?;
+        circuit.enforce_point_equal(&self.viewer_pk.0, &policy.viewer_pk.0)?;
+        circuit.enforce_point_equal(&self.cred_pk.0, &policy.cred_pk.0)?;
+        circuit.enforce_point_equal(&self.freezer_pk, &policy.freezer_pk)?;
         Ok(())
     }
 
@@ -300,12 +296,12 @@ impl AssetPolicyVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         policy: &AssetPolicyVar,
-    ) -> Result<BoolVar, PlonkError> {
-        let a_eq = circuit.check_equal(self.reveal_map, policy.reveal_map)?;
-        let b_eq = circuit.check_equal_point(&self.viewer_pk.0, &policy.viewer_pk.0)?;
-        let c_eq = circuit.check_equal_point(&self.cred_pk.0, &policy.cred_pk.0)?;
-        let d_eq = circuit.check_equal_point(&self.freezer_pk, &policy.freezer_pk)?;
-        let e_eq = circuit.check_equal(self.reveal_threshold, policy.reveal_threshold)?;
+    ) -> Result<BoolVar, CircuitError> {
+        let a_eq = circuit.is_equal(self.reveal_map, policy.reveal_map)?;
+        let b_eq = circuit.is_point_equal(&self.viewer_pk.0, &policy.viewer_pk.0)?;
+        let c_eq = circuit.is_point_equal(&self.cred_pk.0, &policy.cred_pk.0)?;
+        let d_eq = circuit.is_point_equal(&self.freezer_pk, &policy.freezer_pk)?;
+        let e_eq = circuit.is_equal(self.reveal_threshold, policy.reveal_threshold)?;
         // check are all true
         circuit.logic_and_all(&[a_eq, b_eq, c_eq, d_eq, e_eq])
     }
@@ -315,7 +311,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_cred_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.cred_pk.0)
     }
 
@@ -324,7 +320,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_viewing_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.viewer_pk.0)
     }
 
@@ -333,7 +329,7 @@ impl AssetPolicyVar {
     pub(crate) fn is_dummy_freezer_pk<C: CapConfig>(
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         circuit.is_neutral_point::<C::EmbeddedCurveParam>(&self.freezer_pk)
     }
 }
@@ -347,7 +343,7 @@ impl IdAttrVar {
     fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         id_attr: &IdentityAttribute<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let attr = circuit.create_variable(id_attr.0)?;
         Ok(Self(attr))
     }
@@ -367,7 +363,7 @@ impl ExpirableCredVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         expirable_cred: &ExpirableCredential<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let expiry = circuit.create_variable(C::ScalarField::from(expirable_cred.expiry))?;
         let cred = circuit.create_signature_variable(&expirable_cred.cred.0)?;
         let user_addr = UserAddressVar(circuit.create_point_variable(Point::from(
@@ -378,7 +374,7 @@ impl ExpirableCredVar {
             .attrs
             .iter()
             .map(|id_attr| IdAttrVar::new(circuit, id_attr))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         Ok(Self {
             attrs,
             expiry,
@@ -402,16 +398,16 @@ impl ExpirableCredVar {
         &self,
         circuit: &mut PlonkCircuit<C::ScalarField>,
         valid_until: Variable,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         if self.attrs.len() != ATTRS_LEN {
-            return Err(PlonkError::CircuitError(InternalError(format!(
+            return Err(CircuitError::InternalError(format!(
                 "wrong number of attributes in credential: {0}",
                 self.attrs.len()
-            ))));
+            )));
         }
         // 1. check credetial expiration time
         let expiry_minus_valid_until = circuit.sub(self.expiry, valid_until)?;
-        circuit.range_gate(expiry_minus_valid_until, MAX_TIMESTAMP_LEN)?;
+        circuit.enforce_in_range(expiry_minus_valid_until, MAX_TIMESTAMP_LEN)?;
 
         // 2. check credential signature
         // msg := (expiry || upk || attrs)
@@ -446,10 +442,7 @@ mod tests {
     };
     use ark_ff::{One, Zero};
     use ark_std::{test_rng, vec::Vec};
-    use jf_plonk::{
-        circuit::{BoolVar, Circuit, PlonkCircuit},
-        errors::PlonkError,
-    };
+    use jf_relation::{errors::CircuitError, BoolVar, Circuit, PlonkCircuit};
 
     type F = <Config as CapConfig>::ScalarField;
     type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;
@@ -461,7 +454,7 @@ mod tests {
     fn build_verify_cred_circuit(
         valid_until: F,
         expirable_cred: &ExpirableCredential<Config>,
-    ) -> Result<(BoolVar, ExpirableCredVar, PlonkCircuit<F>), PlonkError> {
+    ) -> Result<(BoolVar, ExpirableCredVar, PlonkCircuit<F>), CircuitError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let valid_until = circuit.create_variable(valid_until)?;
         let expirable_cred = ExpirableCredVar::new(&mut circuit, expirable_cred)?;
@@ -470,7 +463,7 @@ mod tests {
     }
 
     #[test]
-    fn test_verify_expirable_credential() -> Result<(), PlonkError> {
+    fn test_verify_expirable_credential() -> Result<(), CircuitError> {
         let rng = &mut test_rng();
         let minter_keypair = CredIssuerKeyPair::generate(rng);
         let user = UserKeyPair::<Config>::generate(rng);
@@ -502,7 +495,7 @@ mod tests {
     ////////////////////////////////////////////////////////////
 
     #[test]
-    fn test_compute_record_commitment_consistency() -> Result<(), PlonkError> {
+    fn test_compute_record_commitment_consistency() -> Result<(), CircuitError> {
         let rng = &mut test_rng();
         let record_open = RecordOpening::<Config>::rand_for_test(rng);
         let record_comm = record_open.derive_record_commitment();
@@ -525,7 +518,7 @@ mod tests {
     ////////////////////////////////////////////////////////////
 
     #[test]
-    fn test_enforce_dummy_policy() -> Result<(), PlonkError> {
+    fn test_enforce_dummy_policy() -> Result<(), CircuitError> {
         // good path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let dummy_policy = AssetPolicy::<Config>::default();
@@ -545,7 +538,7 @@ mod tests {
     }
 
     #[test]
-    fn test_enforce_equal_policy() -> Result<(), PlonkError> {
+    fn test_enforce_equal_policy() -> Result<(), CircuitError> {
         let mut rng = &mut test_rng();
         // happy path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
@@ -573,7 +566,7 @@ mod tests {
     ////////////////////////////////////////////////////////////
 
     #[test]
-    fn test_check_equal_viewing_memo() -> Result<(), PlonkError> {
+    fn test_check_equal_viewing_memo() -> Result<(), CircuitError> {
         let rng = &mut test_rng();
         let data: Vec<F> = (0..10).map(|i| F::from(i as u32)).collect();
         let mut data2 = data.clone();
@@ -609,7 +602,7 @@ mod tests {
         viewing_memo_1: &ViewableMemo<Config>,
         viewing_memo_2: &ViewableMemo<Config>,
         expect_equal: F,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let viewing_memo_1 = ViewableMemoVar::new(&mut circuit, viewing_memo_1)?;
         let viewing_memo_2 = ViewableMemoVar::new(&mut circuit, viewing_memo_2)?;

@@ -15,11 +15,8 @@ use crate::{
 };
 use ark_ff::One;
 use ark_std::{string::ToString, vec::Vec};
-use jf_plonk::{
-    circuit::{Circuit, PlonkCircuit, Variable},
-    errors::{CircuitError::InternalError, PlonkError},
-};
 use jf_primitives::circuit::merkle_tree::{AccElemVars, AccMemberWitnessVar, MerkleTreeGadget};
+use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit, Variable};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 /// Enum for an asset record spender.
@@ -53,7 +50,7 @@ pub(crate) trait TransactionGadgets<C: CapConfig> {
         fee: Variable,
         amounts_in: &[Variable],
         amounts_out: &[Variable],
-    ) -> Result<Variable, PlonkError>;
+    ) -> Result<Variable, CircuitError>;
 
     /// Prove the possession of an asset record and spend it,
     /// add the corresponding constraints.
@@ -68,14 +65,14 @@ pub(crate) trait TransactionGadgets<C: CapConfig> {
         acc_member_witness: &AccMemberWitnessVar,
         sk: Variable,
         spender: Spender,
-    ) -> Result<(Variable, Variable), PlonkError>;
+    ) -> Result<(Variable, Variable), CircuitError>;
 
     /// Apply hadamard product on `vals` and binary vector `bit_map_vars`.
     fn hadamard_product(
         &mut self,
         bit_map_vars: &[Variable],
         vals: &[Variable],
-    ) -> Result<Vec<Variable>, PlonkError>;
+    ) -> Result<Vec<Variable>, CircuitError>;
 }
 
 impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
@@ -86,16 +83,16 @@ impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
         fee: Variable,
         amounts_in: &[Variable],
         amounts_out: &[Variable],
-    ) -> Result<Variable, PlonkError> {
+    ) -> Result<Variable, CircuitError> {
         if amounts_in.is_empty() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::InternalError(
                 "amounts_in is empty".to_string(),
-            )));
+            ));
         }
         if amounts_out.is_empty() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::InternalError(
                 "amounts_out is empty".to_string(),
-            )));
+            ));
         }
         let zero_var = self.zero();
         let total_amounts_in = if amounts_in.len() == 1 {
@@ -114,7 +111,7 @@ impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
             &[amounts_in[0], amounts_out[0], fee, zero_var],
             &[one, -one, -one, one],
         )?;
-        let same_asset = self.check_equal(native_asset, asset)?;
+        let same_asset = self.is_equal(native_asset, asset)?;
         // enforce `same_asset` * (`amount_diff + native_amount_diff`) == 0 (i.e.,
         // `amount_diff` + `native_amount_diff` == 0 when `same_asset == 1`)
         self.mul_add_gate(
@@ -142,7 +139,7 @@ impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
         acc_member_witness: &AccMemberWitnessVar,
         sk: Variable,
         spender: Spender,
-    ) -> Result<(Variable, Variable), PlonkError> {
+    ) -> Result<(Variable, Variable), CircuitError> {
         let (uid, path_ref) = (acc_member_witness.uid, &acc_member_witness.merkle_path);
         let (pk1_point, pk2_point) = if spender == Spender::User {
             (&ro.owner_addr.0, &ro.policy.freezer_pk)
@@ -152,7 +149,7 @@ impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
 
         // PoK of secret key
         let pk = TransactionGadgetsHelper::<C>::derive_user_address(self, sk)?;
-        self.point_equal_gate(&pk.0, pk1_point)?;
+        self.enforce_point_equal(&pk.0, pk1_point)?;
 
         // compute commitment
         let commitment = ro.compute_record_commitment::<C>(self)?;
@@ -177,17 +174,17 @@ impl<C: CapConfig> TransactionGadgets<C> for PlonkCircuit<C::ScalarField> {
         &mut self,
         bit_map_vars: &[Variable],
         vals: &[Variable],
-    ) -> Result<Vec<Variable>, PlonkError> {
+    ) -> Result<Vec<Variable>, CircuitError> {
         if bit_map_vars.len() != vals.len() {
-            return Err(PlonkError::CircuitError(InternalError(
+            return Err(CircuitError::InternalError(
                 "expecting the same length for vals and reveal_map".to_string(),
-            )));
+            ));
         }
         bit_map_vars
             .iter()
             .zip(vals.iter())
             .map(|(&bit, &val)| self.mul(bit, val))
-            .collect::<Result<Vec<_>, PlonkError>>()
+            .collect::<Result<Vec<_>, CircuitError>>()
     }
 }
 
@@ -203,14 +200,11 @@ mod tests {
     };
     use ark_ff::{One, Zero};
     use ark_std::{test_rng, vec::Vec};
-    use jf_plonk::{
-        circuit::{Circuit, PlonkCircuit, Variable},
-        errors::PlonkError,
-    };
     use jf_primitives::{
         circuit::merkle_tree::{gen_merkle_path_for_test, AccMemberWitnessVar},
         merkle_tree::AccMemberWitness,
     };
+    use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit, Variable};
     use jf_utils::fr_to_fq;
 
     type F = <Config as CapConfig>::ScalarField;
@@ -222,7 +216,7 @@ mod tests {
         fee: F,
         amounts_in: &[F],
         amounts_out: &[F],
-    ) -> Result<PlonkCircuit<F>, PlonkError> {
+    ) -> Result<PlonkCircuit<F>, CircuitError> {
         let expected_transfer_amount = amounts_in.iter().skip(1).fold(F::zero(), |acc, &x| acc + x);
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let native_asset = circuit.create_variable(native_asset)?;
@@ -230,11 +224,11 @@ mod tests {
         let amounts_in: Vec<Variable> = amounts_in
             .iter()
             .map(|&val| circuit.create_variable(val))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let amounts_out: Vec<Variable> = amounts_out
             .iter()
             .map(|&val| circuit.create_variable(val))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let fee = circuit.create_variable(fee)?;
         let transfer_amount = TransactionGadgets::<Config>::preserve_balance(
             &mut circuit,
@@ -249,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn test_preserve_balance() -> Result<(), PlonkError> {
+    fn test_preserve_balance() -> Result<(), CircuitError> {
         let native_asset = F::from(59u32);
         let asset1 = F::from(59u32);
         let asset2 = F::from(179u32);
@@ -329,7 +323,7 @@ mod tests {
         spender: Spender,
         expected_nullifier: F,
         expected_root: F,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let ro_var = RecordOpeningVar::new(&mut circuit, ro)?;
         let acc_wit_var =
@@ -354,7 +348,7 @@ mod tests {
     }
 
     #[test]
-    fn test_prove_spend() -> Result<(), PlonkError> {
+    fn test_prove_spend() -> Result<(), CircuitError> {
         let rng = &mut test_rng();
 
         // Case 1: Asset record with freezing policy
@@ -415,7 +409,7 @@ mod tests {
         reveal_map: &RevealMap,
         vals: &[F],
         bit_len: usize,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let expected_hadamard = reveal_map.hadamard_product::<C>(vals);
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let reveal_map_var = circuit.create_variable(reveal_map.to_scalar::<C>())?;
@@ -428,7 +422,7 @@ mod tests {
         let vals = vals
             .iter()
             .map(|&val| circuit.create_variable(val))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let prod = TransactionGadgets::<Config>::hadamard_product(
             &mut circuit,
             &bit_map_vars[..bit_len],
@@ -446,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn test_hadamard_product() -> Result<(), PlonkError> {
+    fn test_hadamard_product() -> Result<(), CircuitError> {
         let mut reveal_map = RevealMap::default();
         reveal_map.reveal_all();
         let vals: Vec<F> = (0..VIEWABLE_DATA_LEN).map(|i| F::from(i as u32)).collect();
