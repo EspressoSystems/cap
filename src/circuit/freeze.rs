@@ -23,11 +23,8 @@ use crate::{
 };
 use ark_ff::Zero;
 use ark_std::{format, rand::SeedableRng, string::ToString, vec::Vec};
-use jf_plonk::{
-    circuit::{Circuit, PlonkCircuit, Variable},
-    errors::PlonkError,
-};
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
+use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit, Variable};
 use jf_utils::fr_to_fq;
 
 pub(crate) struct FreezeCircuit<C: CapConfig>(pub(crate) PlonkCircuit<C::ScalarField>);
@@ -77,7 +74,7 @@ impl<C: CapConfig> FreezeCircuit<C> {
     fn build_unchecked(
         witness: &FreezeWitness<C>,
         pub_input: &FreezePublicInput<C>,
-    ) -> Result<(Self, usize), PlonkError> {
+    ) -> Result<(Self, usize), CircuitError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let witness = FreezeWitnessVar::new(&mut circuit, witness)?;
         let pub_input = FreezePubInputVar::new(&mut circuit, pub_input)?;
@@ -86,16 +83,16 @@ impl<C: CapConfig> FreezeCircuit<C> {
         let first_input = &witness.input_ros[0];
         let first_output = &witness.output_ros[0];
         // The first input/output are with native asset definition
-        circuit.equal_gate(first_input.asset_code, pub_input.native_asset_code)?;
+        circuit.enforce_equal(first_input.asset_code, pub_input.native_asset_code)?;
         first_input.policy.enforce_dummy_policy::<C>(&mut circuit)?;
-        circuit.equal_gate(first_output.asset_code, pub_input.native_asset_code)?;
+        circuit.enforce_equal(first_output.asset_code, pub_input.native_asset_code)?;
         first_output
             .policy
             .enforce_dummy_policy::<C>(&mut circuit)?;
         // The first input/output are not frozen
         let unfrozen = C::ScalarField::zero();
-        circuit.constant_gate(first_input.freeze_flag.into(), unfrozen)?;
-        circuit.constant_gate(first_output.freeze_flag.into(), unfrozen)?;
+        circuit.enforce_constant(first_input.freeze_flag.into(), unfrozen)?;
+        circuit.enforce_constant(first_output.freeze_flag.into(), unfrozen)?;
         // Fee balance
         circuit.add_gate(first_output.amount, pub_input.fee, first_input.amount)?;
         // Proof of spending
@@ -106,8 +103,8 @@ impl<C: CapConfig> FreezeCircuit<C> {
             witness.fee_sk,
             Spender::User,
         )?;
-        circuit.equal_gate(root, pub_input.merkle_root)?;
-        circuit.equal_gate(nullifier, pub_input.input_nullifiers[0])?;
+        circuit.enforce_equal(root, pub_input.merkle_root)?;
+        circuit.enforce_equal(nullifier, pub_input.input_nullifiers[0])?;
 
         // Check freezing inputs/outputs consistency
         for (ro_in, ro_out) in witness
@@ -123,9 +120,9 @@ impl<C: CapConfig> FreezeCircuit<C> {
                 circuit.one(),
             )?;
             // Output ro preserves the amount, address, asset definition of input ro
-            circuit.equal_gate(ro_in.amount, ro_out.amount)?;
-            circuit.point_equal_gate(&ro_in.owner_addr.0, &ro_out.owner_addr.0)?;
-            circuit.equal_gate(ro_in.asset_code, ro_out.asset_code)?;
+            circuit.enforce_equal(ro_in.amount, ro_out.amount)?;
+            circuit.enforce_point_equal(&ro_in.owner_addr.0, &ro_out.owner_addr.0)?;
+            circuit.enforce_equal(ro_in.asset_code, ro_out.asset_code)?;
             ro_in
                 .policy
                 .enforce_equal_policy::<C>(&mut circuit, &ro_out.policy)?;
@@ -138,7 +135,7 @@ impl<C: CapConfig> FreezeCircuit<C> {
             .zip(pub_input.output_commitments.iter())
         {
             let rc_out = ro_out.compute_record_commitment::<C>(&mut circuit)?;
-            circuit.equal_gate(rc_out, expected_comm)?;
+            circuit.enforce_equal(rc_out, expected_comm)?;
         }
 
         // Check freezing inputs
@@ -169,10 +166,10 @@ impl<C: CapConfig> FreezeCircuit<C> {
                 Spender::Freezer,
             )?;
             // enforce correct root if record is not dummy
-            let is_correct_mt_root = circuit.check_equal(root, pub_input.merkle_root)?;
+            let is_correct_mt_root = circuit.is_equal(root, pub_input.merkle_root)?;
             circuit.logic_or_gate(is_correct_mt_root, b_is_dummy_ro)?;
             // check nullifier is correctly computed
-            circuit.equal_gate(nullifier, expected_nl)?;
+            circuit.enforce_equal(nullifier, expected_nl)?;
         }
 
         let n_constraints = circuit.num_gates();
@@ -195,22 +192,22 @@ impl FreezeWitnessVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &FreezeWitness<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let input_ros = witness
             .input_ros
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let input_acc_member_witnesses = witness
             .input_acc_member_witnesses
             .iter()
             .map(|acc_wit| AccMemberWitnessVar::new::<_, C::EmbeddedCurveParam>(circuit, acc_wit))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let output_ros = witness
             .output_ros
             .iter()
             .map(|ro| RecordOpeningVar::new(circuit, ro))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let fee_sk = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             witness.fee_keypair.address_secret_ref(),
         ))?;
@@ -220,7 +217,7 @@ impl FreezeWitnessVar {
             .map(|&keypair| {
                 circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(&keypair.sec_key))
             })
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         Ok(Self {
             input_ros,
             input_acc_member_witnesses,
@@ -245,7 +242,7 @@ impl FreezePubInputVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         pub_input: &FreezePublicInput<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let merkle_root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
         let fee = circuit.create_public_variable(C::ScalarField::from(pub_input.fee.0))?;
@@ -253,12 +250,12 @@ impl FreezePubInputVar {
             .input_nullifiers
             .iter()
             .map(|nl| circuit.create_public_variable(nl.0))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         let output_commitments = pub_input
             .output_commitments
             .iter()
             .map(|comm| circuit.create_public_variable(comm.0))
-            .collect::<Result<Vec<_>, PlonkError>>()?;
+            .collect::<Result<Vec<_>, CircuitError>>()?;
         Ok(Self {
             merkle_root,
             native_asset_code,
@@ -282,11 +279,8 @@ mod tests {
         utils::params_builder::FreezeParamsBuilder,
     };
     use ark_std::{vec, vec::Vec};
-    use jf_plonk::{
-        circuit::{Circuit, PlonkCircuit},
-        errors::PlonkError,
-    };
     use jf_primitives::merkle_tree::NodeValue;
+    use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit};
 
     type F = <Config as CapConfig>::ScalarField;
 
@@ -320,7 +314,7 @@ mod tests {
         witness: &FreezeWitness<Config>,
         pub_input: &FreezePublicInput<Config>,
         witness_is_valid: bool,
-    ) -> Result<(), PlonkError> {
+    ) -> Result<(), CircuitError> {
         let pub_input_vec = pub_input.to_scalars();
         let (circuit, _) = FreezeCircuit::build_unchecked(witness, pub_input)?;
         let verify = circuit.0.check_circuit_satisfiability(&pub_input_vec[..]);
@@ -333,7 +327,7 @@ mod tests {
     }
 
     #[test]
-    fn test_freeze_circuit_build() -> Result<(), PlonkError> {
+    fn test_freeze_circuit_build() -> Result<(), CircuitError> {
         let rng = &mut ark_std::test_rng();
         let tree_depth = 2;
         let fee_keypair = UserKeyPair::generate(rng);

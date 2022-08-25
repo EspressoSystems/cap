@@ -25,11 +25,8 @@ use crate::{
 };
 use ark_ff::Zero;
 use ark_std::{format, vec};
-use jf_plonk::{
-    circuit::{BoolVar, Circuit, PlonkCircuit, Variable},
-    errors::PlonkError,
-};
 use jf_primitives::circuit::merkle_tree::AccMemberWitnessVar;
+use jf_relation::{errors::CircuitError, BoolVar, Circuit, PlonkCircuit, Variable};
 use jf_utils::fr_to_fq;
 
 pub(crate) struct MintCircuit<C: CapConfig>(pub(crate) PlonkCircuit<C::ScalarField>);
@@ -50,7 +47,7 @@ impl<C: CapConfig> MintCircuit<C> {
     pub(crate) fn build(
         witness: &MintWitness<C>,
         pub_input: &MintPublicInput<C>,
-    ) -> Result<(Self, usize), PlonkError> {
+    ) -> Result<(Self, usize), CircuitError> {
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let witness = MintWitnessVar::new(&mut circuit, witness)?;
         let pub_input = MintPubInputVar::new(&mut circuit, pub_input)?;
@@ -59,11 +56,11 @@ impl<C: CapConfig> MintCircuit<C> {
         let mint_rc = witness
             .mint_ro
             .compute_record_commitment::<C>(&mut circuit)?;
-        circuit.equal_gate(mint_rc, pub_input.mint_rc)?;
+        circuit.enforce_equal(mint_rc, pub_input.mint_rc)?;
         let chg_rc = witness
             .chg_ro
             .compute_record_commitment::<C>(&mut circuit)?;
-        circuit.equal_gate(chg_rc, pub_input.chg_rc)?;
+        circuit.enforce_equal(chg_rc, pub_input.chg_rc)?;
 
         // Derive asset type code from secret seed and asset type digest
         let mint_internal_ac = TransactionGadgetsHelper::<C>::derive_internal_asset_code(
@@ -71,7 +68,7 @@ impl<C: CapConfig> MintCircuit<C> {
             witness.ac_seed,
             witness.ac_digest,
         )?;
-        circuit.equal_gate(mint_internal_ac, pub_input.mint_internal_ac)?;
+        circuit.enforce_equal(mint_internal_ac, pub_input.mint_internal_ac)?;
 
         // Preserve balance
         circuit.add_gate(pub_input.fee, witness.chg_ro.amount, witness.fee_ro.amount)?;
@@ -84,30 +81,30 @@ impl<C: CapConfig> MintCircuit<C> {
             witness.creator_sk,
             Spender::User,
         )?;
-        circuit.equal_gate(root, pub_input.root)?;
-        circuit.equal_gate(nullifier, pub_input.input_nullifier)?;
+        circuit.enforce_equal(root, pub_input.root)?;
+        circuit.enforce_equal(nullifier, pub_input.input_nullifier)?;
 
         // Check that records are not frozen
         let zero = C::ScalarField::zero();
-        circuit.constant_gate(witness.mint_ro.freeze_flag.into(), zero)?;
-        circuit.constant_gate(witness.fee_ro.freeze_flag.into(), zero)?;
-        circuit.constant_gate(witness.chg_ro.freeze_flag.into(), zero)?;
+        circuit.enforce_constant(witness.mint_ro.freeze_flag.into(), zero)?;
+        circuit.enforce_constant(witness.fee_ro.freeze_flag.into(), zero)?;
+        circuit.enforce_constant(witness.chg_ro.freeze_flag.into(), zero)?;
 
         // Range-check mint amount, note we do not need to range-check change amount as
         // it's no more than the input amount that has been range-checked before.
-        circuit.range_gate(witness.mint_ro.amount, AMOUNT_LEN)?;
+        circuit.enforce_in_range(witness.mint_ro.amount, AMOUNT_LEN)?;
 
         // Check (amount, asset_code, policy) consistency between witness and public
         // input
-        circuit.equal_gate(witness.mint_ro.amount, pub_input.mint_amount)?;
-        circuit.equal_gate(witness.mint_ro.asset_code, pub_input.mint_ac)?;
+        circuit.enforce_equal(witness.mint_ro.amount, pub_input.mint_amount)?;
+        circuit.enforce_equal(witness.mint_ro.asset_code, pub_input.mint_ac)?;
         pub_input
             .mint_policy
             .enforce_equal_policy::<C>(&mut circuit, &witness.mint_ro.policy)?;
 
         // Input/Change records should have native asset code and dummy policy
-        circuit.equal_gate(witness.chg_ro.asset_code, pub_input.native_asset_code)?;
-        circuit.equal_gate(witness.fee_ro.asset_code, pub_input.native_asset_code)?;
+        circuit.enforce_equal(witness.chg_ro.asset_code, pub_input.native_asset_code)?;
+        circuit.enforce_equal(witness.fee_ro.asset_code, pub_input.native_asset_code)?;
         witness
             .chg_ro
             .policy
@@ -118,7 +115,7 @@ impl<C: CapConfig> MintCircuit<C> {
             .enforce_dummy_policy::<C>(&mut circuit)?;
 
         // Input/Change records should have identical user addresses
-        circuit.point_equal_gate(&witness.fee_ro.owner_addr.0, &witness.chg_ro.owner_addr.0)?;
+        circuit.enforce_point_equal(&witness.fee_ro.owner_addr.0, &witness.chg_ro.owner_addr.0)?;
 
         // Viewer memo is correctly constructed when `viewer_pk` is not null
         let b_dummy_viewing_pk = pub_input
@@ -139,7 +136,7 @@ impl<C: CapConfig> MintCircuit<C> {
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &MintWitnessVar,
         viewing_memo: &ViewableMemoVar,
-    ) -> Result<BoolVar, PlonkError> {
+    ) -> Result<BoolVar, CircuitError> {
         // 1. Prepare message to be encrypted: note (amount, asset_code, policy) are
         // public, thus no need to encrypt
         let mint_ro = &witness.mint_ro;
@@ -179,7 +176,7 @@ impl MintWitnessVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         witness: &MintWitness<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let mint_ro = RecordOpeningVar::new(circuit, &witness.mint_ro)?;
         let creator_sk = circuit.create_variable(fr_to_fq::<_, C::EmbeddedCurveParam>(
             witness.minter_keypair.address_secret_ref(),
@@ -230,7 +227,7 @@ impl MintPubInputVar {
     pub(crate) fn new<C: CapConfig>(
         circuit: &mut PlonkCircuit<C::ScalarField>,
         pub_input: &MintPublicInput<C>,
-    ) -> Result<Self, PlonkError> {
+    ) -> Result<Self, CircuitError> {
         let root = circuit.create_public_variable(pub_input.merkle_root.to_scalar())?;
         let native_asset_code = circuit.create_public_variable(pub_input.native_asset_code.0)?;
         let input_nullifier = circuit.create_public_variable(pub_input.input_nullifier.0)?;
@@ -276,8 +273,8 @@ mod tests {
     };
     use ark_ff::Zero;
     use ark_std::{format, UniformRand};
-    use jf_plonk::circuit::{Circuit, PlonkCircuit};
     use jf_primitives::merkle_tree::NodeValue;
+    use jf_relation::{Circuit, PlonkCircuit};
 
     type F = <Config as CapConfig>::ScalarField;
     type Fj = <Config as CapConfig>::EmbeddedCurveScalarField;

@@ -43,13 +43,13 @@ use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
     prf::{PrfKey, PRF},
+    rescue::Permutation as RescuePermutation,
     signatures::{
         schnorr,
         schnorr::{SchnorrSignatureScheme, Signature},
         SignatureScheme,
     },
 };
-use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
 use serde::{Deserialize, Serialize};
 

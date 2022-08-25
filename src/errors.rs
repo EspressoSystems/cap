@@ -18,6 +18,7 @@ use ark_serialize::SerializationError as ArkSerializationError;
 use ark_std::string::String;
 use displaydoc::Display;
 use jf_primitives::errors::PrimitivesError;
+use jf_relation::errors::CircuitError;
 
 /// All possible categories of error from Transaction API
 #[derive(Display, Debug)]
@@ -26,6 +27,8 @@ pub enum TxnApiError {
     FailedPrimitives(String),
     /// Plonk SNARK failed: {0}
     FailedSnark(String),
+    /// Constraint System err: {0:?}
+    FailedConstraintSystem(CircuitError),
     /// AssetCode verification failed: {0}
     FailedAssetCodeVerification(String),
     /// Credential creation failed: {0}
@@ -84,6 +87,12 @@ impl From<ArkSerializationError> for TxnApiError {
 impl From<DeserializationError> for TxnApiError {
     fn from(e: DeserializationError) -> Self {
         Self::DeserializationError(e)
+    }
+}
+
+impl From<CircuitError> for TxnApiError {
+    fn from(e: CircuitError) -> Self {
+        Self::FailedConstraintSystem(e)
     }
 }
 

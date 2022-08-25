@@ -22,7 +22,7 @@ use crate::{
 };
 use ark_ec::ProjectiveCurve;
 use ark_std::{format, string::ToString};
-use jf_plonk::circuit::Arithmetization;
+use jf_relation::Arithmetization;
 pub use params_builder::TxnsParams;
 
 impl<C: CapConfig> From<&FreezerPubKey<C>> for (C::ScalarField, C::ScalarField) {
