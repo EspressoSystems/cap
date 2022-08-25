@@ -742,13 +742,13 @@
     <span class="ident">aead</span>, <span class="ident">elgamal</span>,
     <span class="ident">elgamal::EncKey</span>,
     <span class="ident">prf</span>::{<span class="ident">PrfKey</span>, <span class="ident">PRF</span>},
+    <span class="ident">rescue::Permutation</span> <span class="kw">as</span> <span class="ident">RescuePermutation</span>,
     <span class="ident">signatures</span>::{
         <span class="ident">schnorr</span>,
         <span class="ident">schnorr</span>::{<span class="ident">SchnorrSignatureScheme</span>, <span class="ident">Signature</span>},
         <span class="ident">SignatureScheme</span>,
     },
 };
-<span class="kw">use</span> <span class="ident">jf_rescue::Permutation</span> <span class="kw">as</span> <span class="ident">RescuePermutation</span>;
 <span class="kw">use</span> <span class="ident">jf_utils</span>::{<span class="ident">hash_to_field</span>, <span class="ident">tagged_blob</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 

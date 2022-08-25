@@ -804,7 +804,6 @@
     <span class="ident">UniformRand</span>,
 };
 <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-    <span class="ident">circuit::Circuit</span>,
     <span class="ident">proof_system</span>::{
         <span class="ident">structs</span>::{<span class="ident">Proof</span>, <span class="ident">ProvingKey</span>, <span class="ident">UniversalSrs</span>, <span class="ident">VerifyingKey</span>},
         <span class="ident">PlonkKzgSnark</span>, <span class="ident">UniversalSNARK</span>,
@@ -815,6 +814,7 @@
     <span class="ident">merkle_tree</span>::{<span class="ident">AccMemberWitness</span>, <span class="ident">MerklePath</span>, <span class="ident">MerklePathNode</span>, <span class="ident">MerkleTree</span>, <span class="ident">NodeValue</span>},
     <span class="ident">signatures::schnorr</span>,
 };
+<span class="kw">use</span> <span class="ident">jf_relation::Circuit</span>;
 <span class="kw">use</span> <span class="ident">jf_utils</span>::{<span class="ident">deserialize_canonical_bytes</span>, <span class="ident">CanonicalBytes</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 

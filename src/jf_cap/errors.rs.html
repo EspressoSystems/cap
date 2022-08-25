@@ -95,6 +95,15 @@
 <span id="89">89</span>
 <span id="90">90</span>
 <span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -115,6 +124,7 @@
 <span class="kw">use</span> <span class="ident">ark_std::string::String</span>;
 <span class="kw">use</span> <span class="ident">displaydoc::Display</span>;
 <span class="kw">use</span> <span class="ident">jf_primitives::errors::PrimitivesError</span>;
+<span class="kw">use</span> <span class="ident">jf_relation::errors::CircuitError</span>;
 
 <span class="doccomment">/// All possible categories of error from Transaction API</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Display</span>, <span class="ident">Debug</span>)]</span>
@@ -123,6 +133,8 @@
     <span class="ident">FailedPrimitives</span>(<span class="ident">String</span>),
     <span class="doccomment">/// Plonk SNARK failed: {0}</span>
     <span class="ident">FailedSnark</span>(<span class="ident">String</span>),
+    <span class="doccomment">/// Constraint System err: {0:?}</span>
+    <span class="ident">FailedConstraintSystem</span>(<span class="ident">CircuitError</span>),
     <span class="doccomment">/// AssetCode verification failed: {0}</span>
     <span class="ident">FailedAssetCodeVerification</span>(<span class="ident">String</span>),
     <span class="doccomment">/// Credential creation failed: {0}</span>
@@ -181,6 +193,12 @@
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">DeserializationError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TxnApiError</span> {
     <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">e</span>: <span class="ident">DeserializationError</span>) -&gt; <span class="self">Self</span> {
         <span class="ident"><span class="self">Self</span>::DeserializationError</span>(<span class="ident">e</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CircuitError</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TxnApiError</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">e</span>: <span class="ident">CircuitError</span>) -&gt; <span class="self">Self</span> {
+        <span class="ident"><span class="self">Self</span>::FailedConstraintSystem</span>(<span class="ident">e</span>)
     }
 }
 

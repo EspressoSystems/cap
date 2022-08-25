@@ -455,12 +455,6 @@
 <span id="449">449</span>
 <span id="450">450</span>
 <span id="451">451</span>
-<span id="452">452</span>
-<span id="453">453</span>
-<span id="454">454</span>
-<span id="455">455</span>
-<span id="456">456</span>
-<span id="457">457</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -486,11 +480,8 @@
 };
 <span class="kw">use</span> <span class="ident">ark_ff::Zero</span>;
 <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">format</span>, <span class="ident">rand::SeedableRng</span>, <span class="ident">string::ToString</span>, <span class="ident">vec::Vec</span>};
-<span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-    <span class="ident">circuit</span>::{<span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>},
-    <span class="ident">errors::PlonkError</span>,
-};
 <span class="kw">use</span> <span class="ident">jf_primitives::circuit::merkle_tree::AccMemberWitnessVar</span>;
+<span class="kw">use</span> <span class="ident">jf_relation</span>::{<span class="ident">errors::CircuitError</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>};
 <span class="kw">use</span> <span class="ident">jf_utils::fr_to_fq</span>;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">FreezeCircuit</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>);
@@ -540,7 +531,7 @@
     <span class="kw">fn</span> <span class="ident">build_unchecked</span>(
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
         <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">FreezePublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">usize</span>), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="self">Self</span>, <span class="ident">usize</span>), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">witness</span> <span class="op">=</span> <span class="ident">FreezeWitnessVar::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">witness</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">pub_input</span> <span class="op">=</span> <span class="ident">FreezePubInputVar::new</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="ident">pub_input</span>)<span class="question-mark">?</span>;
@@ -549,16 +540,16 @@
         <span class="kw">let</span> <span class="ident">first_input</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">input_ros</span>[<span class="number">0</span>];
         <span class="kw">let</span> <span class="ident">first_output</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">witness</span>.<span class="ident">output_ros</span>[<span class="number">0</span>];
         <span class="comment">// The first input/output are with native asset definition</span>
-        <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">first_input</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">first_input</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
         <span class="ident">first_input</span>.<span class="ident">policy</span>.<span class="ident">enforce_dummy_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">first_output</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">first_output</span>.<span class="ident">asset_code</span>, <span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>)<span class="question-mark">?</span>;
         <span class="ident">first_output</span>
             .<span class="ident">policy</span>
             .<span class="ident">enforce_dummy_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
         <span class="comment">// The first input/output are not frozen</span>
         <span class="kw">let</span> <span class="ident">unfrozen</span> <span class="op">=</span> <span class="ident">C::ScalarField::zero</span>();
-        <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">first_input</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">unfrozen</span>)<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">constant_gate</span>(<span class="ident">first_output</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">unfrozen</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_constant</span>(<span class="ident">first_input</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">unfrozen</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_constant</span>(<span class="ident">first_output</span>.<span class="ident">freeze_flag</span>.<span class="ident">into</span>(), <span class="ident">unfrozen</span>)<span class="question-mark">?</span>;
         <span class="comment">// Fee balance</span>
         <span class="ident">circuit</span>.<span class="ident">add_gate</span>(<span class="ident">first_output</span>.<span class="ident">amount</span>, <span class="ident">pub_input</span>.<span class="ident">fee</span>, <span class="ident">first_input</span>.<span class="ident">amount</span>)<span class="question-mark">?</span>;
         <span class="comment">// Proof of spending</span>
@@ -569,8 +560,8 @@
             <span class="ident">witness</span>.<span class="ident">fee_sk</span>,
             <span class="ident">Spender::User</span>,
         )<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
-        <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">nullifier</span>, <span class="ident">pub_input</span>.<span class="ident">input_nullifiers</span>[<span class="number">0</span>])<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
+        <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">nullifier</span>, <span class="ident">pub_input</span>.<span class="ident">input_nullifiers</span>[<span class="number">0</span>])<span class="question-mark">?</span>;
 
         <span class="comment">// Check freezing inputs/outputs consistency</span>
         <span class="kw">for</span> (<span class="ident">ro_in</span>, <span class="ident">ro_out</span>) <span class="kw">in</span> <span class="ident">witness</span>
@@ -586,9 +577,9 @@
                 <span class="ident">circuit</span>.<span class="ident">one</span>(),
             )<span class="question-mark">?</span>;
             <span class="comment">// Output ro preserves the amount, address, asset definition of input ro</span>
-            <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">ro_in</span>.<span class="ident">amount</span>, <span class="ident">ro_out</span>.<span class="ident">amount</span>)<span class="question-mark">?</span>;
-            <span class="ident">circuit</span>.<span class="ident">point_equal_gate</span>(<span class="kw-2">&amp;</span><span class="ident">ro_in</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">ro_out</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
-            <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">ro_in</span>.<span class="ident">asset_code</span>, <span class="ident">ro_out</span>.<span class="ident">asset_code</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">ro_in</span>.<span class="ident">amount</span>, <span class="ident">ro_out</span>.<span class="ident">amount</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">enforce_point_equal</span>(<span class="kw-2">&amp;</span><span class="ident">ro_in</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">ro_out</span>.<span class="ident">owner_addr</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">ro_in</span>.<span class="ident">asset_code</span>, <span class="ident">ro_out</span>.<span class="ident">asset_code</span>)<span class="question-mark">?</span>;
             <span class="ident">ro_in</span>
                 .<span class="ident">policy</span>
                 .<span class="ident">enforce_equal_policy</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>, <span class="kw-2">&amp;</span><span class="ident">ro_out</span>.<span class="ident">policy</span>)<span class="question-mark">?</span>;
@@ -601,7 +592,7 @@
             .<span class="ident">zip</span>(<span class="ident">pub_input</span>.<span class="ident">output_commitments</span>.<span class="ident">iter</span>())
         {
             <span class="kw">let</span> <span class="ident">rc_out</span> <span class="op">=</span> <span class="ident">ro_out</span>.<span class="ident">compute_record_commitment</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="ident">circuit</span>)<span class="question-mark">?</span>;
-            <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">rc_out</span>, <span class="ident">expected_comm</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">rc_out</span>, <span class="ident">expected_comm</span>)<span class="question-mark">?</span>;
         }
 
         <span class="comment">// Check freezing inputs</span>
@@ -632,10 +623,10 @@
                 <span class="ident">Spender::Freezer</span>,
             )<span class="question-mark">?</span>;
             <span class="comment">// enforce correct root if record is not dummy</span>
-            <span class="kw">let</span> <span class="ident">is_correct_mt_root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">check_equal</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
+            <span class="kw">let</span> <span class="ident">is_correct_mt_root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">is_equal</span>(<span class="ident">root</span>, <span class="ident">pub_input</span>.<span class="ident">merkle_root</span>)<span class="question-mark">?</span>;
             <span class="ident">circuit</span>.<span class="ident">logic_or_gate</span>(<span class="ident">is_correct_mt_root</span>, <span class="ident">b_is_dummy_ro</span>)<span class="question-mark">?</span>;
             <span class="comment">// check nullifier is correctly computed</span>
-            <span class="ident">circuit</span>.<span class="ident">equal_gate</span>(<span class="ident">nullifier</span>, <span class="ident">expected_nl</span>)<span class="question-mark">?</span>;
+            <span class="ident">circuit</span>.<span class="ident">enforce_equal</span>(<span class="ident">nullifier</span>, <span class="ident">expected_nl</span>)<span class="question-mark">?</span>;
         }
 
         <span class="kw">let</span> <span class="ident">n_constraints</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">num_gates</span>();
@@ -658,22 +649,22 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeWitness</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">input_ros</span> <span class="op">=</span> <span class="ident">witness</span>
             .<span class="ident">input_ros</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="ident">ro</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">input_acc_member_witnesses</span> <span class="op">=</span> <span class="ident">witness</span>
             .<span class="ident">input_acc_member_witnesses</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">acc_wit</span><span class="op">|</span> <span class="ident">AccMemberWitnessVar::new</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">circuit</span>, <span class="ident">acc_wit</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">output_ros</span> <span class="op">=</span> <span class="ident">witness</span>
             .<span class="ident">output_ros</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">ro</span><span class="op">|</span> <span class="ident">RecordOpeningVar::new</span>(<span class="ident">circuit</span>, <span class="ident">ro</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">fee_sk</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(
             <span class="ident">witness</span>.<span class="ident">fee_keypair</span>.<span class="ident">address_secret_ref</span>(),
         ))<span class="question-mark">?</span>;
@@ -683,7 +674,7 @@
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span><span class="ident">keypair</span><span class="op">|</span> {
                 <span class="ident">circuit</span>.<span class="ident">create_variable</span>(<span class="ident">fr_to_fq</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">keypair</span>.<span class="ident">sec_key</span>))
             })
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">input_ros</span>,
             <span class="ident">input_acc_member_witnesses</span>,
@@ -708,7 +699,7 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
         <span class="ident">circuit</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span>,
         <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">FreezePublicInput</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">merkle_root</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">pub_input</span>.<span class="ident">merkle_root</span>.<span class="ident">to_scalar</span>())<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">native_asset_code</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">pub_input</span>.<span class="ident">native_asset_code</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">C::ScalarField::from</span>(<span class="ident">pub_input</span>.<span class="ident">fee</span>.<span class="number">0</span>))<span class="question-mark">?</span>;
@@ -716,12 +707,12 @@
             .<span class="ident">input_nullifiers</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">nl</span><span class="op">|</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">nl</span>.<span class="number">0</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">output_commitments</span> <span class="op">=</span> <span class="ident">pub_input</span>
             .<span class="ident">output_commitments</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">comm</span><span class="op">|</span> <span class="ident">circuit</span>.<span class="ident">create_public_variable</span>(<span class="ident">comm</span>.<span class="number">0</span>))
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">merkle_root</span>,
             <span class="ident">native_asset_code</span>,
@@ -745,11 +736,8 @@
         <span class="ident">utils::params_builder::FreezeParamsBuilder</span>,
     };
     <span class="kw">use</span> <span class="ident">ark_std</span>::{<span class="ident">vec</span>, <span class="ident">vec::Vec</span>};
-    <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-        <span class="ident">circuit</span>::{<span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>},
-        <span class="ident">errors::PlonkError</span>,
-    };
     <span class="kw">use</span> <span class="ident">jf_primitives::merkle_tree::NodeValue</span>;
+    <span class="kw">use</span> <span class="ident">jf_relation</span>::{<span class="ident">errors::CircuitError</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>};
 
     <span class="kw">type</span> <span class="ident">F</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::ScalarField</span>;
 
@@ -783,7 +771,7 @@
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">FreezeWitness</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
         <span class="ident">pub_input</span>: <span class="kw-2">&amp;</span><span class="ident">FreezePublicInput</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
         <span class="ident">witness_is_valid</span>: <span class="ident">bool</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">pub_input_vec</span> <span class="op">=</span> <span class="ident">pub_input</span>.<span class="ident">to_scalars</span>();
         <span class="kw">let</span> (<span class="ident">circuit</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">FreezeCircuit::build_unchecked</span>(<span class="ident">witness</span>, <span class="ident">pub_input</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">verify</span> <span class="op">=</span> <span class="ident">circuit</span>.<span class="number">0</span>.<span class="ident">check_circuit_satisfiability</span>(<span class="kw-2">&amp;</span><span class="ident">pub_input_vec</span>[..]);
@@ -796,7 +784,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_freeze_circuit_build</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_freeze_circuit_build</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">rng</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">tree_depth</span> <span class="op">=</span> <span class="number">2</span>;
         <span class="kw">let</span> <span class="ident">fee_keypair</span> <span class="op">=</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>);

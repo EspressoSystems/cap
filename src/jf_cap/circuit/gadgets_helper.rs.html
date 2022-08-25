@@ -252,33 +252,33 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">circuit::structs::UserAddressVar</span>, <span class="ident">prelude::CapConfig</span>};
 <span class="kw">use</span> <span class="ident">ark_ec</span>::{<span class="ident">twisted_edwards_extended::GroupAffine</span>, <span class="ident">AffineCurve</span>};
-<span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-    <span class="ident">circuit</span>::{
-        <span class="ident">customized</span>::{<span class="ident">ecc::PointVariable</span>, <span class="ident">rescue::RescueGadget</span>},
-        <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>,
-    },
-    <span class="ident">errors::PlonkError</span>,
+<span class="kw">use</span> <span class="ident">jf_primitives::circuit</span>::{<span class="ident">prf::PrfGadget</span>, <span class="ident">rescue::RescueGadget</span>};
+<span class="kw">use</span> <span class="ident">jf_relation</span>::{
+    <span class="ident">errors::CircuitError</span>, <span class="ident">gadgets::ecc::PointVariable</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>, <span class="ident">Variable</span>,
 };
-<span class="kw">use</span> <span class="ident">jf_primitives::circuit::prf::PrfGadget</span>;
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait</span> <span class="ident">TransactionGadgetsHelper</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">derive_internal_asset_code</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">seed</span>: <span class="ident">Variable</span>,
         <span class="ident">aux</span>: <span class="ident">Variable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">derive_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">secret_key</span>: <span class="ident">Variable</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UserAddressVar</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span>;
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span>;
+
+    <span class="kw">fn</span> <span class="ident">derive_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">secret_key</span>: <span class="ident">Variable</span>)
+        -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UserAddressVar</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span>;
+
     <span class="kw">fn</span> <span class="ident">derive_nullifier_key</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">secret_key</span>: <span class="ident">Variable</span>,
         <span class="ident">public_key</span>: <span class="kw-2">&amp;</span><span class="ident">PointVariable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span>;
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span>;
+
     <span class="kw">fn</span> <span class="ident">nullify</span>(
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">key</span>: <span class="ident">Variable</span>,
         <span class="ident">uid</span>: <span class="ident">Variable</span>,
         <span class="ident">commitment</span>: <span class="ident">Variable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span>;
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span> <span class="ident">TransactionGadgetsHelper</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PlonkCircuit</span><span class="op">&lt;</span><span class="ident">C::ScalarField</span><span class="op">&gt;</span> {
@@ -286,11 +286,14 @@
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">seed</span>: <span class="ident">Variable</span>,
         <span class="ident">aux</span>: <span class="ident">Variable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">eval_prf</span>(<span class="ident">seed</span>, <span class="kw-2">&amp;</span>[<span class="ident">aux</span>])
     }
 
-    <span class="kw">fn</span> <span class="ident">derive_user_address</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">secret_key</span>: <span class="ident">Variable</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UserAddressVar</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">derive_user_address</span>(
+        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+        <span class="ident">secret_key</span>: <span class="ident">Variable</span>,
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UserAddressVar</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">base</span> <span class="op">=</span> <span class="ident">GroupAffine</span>::<span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span><span class="ident">::prime_subgroup_generator</span>();
         <span class="kw">let</span> <span class="ident">address_var</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">fixed_base_scalar_mul</span>(<span class="ident">secret_key</span>, <span class="kw-2">&amp;</span><span class="ident">base</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">UserAddressVar</span>(<span class="ident">address_var</span>))
@@ -300,7 +303,7 @@
         <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
         <span class="ident">secret_key</span>: <span class="ident">Variable</span>,
         <span class="ident">public_key</span>: <span class="kw-2">&amp;</span><span class="ident">PointVariable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">shared_key</span> <span class="op">=</span>
             <span class="self">self</span>.<span class="ident">variable_base_scalar_mul</span>::<span class="op">&lt;</span><span class="ident">C::EmbeddedCurveParam</span><span class="op">&gt;</span>(<span class="ident">secret_key</span>, <span class="ident">public_key</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">zero</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">zero</span>();
@@ -315,7 +318,7 @@
         <span class="ident">key</span>: <span class="ident">Variable</span>,
         <span class="ident">uid</span>: <span class="ident">Variable</span>,
         <span class="ident">commitment</span>: <span class="ident">Variable</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Variable</span>, <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">eval_prf</span>(<span class="ident">key</span>, <span class="kw-2">&amp;</span>[<span class="ident">uid</span>, <span class="ident">commitment</span>])
     }
 }
@@ -331,10 +334,7 @@
     <span class="kw">use</span> <span class="ident">ark_ec::ProjectiveCurve</span>;
     <span class="kw">use</span> <span class="ident">ark_ff::One</span>;
     <span class="kw">use</span> <span class="ident">ark_std::UniformRand</span>;
-    <span class="kw">use</span> <span class="ident">jf_plonk</span>::{
-        <span class="ident">circuit</span>::{<span class="ident">customized::ecc::Point</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>},
-        <span class="ident">errors::PlonkError</span>,
-    };
+    <span class="kw">use</span> <span class="ident">jf_relation</span>::{<span class="ident">errors::CircuitError</span>, <span class="ident">gadgets::ecc::Point</span>, <span class="ident">Circuit</span>, <span class="ident">PlonkCircuit</span>};
     <span class="kw">use</span> <span class="ident">jf_utils::fr_to_fq</span>;
 
     <span class="kw">type</span> <span class="ident">F</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::ScalarField</span>;
@@ -342,7 +342,7 @@
     <span class="kw">type</span> <span class="ident">EmbeddedCurveParam</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Config</span> <span class="kw">as</span> <span class="ident">CapConfig</span><span class="op">&gt;</span><span class="ident">::EmbeddedCurveParam</span>;
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_internal_asset_code</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_internal_asset_code</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
 
@@ -369,7 +369,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_user_address</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_user_address</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
@@ -392,7 +392,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_nullifier_key</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_nullifier_key</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">circuit</span> <span class="op">=</span> <span class="ident">PlonkCircuit</span>::<span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span><span class="ident">::new_turbo_plonk</span>();
         <span class="kw">let</span> <span class="ident">user_key_pair</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::keys::UserKeyPair</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::generate</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>);
@@ -445,7 +445,7 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_nullifier</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">PlonkError</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">test_nullifier</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">CircuitError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prng</span> <span class="op">=</span> <span class="ident">ark_std::test_rng</span>();
         <span class="kw">let</span> <span class="ident">nullifier_key</span> <span class="op">=</span> <span class="ident">NullifierKey</span>::<span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="kw-2">&amp;</span><span class="ident">Fj::rand</span>(<span class="kw-2">&amp;mut</span> <span class="ident">prng</span>));
         <span class="kw">let</span> <span class="ident">uid</span> <span class="op">=</span> <span class="number">10u64</span>;
