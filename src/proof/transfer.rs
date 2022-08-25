@@ -43,11 +43,11 @@ use jf_plonk::{
     },
     transcript::SolidityTranscript,
 };
-use jf_relation::{Circuit};
 use jf_primitives::{
     merkle_tree::{AccMemberWitness, MerklePath, MerklePathNode, MerkleTree, NodeValue},
     signatures::schnorr,
 };
+use jf_relation::Circuit;
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
 use serde::{Deserialize, Serialize};
 

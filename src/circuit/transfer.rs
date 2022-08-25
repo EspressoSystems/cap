@@ -416,8 +416,7 @@ mod tests {
         utils::params_builder::TransferParamsBuilder,
     };
     use ark_ff::Zero;
-    use ark_std::string::ToString;
-    use ark_std::{vec, vec::Vec, UniformRand};
+    use ark_std::{string::ToString, vec, vec::Vec, UniformRand};
     use jf_primitives::merkle_tree::{MerklePathNode, NodeValue};
     use jf_relation::{errors::CircuitError, Circuit, PlonkCircuit};
 
