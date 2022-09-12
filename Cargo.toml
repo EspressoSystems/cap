@@ -49,7 +49,7 @@ ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"],
 ark-ed-on-bn254 = { version = "0.3.0", default-features = false, optional = true }
 
 [dev-dependencies]
-criterion = "0.3.1"
+criterion = "0.4.0"
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
 
