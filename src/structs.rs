@@ -63,7 +63,7 @@ pub struct InternalAssetCode(pub(crate) BaseField);
 
 /// The random seed used in AssetCode derivation
 #[tagged_blob("ASSET_SEED")]
-#[derive(Debug, Copy, Clone, Default, CanonicalSerialize, CanonicalDeserialize, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, CanonicalSerialize, CanonicalDeserialize, PartialEq, Eq)]
 pub struct AssetCodeSeed(pub(crate) BaseField);
 
 impl AssetCodeSeed {
@@ -1343,7 +1343,7 @@ impl ViewableMemo {
 }
 
 /// Transfer ViewableMemo decrypted
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ViewableData {
     /// asset code of the associated policy
     pub asset_code: AssetCode,
