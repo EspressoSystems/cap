@@ -39,13 +39,14 @@ use ark_std::{
     vec::Vec,
     UniformRand,
 };
+use derive_more::{Deref, From, Into};
 use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
     prf::{PrfKey, PRF},
     signatures::{
         schnorr,
-        schnorr::{SchnorrSignatureScheme, Signature, VerKey},
+        schnorr::{SchnorrSignatureScheme, Signature},
         SignatureScheme,
     },
 };
@@ -53,7 +54,27 @@ use jf_rescue::Permutation as RescuePermutation;
 use jf_utils::{hash_to_field, tagged_blob};
 
 /// Public address for a user to send assets to/from.
-pub type UserAddress = schnorr::VerKey<CurveParam>;
+#[tagged_blob("ADDR")]
+#[derive(
+    Clone,
+    Default,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+    Deref,
+    From,
+    Into,
+)]
+pub struct UserAddress(schnorr::VerKey<CurveParam>);
+
+impl From<&UserAddress> for (BaseField, BaseField) {
+    fn from(addr: &UserAddress) -> Self {
+        (&**addr).into()
+    }
+}
 
 /// The public key of a `UserKeyPair`
 #[tagged_blob("USERPUBKEY")]
@@ -152,7 +173,7 @@ impl UserKeyPair {
 
     /// Getter for public address
     pub fn address(&self) -> UserAddress {
-        self.addr_keypair.ver_key()
+        self.addr_keypair.ver_key().into()
     }
 
     /// Getter for the reference to the address secret key
@@ -331,7 +352,7 @@ impl ViewerKeyPair {
             let visible_data =
                 ViewableData::from_xfr_data_and_asset(asset_definition, chunk, InOrOut::In)?;
             if visible_data.user_address.is_none()
-                || visible_data.user_address.as_ref().unwrap() != &VerKey::default()
+                || visible_data.user_address.as_ref().unwrap() != &UserAddress::default()
             {
                 visible_data_input.push(visible_data);
             }
