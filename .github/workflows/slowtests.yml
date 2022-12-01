@@ -1,0 +1,41 @@
+name: Slow Tests
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  RUSTFLAGS: "-C overflow-checks=on"
+  CARGO_HUSKY_DONT_INSTALL_HOOKS: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel Outdated Builds
+        uses: styfle/cancel-workflow-action@0.11.0
+        with:
+          all_but_latest: true
+          access_token: ${{ github.token }}
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust 1.64 toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.64
+          components: clippy, rustfmt
+
+      - name: Enable Rust Caching
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Test
+        run: |
+          cargo test --release --no-default-features --features bls12_377 -- -Zunstable-options --report-time
+          cargo test --release --no-default-features --features bls12_381 -- -Zunstable-options --report-time
+          cargo test --release --no-default-features --features bn254     -- -Zunstable-options --report-time

@@ -5,9 +5,11 @@ on:
     branches:
       - main
   pull_request:
-    branches:
-      - main
   workflow_dispatch:
+
+env:
+  RUSTFLAGS: "-C overflow-checks=on"
+  CARGO_HUSKY_DONT_INSTALL_HOOKS: "true"
 
 jobs:
   build:
@@ -22,47 +24,37 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install minimal nightly with rustfmt
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          components: rustfmt
 
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust 1.64 toolchain
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: default
-          toolchain: stable
-          override: true
-          default: true
-          components: rustfmt, clippy
+          toolchain: 1.64
+          components: clippy, rustfmt
 
       - name: Enable Rust Caching
         uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
 
       - name: Format Check
-        run: cargo +nightly fmt -- --check
+        run: cargo fmt -- --check
 
       - name: Clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ github.token }}
-          args: -- -D warnings
+        run: |
+          cargo clippy -- -D warnings
 
       - name: Audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ github.token }}
+        run: cargo audit --ignore RUSTSEC-2022-0013
 
       - name: Check Bench
         run: cargo bench --no-run
 
       - name: Check Ignored Tests
-        run: cargo test --no-run -- --ignored
+        run: cargo test --release --no-run -- --ignored
 
       - name: Test
-        run: bash ./scripts/run_tests.sh
+        run: |
+          cargo test --release --no-default-features --features bn254 -- -Zunstable-options --report-time
 
       - name: Generate Documentation
         run: |
