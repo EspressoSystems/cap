@@ -983,7 +983,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "sha2 0.9.9",
+ "sha2",
  "sha3 0.10.1",
  "structopt",
 ]
@@ -1050,7 +1050,7 @@ dependencies = [
  "rand_chacha",
  "rayon",
  "serde",
- "sha2 0.10.2",
+ "sha2",
  "zeroize",
 ]
 
@@ -1095,7 +1095,7 @@ dependencies = [
  "jf-utils-derive",
  "rayon",
  "serde",
- "sha2 0.10.2",
+ "sha2",
  "tagged-base64",
 ]
 
@@ -1708,19 +1708,6 @@ dependencies = [
  "itoa 1.0.1",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "sha2"
-version = "0.9.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d58a1e1bf39749807d89cf2d98ac2dfa0ff1cb3faa38fbb64dd88ac8013d800"
-dependencies = [
- "block-buffer 0.9.0",
- "cfg-if",
- "cpufeatures",
- "digest 0.9.0",
- "opaque-debug",
 ]
 
 [[package]]
