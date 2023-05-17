@@ -3,7 +3,7 @@
 .idea
 /target
 cargo-system-config.toml
-# Cargo.lock
+.pre-commit-config.yaml
 
 # Test coverage (grcov)
 default.profraw
