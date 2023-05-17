@@ -15,22 +15,20 @@
   inputs.pre-commit-hooks.url = "github:cachix/pre-commit-hooks.nix";
   inputs.pre-commit-hooks.inputs.nixpkgs.follows = "nixpkgs";
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat, rust-overlay, pre-commit-hooks, ... }:
+  outputs = { self, nixpkgs, flake-utils, flake-compat, rust-overlay
+    , pre-commit-hooks, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ 
-          (import rust-overlay)
-        ];
+        overlays = [ (import rust-overlay) ];
         pkgs = import nixpkgs { inherit system overlays; };
-        nightlyToolchain = pkgs.rust-bin.selectLatestNightlyWith
-          (toolchain: toolchain.minimal.override { extensions = [ "rustfmt" ]; });
+        nightlyToolchain = pkgs.rust-bin.selectLatestNightlyWith (toolchain:
+          toolchain.minimal.override { extensions = [ "rustfmt" ]; });
 
         stableToolchain = pkgs.rust-bin.stable.latest.minimal.override {
           extensions = [ "clippy" "llvm-tools-preview" "rust-src" ];
-          targets = ["wasm32-unknown-unknown"];
+          targets = [ "wasm32-unknown-unknown" ];
         };
-      in with pkgs;
-      {
+      in with pkgs; {
         check = {
           pre-commit-check = pre-commit-hooks.lib.${system}.run {
             src = ./.;
@@ -76,7 +74,8 @@
             clang-tools_15
             clangStdenv
             llvm_15
-          ] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.Security ];
+          ] ++ lib.optionals stdenv.isDarwin
+            [ darwin.apple_sdk.frameworks.Security ];
 
           shellHook = ''
             export RUST_BACKTRACE=full
@@ -92,9 +91,8 @@
             export AR="${llvm_15}/bin/llvm-ar"
             export CFLAGS="-mcpu=generic"
           ''
-          # install pre-commit hooks
-          + self.check.${system}.pre-commit-check.shellHook;
+            # install pre-commit hooks
+            + self.check.${system}.pre-commit-check.shellHook;
         };
-      }
-    );
+      });
 }
