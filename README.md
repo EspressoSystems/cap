@@ -1,29 +1,33 @@
 # Configurable Asset Privacy (CAP) protocol -- a library in the Jellyfish ecosystem
 
-
 ## Development environment setup
 
-### Install RUST
+We recommend the following tools:
 
-We recommend to use nix for installing the correct version of rust and
-additional libraries:
-```bash
-> curl -L https://nixos.org/nix/install | sh
-> . ~/.nix-profile/etc/profile.d/nix.sh
-```
+- [`nix`](https://nixos.org/download.html)
+- [`direnv`](https://direnv.net/docs/installation.html)
+
+Run `direnv allow` at the repo root. You should see dependencies (including Rust) being installed.
+Alternatively, enter the nix-shell manually via `nix develop`.
+
+You can check you are in the correct development environment by running `which cargo`, which should print
+something like `/nix/store/2gb31jhahrm59n3lhpv1lw0wfax9cf9v-rust-minimal-1.69.0/bin/cargo`;
+and running `echo $CARGO_HOME` should print `~/.cargo-nix`.
 
 ### Compiling the project for the first time
 
 ```bash
-> nix-shell
+> nix develop
 > cargo build
 ```
 
-### Git Hooks
+### WASM target
 
-We use [`cargo-husky`](https://github.com/rhysd/cargo-husky) to automatically load any scripts under `.cargo-husky/hooks` into `.git/hooks`.
+`jf-cap` can be compiled to `wasm32-unknown-unknown` target, simply run:
 
-Changes made to any `.cargo-husky/hooks` will be automatically synced to `.git/` every time you run `cargo test` -- no special extra command to run.
+```
+./scripts/build_wasm.sh
+```
 
 ### Tests
 
@@ -31,7 +35,7 @@ Changes made to any `.cargo-husky/hooks` will be automatically synced to `.git/`
 > cargo test --release
 ```
 
-Note that by default the *release* mode does not check integers overflow.
+Note that by default the _release_ mode does not check integers overflow.
 In order to enforce this check run:
 
 ```
@@ -40,7 +44,7 @@ In order to enforce this check run:
 
 #### Test coverage
 
-We use [grcov](https://github.com/mozilla/grcov) for test coverage 
+We use [grcov](https://github.com/mozilla/grcov) for test coverage
 
 ```
 > ./scripts/test_coverage.sh
@@ -64,25 +68,26 @@ To format your code run
 
 ### Updating non-cargo dependencies
 
-- To update the [nix packages](https://github.com/NixOS/nixpkgs) run `./nix/update-nix`.
-- To update the [rust overlay](https://github.com/oxalica/rust-overlay) run
-  `./nix/update-rust-overlay`.
+Run `nix flake update`.
+If you would like to pin other versions, edit `flake.nix` beforehand. Commit the lock file when happy.
 
-To use the updates enter a new `nix-shell`.
+To update only a single input specify it as the argument, for example
 
-### Testing the nix-shell dev environment on other platforms
-Refer to the [nix/vagrant](./nix/vagrant/) directory.
+```
+nix flake update github:oxalica/rust-overlay
+```
 
 ### Benchmarks
 
 #### Transactions generation/verification
 
-Running the benchmarks produces a csv file containing the information about the note being benched 
+Running the benchmarks produces a csv file containing the information about the note being benched
 (type, number of inputs/outputs, number of constraints, size in KB etc...) as well as the running time.
 
-Benchmarks can be run 
-  * with or without [asm optimization](https://github.com/arkworks-rs/algebra#assembly-backend-for-field-arithmetic)
-  * using all cores or a single core
+Benchmarks can be run
+
+- with or without [asm optimization](https://github.com/arkworks-rs/algebra#assembly-backend-for-field-arithmetic)
+- using all cores or a single core
 
 ```
 >./scripts/run_benchmarks.sh --help
@@ -91,21 +96,18 @@ Usage: ./scripts/run_benchmarks.sh [--(no-)asm] [--(no-)multi_threads] [-h|--hel
 	-h, --help: Prints help
 
 # By default no asm and no multicore
-> ./scripts/run_benchmarks.sh                         
+> ./scripts/run_benchmarks.sh
 Multi-threads: OFF
 Asm feature: OFF
 ...
 
 # Activate asm and multicore
-> ./scripts/run_benchmarks.sh --asm --multi_threads 
+> ./scripts/run_benchmarks.sh --asm --multi_threads
 Multi-threads: ON
 Asm feature: ON
 ```
 
-The csv files can be found at `/tmp/{note_description}_cap_benchmark.csv`, 
-    e.g. `/tmp/transfer_note_cap_benchmark.csv`. 
+The csv files can be found at `/tmp/{note_description}_cap_benchmark.csv`,
+e.g. `/tmp/transfer_note_cap_benchmark.csv`.
 
 The criterion report can be found at `target/criterion/report/index.html`.
-
-
-
