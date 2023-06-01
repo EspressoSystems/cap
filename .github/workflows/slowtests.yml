@@ -8,7 +8,6 @@ on:
 
 env:
   RUSTFLAGS: "-C overflow-checks=on"
-  CARGO_HUSKY_DONT_INSTALL_HOOKS: "true"
 
 jobs:
   build:
