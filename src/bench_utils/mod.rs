@@ -30,7 +30,6 @@ use ark_std::{
     vec,
     vec::Vec,
 };
-use percentage::Percentage;
 use rand::{CryptoRng, RngCore};
 
 pub const GEN: &str = "Gen";
@@ -94,11 +93,10 @@ pub fn compute_title_simple(
     proving_key_size: usize,
     verifying_key_size: usize,
 ) -> String {
-    let utility_ratio =
-        Percentage::from_decimal((n_constraints as f64) / (domain_size as f64)).value() * (100_f64);
+    let utility_ratio = (n_constraints as f64) / (domain_size as f64) * 100_f64;
 
     format!(
-        "{}-{}-{}-{}-{}-{}-{}-{:.0}-{}-{}-{}",
+        "{}-{}-{}-{}-{}-{}-{}-{:.2}%-{}-{}-{}",
         number_threads(),
         fun_desc,
         num_inputs,

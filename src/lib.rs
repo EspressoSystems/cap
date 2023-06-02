@@ -152,6 +152,7 @@ extern crate derive_more;
 #[macro_use]
 extern crate derivative;
 
+#[cfg(feature = "dev")]
 pub mod bench_utils;
 pub(crate) mod circuit;
 pub mod config;

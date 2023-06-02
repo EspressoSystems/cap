@@ -45,7 +45,7 @@ jobs:
         run: cargo audit --ignore RUSTSEC-2022-0013
 
       - name: Check Bench
-        run: cargo bench --no-run
+        run: cargo bench --no-run --features dev
 
       - name: Check Ignored Tests
         run: cargo test --release --no-run -- --ignored
