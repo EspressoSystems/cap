@@ -33,10 +33,10 @@ use ark_std::{
 };
 use jf_primitives::{
     aead,
-    commitment::Commitment as RescueCommitment,
+    commitment::{CommitmentScheme, FixedLengthRescueCommitment},
     elgamal,
     merkle_tree::{AccMemberWitness, NodeValue},
-    prf::{PrfKey, PRF},
+    prf::{RescuePRF, PRF},
     rescue::Permutation,
     signatures::schnorr::{self, Signature},
 };
@@ -118,9 +118,7 @@ impl<C: CapConfig> InternalAssetCode<C> {
 
     // internal logic of deriving an asset code from seed and digest, both as scalar
     pub(crate) fn new_internal(seed: AssetCodeSeed<C>, digest: AssetCodeDigest<C>) -> Self {
-        let prf_key = PrfKey::from(seed.0);
-        let scalar = PRF::new(1, 1).eval(&prf_key, &[digest.0]).unwrap()[0];
-        Self(scalar)
+        Self(RescuePRF::<C::ScalarField, 1, 1>::evaluate(&[seed.0], &[digest.0]).unwrap()[0])
     }
 }
 
@@ -1032,31 +1030,30 @@ impl<C: CapConfig> RecordOpening<C> {
 
         let reveal_threshold = C::ScalarField::from(self.asset_def.policy.reveal_threshold.0);
 
-        let comm = RescueCommitment::new(12)
-            .commit(
-                &[
-                    C::ScalarField::from(self.amount.0),
-                    self.asset_def.code.0,
-                    user_pubkey_x,
-                    user_pubkey_y,
-                    viewer_pubkey_x,
-                    viewer_pubkey_y,
-                    cred_pubkey_x,
-                    cred_pubkey_y,
-                    freezer_pubkey_x,
-                    freezer_pubkey_y,
-                    reveal_map_and_freeze_flag,
-                    reveal_threshold,
-                ],
-                &self.blind.0,
-            )
-            .unwrap();
+        let comm = FixedLengthRescueCommitment::<C::ScalarField, 12, 13>::commit(
+            &[
+                C::ScalarField::from(self.amount.0),
+                self.asset_def.code.0,
+                user_pubkey_x,
+                user_pubkey_y,
+                viewer_pubkey_x,
+                viewer_pubkey_y,
+                cred_pubkey_x,
+                cred_pubkey_y,
+                freezer_pubkey_x,
+                freezer_pubkey_y,
+                reveal_map_and_freeze_flag,
+                reveal_threshold,
+            ],
+            Some(&self.blind.0),
+        )
+        .unwrap();
         RecordCommitment(comm)
     }
 }
 
 // The actual credential which is basically a Schnorr signature over attributes
-#[tagged_blob("CRED")]
+#[tagged("CRED")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),

@@ -42,7 +42,7 @@ use ark_std::{
 use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
-    prf::{PrfKey, PRF},
+    prf::{RescuePRF, PRF},
     rescue::Permutation as RescuePermutation,
     signatures::{
         schnorr,
@@ -587,11 +587,12 @@ impl<C: CapConfig> NullifierKey<C> {
     // nl := PRF(nk; uid || com) where uid is leaf index, com is the coin/ar
     // commitment
     pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment<C>) -> Nullifier<C> {
-        let prf_key = PrfKey::from(self.0);
         Nullifier(
-            PRF::new(2, 1)
-                .eval(&prf_key, &[C::ScalarField::from(uid), com.0])
-                .unwrap()[0],
+            RescuePRF::<C::ScalarField, 2, 1>::evaluate(
+                &[self.0],
+                &[C::ScalarField::from(uid), com.0],
+            )
+            .unwrap()[0],
         )
     }
 }
