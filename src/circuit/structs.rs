@@ -14,7 +14,7 @@ use crate::{
     prelude::CapConfig,
     structs::{AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo},
 };
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_ff::{One, PrimeField, Zero};
 use ark_std::{format, ops::Neg, string::ToString, vec, vec::Vec};
 use jf_primitives::circuit::{

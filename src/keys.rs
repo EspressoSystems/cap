@@ -28,7 +28,7 @@ use crate::{
     },
     transfer::TransferNote,
 };
-use ark_ec::{group::Group, twisted_edwards_extended::GroupProjective, ProjectiveCurve};
+use ark_ec::{models::twisted_edwards::Projective, CurveGroup, Group};
 use ark_serialize::*;
 use ark_std::{
     format,
@@ -74,7 +74,7 @@ impl<C: CapConfig> From<&UserAddress<C>> for (C::ScalarField, C::ScalarField) {
 
 impl<C: CapConfig> UserAddress<C> {
     /// Returns the internal point representation
-    pub fn internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
+    pub fn internal(&self) -> &Projective<C::EmbeddedCurveParam> {
         self.0.internal()
     }
 }
@@ -154,7 +154,7 @@ impl<C: CapConfig> UserPubKey<C> {
 
 // private or internal functions
 impl<C: CapConfig> UserPubKey<C> {
-    pub(crate) fn address_internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
+    pub(crate) fn address_internal(&self) -> &Projective<C::EmbeddedCurveParam> {
         self.address.internal()
     }
 }
@@ -232,7 +232,7 @@ impl<C: CapConfig> UserKeyPair<C> {
     // Return user address secret key if freezer public key is neutral,
     // otherwise return the hash of the Diffie-Hellman shared key
     pub(crate) fn derive_nullifier_key(&self, fpk: &FreezerPubKey<C>) -> NullifierKey<C> {
-        if fpk.0 == GroupProjective::<C::EmbeddedCurveParam>::default() {
+        if fpk.0 == Projective::<C::EmbeddedCurveParam>::default() {
             NullifierKey::from(self.address_secret_ref())
         } else {
             compute_nullifier_key(&fpk.0, self.address_secret_ref())
@@ -460,7 +460,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
     Eq(bound = "C: CapConfig"),
     Debug(bound = "C: CapConfig")
 )]
-pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::EmbeddedCurveParam>);
+pub struct FreezerPubKey<C: CapConfig>(pub(crate) Projective<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> FreezerPubKey<C> {
     /// Transform to a pair of scalars
@@ -493,7 +493,7 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 
 pub struct FreezerKeyPair<C: CapConfig> {
     pub(crate) sec_key: C::EmbeddedCurveScalarField,
-    pub(crate) pub_key: GroupProjective<C::EmbeddedCurveParam>,
+    pub(crate) pub_key: Projective<C::EmbeddedCurveParam>,
 }
 
 impl<C: CapConfig> FreezerKeyPair<C> {
@@ -504,7 +504,7 @@ impl<C: CapConfig> FreezerKeyPair<C> {
     {
         let sec_key = C::EmbeddedCurveScalarField::rand(rng);
         let pub_key = Group::mul(
-            &GroupProjective::<C::EmbeddedCurveParam>::prime_subgroup_generator(),
+            &Projective::<C::EmbeddedCurveParam>::prime_subgroup_generator(),
             &sec_key,
         );
         Self { sec_key, pub_key }
@@ -556,7 +556,7 @@ impl<C: CapConfig> PartialEq for FreezerKeyPair<C> {
 
 // Use DH to derive a shared key, then hash to get the nullifier key
 fn compute_nullifier_key<C: CapConfig>(
-    pub_key_alice: &GroupProjective<C::EmbeddedCurveParam>,
+    pub_key_alice: &Projective<C::EmbeddedCurveParam>,
     sec_key_bob: &C::EmbeddedCurveScalarField,
 ) -> NullifierKey<C> {
     let shared_key_affine = Group::mul(pub_key_alice, sec_key_bob).into_affine();

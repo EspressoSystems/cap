@@ -20,7 +20,7 @@ use crate::{
     prelude::CapConfig,
     structs::{Amount, AssetDefinition, NoteType, RecordOpening},
 };
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_std::{format, string::ToString};
 use jf_relation::Arithmetization;
 pub use params_builder::TxnsParams;

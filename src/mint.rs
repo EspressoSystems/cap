@@ -22,8 +22,8 @@ use crate::{
     utils::txn_helpers::{mint::*, *},
     NodeValue,
 };
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Read, SerializationError, Write};
-use ark_std::{string::ToString, vec, UniformRand};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_std::{string::ToString, vec, vec::Vec, UniformRand};
 use jf_plonk::proof_system::structs::Proof;
 use jf_primitives::signatures::schnorr;
 use rand::{CryptoRng, RngCore};

@@ -19,7 +19,7 @@ use crate::{
     mint::MintNote,
     utils::*,
 };
-use ark_ec::twisted_edwards_extended::GroupAffine;
+use ark_ec::models::twisted_edwards::Affine;
 use ark_ff::{BigInteger, Field, PrimeField, UniformRand, Zero};
 use ark_serialize::*;
 use ark_std::{
@@ -1448,7 +1448,7 @@ impl<C: CapConfig> ViewableData<C> {
         y: &C::ScalarField,
         asset_definition: &AssetDefinition<C>,
     ) -> Result<Option<UserAddress<C>>, TxnApiError> {
-        let point_affine = GroupAffine::<C::EmbeddedCurveParam>::new(*x, *y);
+        let point_affine = Affine::<C::EmbeddedCurveParam>::new(*x, *y);
         if !point_affine.is_on_curve() || !point_affine.is_in_correct_subgroup_assuming_on_curve() {
             if asset_definition
                 .policy

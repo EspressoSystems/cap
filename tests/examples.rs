@@ -13,7 +13,7 @@
 extern crate anyhow;
 
 use anyhow::Result;
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_serialize::*;
 use ark_std::{
     collections::{HashMap, HashSet},

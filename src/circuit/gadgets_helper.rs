@@ -10,7 +10,7 @@
 // details. You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
-use ark_ec::{twisted_edwards_extended::GroupAffine, AffineCurve};
+use ark_ec::twisted_edwards::Affine;
 use jf_primitives::circuit::{prf::PrfGadget, rescue::RescueGadget};
 use jf_relation::{
     errors::CircuitError, gadgets::ecc::PointVariable, Circuit, PlonkCircuit, Variable,
@@ -53,7 +53,7 @@ impl<C: CapConfig> TransactionGadgetsHelper<C> for PlonkCircuit<C::ScalarField> 
         &mut self,
         secret_key: Variable,
     ) -> Result<UserAddressVar, CircuitError> {
-        let base = GroupAffine::<C::EmbeddedCurveParam>::prime_subgroup_generator();
+        let base = Affine::<C::EmbeddedCurveParam>::prime_subgroup_generator();
         let address_var = self.fixed_base_scalar_mul(secret_key, &base)?;
         Ok(UserAddressVar(address_var))
     }
@@ -90,7 +90,7 @@ mod tests {
         prelude::{CapConfig, Config},
         structs::{AssetCodeDigest, AssetCodeSeed, InternalAssetCode, RecordCommitment},
     };
-    use ark_ec::ProjectiveCurve;
+    use ark_ec::CurveGroup;
     use ark_ff::One;
     use ark_std::UniformRand;
     use jf_relation::{errors::CircuitError, gadgets::ecc::Point, Circuit, PlonkCircuit};
