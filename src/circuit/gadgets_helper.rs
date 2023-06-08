@@ -11,7 +11,7 @@
 
 use crate::{circuit::structs::UserAddressVar, prelude::CapConfig};
 use ark_ec::twisted_edwards::Affine;
-use jf_primitives::circuit::{prf::PrfGadget, rescue::RescueGadget};
+use jf_primitives::circuit::{prf::PRFGadget, rescue::RescueGadget};
 use jf_relation::{
     errors::CircuitError, gadgets::ecc::PointVariable, Circuit, PlonkCircuit, Variable,
 };

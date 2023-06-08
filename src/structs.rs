@@ -34,15 +34,14 @@ use ark_std::{
 use jf_primitives::{
     aead,
     commitment::{CommitmentScheme, FixedLengthRescueCommitment},
+    crhf::{FixedLengthRescueCRHF, CRHF},
     elgamal,
     merkle_tree::prelude::{MerkleTreeScheme, RescueMerkleTree},
     prf::{RescuePRF, PRF},
-    rescue::Permutation,
     signatures::schnorr::{self, Signature},
 };
 use jf_utils::hash_to_field;
 use serde::{Deserialize, Serialize};
-use sha2::Sha512;
 use sha3::{Digest, Keccak256};
 use tagged_base64::tagged;
 
@@ -94,7 +93,8 @@ pub(crate) struct AssetCodeDigest<C: CapConfig>(pub(crate) C::ScalarField);
 impl<C: CapConfig> AssetCodeDigest<C> {
     pub(crate) fn from_description(description: &[u8]) -> Self {
         let scalars = hash_to_field::<_, C::ScalarField>(description);
-        let digest = Permutation::default().sponge_with_padding(&[scalars], 1)[0];
+        let digest =
+            FixedLengthRescueCRHF::<C::ScalarField, 1, 1>::evaluate(&[scalars]).unwrap()[0];
         AssetCodeDigest(digest)
     }
 }
@@ -124,7 +124,7 @@ impl<C: CapConfig> InternalAssetCode<C> {
 
     // internal logic of deriving an asset code from seed and digest, both as scalar
     pub(crate) fn new_internal(seed: AssetCodeSeed<C>, digest: AssetCodeDigest<C>) -> Self {
-        Self(RescuePRF::<C::ScalarField, 1, 1>::evaluate(&[seed.0], &[digest.0]).unwrap()[0])
+        Self(RescuePRF::<C::ScalarField, 1, 1>::evaluate(&seed.0, &[digest.0]).unwrap()[0])
     }
 }
 
@@ -172,6 +172,39 @@ impl Amount {
     /// Generate a vector of Amount from a u128 vector
     pub fn from_vec(vals: &[u128]) -> Vec<Self> {
         vals.iter().map(|x| Amount(*x)).collect()
+    }
+}
+
+impl CanonicalSerialize for Amount {
+    fn serialize_with_mode<W: Write>(
+        &self,
+        mut writer: W,
+        _compress: Compress,
+    ) -> Result<(), SerializationError> {
+        writer.write_all(&self.0.to_le_bytes())?;
+        Ok(())
+    }
+
+    fn serialized_size(&self, _compress: Compress) -> usize {
+        (u128::BITS / 8) as usize // 16
+    }
+}
+
+impl CanonicalDeserialize for Amount {
+    fn deserialize_with_mode<R: Read>(
+        reader: R,
+        _compress: Compress,
+        _validate: Validate,
+    ) -> Result<Self, SerializationError> {
+        let mut result = [0u8; 16];
+        reader.read_exact(&mut result)?;
+        Ok(Self(u128::from_le_bytes(result)))
+    }
+}
+
+impl Valid for Amount {
+    fn check(&self) -> Result<(), SerializationError> {
+        Ok(())
     }
 }
 
@@ -259,7 +292,7 @@ impl<C: CapConfig> AssetCode<C> {
 
     /// Derive a domestic cap asset code from its internal asset code value
     pub(crate) fn new_domestic_from_internal(internal: &InternalAssetCode<C>) -> Self {
-        let bytes_internal = internal.0.into_repr().to_bytes_le();
+        let bytes_internal = internal.0.into_bigint().to_bytes_le();
         let bytes = [DOM_SEP_DOMESTIC_ASSET.to_vec(), bytes_internal].concat();
         let mut hasher = Keccak256::new();
         hasher.update(&bytes);
@@ -304,7 +337,19 @@ impl<C: CapConfig> AssetCode<C> {
 /// A bitmap indicating which of the following fields are to be revealed:
 /// (upk_x, upk_y, v, blind, attrs) where reveal bits for upk_x and upk_y are
 /// the same. Also note that asset code code is compulsorily revealed.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Default,
+    Serialize,
+    Deserialize,
+    CanonicalSerialize,
+    CanonicalDeserialize,
+)]
 pub struct RevealMap(pub(crate) [bool; VIEWABLE_DATA_LEN]);
 
 impl RevealMap {
@@ -800,15 +845,14 @@ impl<C: CapConfig> RecordCommitment<C> {
     }
 }
 
+// TODO: (alex) we can use `#[repr(u8)]` and `#[serde(rename = "0")]` attributes
+// on standard serde when we decide to remove CanonicalSerde on FreezeFlag.
 /// Flag indicating whether records is frozen or not
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[repr(u8)]
 pub enum FreezeFlag {
     /// Record is spendable or frozable
-    #[serde(rename = "0")]
     Unfrozen,
     /// Record can only be unfrozen
-    #[serde(rename = "1")]
     Frozen,
 }
 
@@ -819,6 +863,47 @@ impl FreezeFlag {
             FreezeFlag::Unfrozen => FreezeFlag::Frozen,
             FreezeFlag::Frozen => FreezeFlag::Unfrozen,
         }
+    }
+}
+
+impl CanonicalSerialize for FreezeFlag {
+    fn serialize_with_mode<W: Write>(
+        &self,
+        mut writer: W,
+        _compress: Compress,
+    ) -> Result<(), SerializationError> {
+        match self {
+            FreezeFlag::Unfrozen => writer.write_all(&[0u8])?,
+            FreezeFlag::Frozen => writer.write_all(&[1u8])?,
+        };
+        Ok(())
+    }
+
+    fn serialized_size(&self, _compress: Compress) -> usize {
+        1
+    }
+}
+
+impl CanonicalDeserialize for FreezeFlag {
+    fn deserialize_with_mode<R: Read>(
+        mut reader: R,
+        _compress: Compress,
+        _validate: Validate,
+    ) -> Result<Self, SerializationError> {
+        let mut result = [0u8];
+        reader.read_exact(&mut result)?;
+        let mode = match result[0] {
+            0 => FreezeFlag::Unfrozen,
+            1 => FreezeFlag::Frozen,
+            _ => return Err(SerializationError::InvalidData),
+        };
+        Ok(mode)
+    }
+}
+
+impl Valid for FreezeFlag {
+    fn check(&self) -> Result<(), SerializationError> {
+        Ok(())
     }
 }
 
@@ -1008,7 +1093,7 @@ impl<C: CapConfig> IdentityAttribute<C> {
 
     /// Getter for the attribute value in bytes.
     pub fn value(&self) -> Result<Vec<u8>, TxnApiError> {
-        let mut padded_bytes: Vec<u8> = self.0.into_repr().to_bytes_le();
+        let mut padded_bytes: Vec<u8> = self.0.into_bigint().to_bytes_le();
 
         match padded_bytes.last() {
             None => return Err(TxnApiError::InvalidAttribute),
@@ -1312,7 +1397,10 @@ impl<C: CapConfig> ViewableMemo<C> {
         // msg length, as upk takes two scalars; for outputs, only asset
         // viewing is on, thus only 4 scalars viewed; finally, the asset
         // code is always revealed, thus + 1 in the end.
-        let bytes = randomizer.hash::<Sha512>();
+        let mut hasher = Keccak256::new();
+        hasher.update(randomizer.into_bigint().to_bytes_le());
+        let bytes = hasher.finalize();
+
         let mut seed = [0u8; 32];
         seed.copy_from_slice(&bytes[0..32]);
         let mut rng = rand_chacha::ChaChaRng::from_seed(seed);
@@ -1447,7 +1535,7 @@ impl<C: CapConfig> ViewableData<C> {
         let user_address = ViewableData::fetch_address(&data[0], &data[1], asset_definition)?;
 
         let amount = if asset_definition.policy.is_amount_revealed() {
-            let big_int = data[2].into_repr();
+            let big_int = data[2].into_bigint();
             let mut u128_max_bits_le = vec![true; 128];
             u128_max_bits_le.resize(256, false);
             // if big_int > BigInteger256::from_bits_le(&u128_max_bits_le) {
