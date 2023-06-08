@@ -18,9 +18,9 @@ use crate::{
     errors::TxnApiError,
     keys::FreezerPubKey,
     prelude::CapConfig,
-    structs::{Amount, AssetDefinition, NoteType, RecordOpening},
+    structs::{Amount, AssetDefinition, NodeValue, NoteType, RecordOpening},
 };
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_std::{format, string::ToString};
 use jf_relation::Arithmetization;
 pub use params_builder::TxnsParams;
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_get_asset_def_in_transfer_txn() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
 
         let asset_def_native = AssetDefinition::<Config>::native();
         let asset_def_2 = AssetDefinition::<Config>::rand_for_test(&mut rng);
@@ -280,7 +280,10 @@ pub(crate) mod txn_helpers {
         errors::TxnApiError,
         keys::{CredIssuerPubKey, FreezerPubKey},
         prelude::CapConfig,
-        structs::{Amount, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
+        structs::{
+            AccMemberWitness, Amount, AssetDefinition, BlindFactor, FreezeFlag, NodeValue,
+            Nullifier, RecordOpening,
+        },
         transfer::TransferNoteInput,
     };
 
@@ -293,7 +296,7 @@ pub(crate) mod txn_helpers {
         vec,
         vec::Vec,
     };
-    use jf_primitives::merkle_tree::{MerkleLeaf, MerkleLeafProof, MerkleTree};
+    use jf_primitives::merkle_tree::prelude::RescueMerkleTree;
     use jf_utils::hash_to_field;
     use rand::{CryptoRng, RngCore};
 
@@ -317,7 +320,6 @@ pub(crate) mod txn_helpers {
             proof::mint::MintProvingKey,
             structs::{AssetCode, AssetCodeDigest, AssetCodeSeed},
         };
-        use jf_primitives::merkle_tree::AccMemberWitness;
 
         pub(crate) fn check_proving_key_consistency<C: CapConfig>(
             proving_key: &MintProvingKey<C>,
@@ -359,12 +361,8 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod transfer {
-        use jf_primitives::merkle_tree::NodeValue;
-
         use super::*;
-        use crate::{
-            keys::ViewerPubKey, proof::transfer::TransferProvingKey, structs::AssetDefinition,
-        };
+        use crate::{keys::ViewerPubKey, proof::transfer::TransferProvingKey};
 
         pub(crate) fn check_proving_key_consistency<C: CapConfig>(
             proving_key: &TransferProvingKey<C>,
@@ -520,8 +518,6 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod freeze {
-        use jf_primitives::merkle_tree::NodeValue;
-
         use super::*;
         use crate::{freeze::FreezeNoteInput, proof::freeze::FreezeProvingKey, structs::FeeInput};
 
@@ -802,11 +798,10 @@ pub(crate) mod txn_helpers {
                 check_distinct_input_nullifiers, derive_fee, transfer::check_asset_def,
             },
         };
-        use ark_std::test_rng;
 
         #[test]
         fn test_derive_fee() {
-            let mut rng = ark_std::test_rng();
+            let mut rng = jf_utils::test_rng();
 
             let asset_def_native = AssetDefinition::<Config>::native();
             let asset_def_non_native = AssetDefinition::rand_for_test(&mut rng);
@@ -894,7 +889,7 @@ pub(crate) mod txn_helpers {
 
         #[test]
         fn test_distinct_input_nullifier() {
-            let rng = &mut test_rng();
+            let rng = &mut jf_utils::test_rng();
             let nullifier1 = Nullifier::<Config>::random_for_test(rng);
             let nullifier2 = Nullifier::<Config>::random_for_test(rng);
             assert!(check_distinct_input_nullifiers(&[nullifier1]).is_ok());
@@ -904,7 +899,7 @@ pub(crate) mod txn_helpers {
 
         #[test]
         fn test_check_asset_def() {
-            let mut rng = ark_std::test_rng();
+            let mut rng = jf_utils::test_rng();
 
             let asset_def_native = AssetDefinition::<Config>::native();
             let asset_def_non_native_1 = AssetDefinition::<Config>::rand_for_test(&mut rng);

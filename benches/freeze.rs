@@ -50,7 +50,7 @@ fn run_benchmark_freeze(c: &mut Criterion, filename_list: &mut Vec<String>) {
     benchmark_group.measurement_time(Duration::new(10, 0));
 
     for num_inputs in &NUM_INPUTS_RANGE {
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
 
         // Public parameters
         let domain_size =

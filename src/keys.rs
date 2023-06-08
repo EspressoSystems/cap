@@ -28,7 +28,7 @@ use crate::{
     },
     transfer::TransferNote,
 };
-use ark_ec::{group::Group, twisted_edwards_extended::GroupProjective, ProjectiveCurve};
+use ark_ec::{models::twisted_edwards::Projective, CurveGroup, Group};
 use ark_serialize::*;
 use ark_std::{
     format,
@@ -42,7 +42,7 @@ use ark_std::{
 use jf_primitives::{
     aead, elgamal,
     elgamal::EncKey,
-    prf::{PrfKey, PRF},
+    prf::{RescuePRF, PRF},
     rescue::Permutation as RescuePermutation,
     signatures::{
         schnorr,
@@ -50,8 +50,9 @@ use jf_primitives::{
         SignatureScheme,
     },
 };
-use jf_utils::{hash_to_field, tagged_blob};
+use jf_utils::hash_to_field;
 use serde::{Deserialize, Serialize};
+use tagged_base64::tagged;
 
 /// Public address for a user to send assets to/from.
 #[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
@@ -74,13 +75,13 @@ impl<C: CapConfig> From<&UserAddress<C>> for (C::ScalarField, C::ScalarField) {
 
 impl<C: CapConfig> UserAddress<C> {
     /// Returns the internal point representation
-    pub fn internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
+    pub fn internal(&self) -> &Projective<C::EmbeddedCurveParam> {
         self.0.internal()
     }
 }
 
 /// The public key of a `UserKeyPair`
-#[tagged_blob("USERPUBKEY")]
+#[tagged("USERPUBKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -154,13 +155,13 @@ impl<C: CapConfig> UserPubKey<C> {
 
 // private or internal functions
 impl<C: CapConfig> UserPubKey<C> {
-    pub(crate) fn address_internal(&self) -> &GroupProjective<C::EmbeddedCurveParam> {
+    pub(crate) fn address_internal(&self) -> &Projective<C::EmbeddedCurveParam> {
         self.address.internal()
     }
 }
 
 /// A key pair for the user who owns and can consume records (spend asset)
-#[tagged_blob("USERKEY")]
+#[tagged("USERKEY")]
 #[derive(Derivative, CanonicalSerialize, CanonicalDeserialize)]
 #[derivative(
     Default(bound = "C: CapConfig"),
@@ -232,7 +233,7 @@ impl<C: CapConfig> UserKeyPair<C> {
     // Return user address secret key if freezer public key is neutral,
     // otherwise return the hash of the Diffie-Hellman shared key
     pub(crate) fn derive_nullifier_key(&self, fpk: &FreezerPubKey<C>) -> NullifierKey<C> {
-        if fpk.0 == GroupProjective::<C::EmbeddedCurveParam>::default() {
+        if fpk.0 == Projective::<C::EmbeddedCurveParam>::default() {
             NullifierKey::from(self.address_secret_ref())
         } else {
             compute_nullifier_key(&fpk.0, self.address_secret_ref())
@@ -241,7 +242,7 @@ impl<C: CapConfig> UserKeyPair<C> {
 }
 
 /// Public key for the credential creator
-#[tagged_blob("CREDPUBKEY")]
+#[tagged("CREDPUBKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -281,7 +282,7 @@ impl<C: CapConfig> CredIssuerPubKey<C> {
 }
 
 /// Key pair for the credential creator
-#[tagged_blob("CREDKEY")]
+#[tagged("CREDKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -315,7 +316,7 @@ impl<C: CapConfig> CredIssuerKeyPair<C> {
 }
 
 /// Public key for the viewer
-#[tagged_blob("AUDPUBKEY")]
+#[tagged("AUDPUBKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -350,7 +351,7 @@ impl<C: CapConfig> ViewerPubKey<C> {
     }
 }
 /// Key pair for the viewer
-#[tagged_blob("AUDKEY")]
+#[tagged("AUDKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(Debug(bound = "C: CapConfig"), Clone(bound = "C: CapConfig"))]
 pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::EmbeddedCurveParam>);
@@ -452,7 +453,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
 }
 
 /// Public key for the freezer
-#[tagged_blob("FREEZEPUBKEY")]
+#[tagged("FREEZEPUBKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Clone(bound = "C: CapConfig"),
@@ -460,7 +461,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
     Eq(bound = "C: CapConfig"),
     Debug(bound = "C: CapConfig")
 )]
-pub struct FreezerPubKey<C: CapConfig>(pub(crate) GroupProjective<C::EmbeddedCurveParam>);
+pub struct FreezerPubKey<C: CapConfig>(pub(crate) Projective<C::EmbeddedCurveParam>);
 
 impl<C: CapConfig> FreezerPubKey<C> {
     /// Transform to a pair of scalars
@@ -483,7 +484,7 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 }
 
 /// Key pair for the freezer
-#[tagged_blob("FREEZEKEY")]
+#[tagged("FREEZEKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -493,7 +494,7 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 
 pub struct FreezerKeyPair<C: CapConfig> {
     pub(crate) sec_key: C::EmbeddedCurveScalarField,
-    pub(crate) pub_key: GroupProjective<C::EmbeddedCurveParam>,
+    pub(crate) pub_key: Projective<C::EmbeddedCurveParam>,
 }
 
 impl<C: CapConfig> FreezerKeyPair<C> {
@@ -504,7 +505,7 @@ impl<C: CapConfig> FreezerKeyPair<C> {
     {
         let sec_key = C::EmbeddedCurveScalarField::rand(rng);
         let pub_key = Group::mul(
-            &GroupProjective::<C::EmbeddedCurveParam>::prime_subgroup_generator(),
+            &Projective::<C::EmbeddedCurveParam>::prime_subgroup_generator(),
             &sec_key,
         );
         Self { sec_key, pub_key }
@@ -556,7 +557,7 @@ impl<C: CapConfig> PartialEq for FreezerKeyPair<C> {
 
 // Use DH to derive a shared key, then hash to get the nullifier key
 fn compute_nullifier_key<C: CapConfig>(
-    pub_key_alice: &GroupProjective<C::EmbeddedCurveParam>,
+    pub_key_alice: &Projective<C::EmbeddedCurveParam>,
     sec_key_bob: &C::EmbeddedCurveScalarField,
 ) -> NullifierKey<C> {
     let shared_key_affine = Group::mul(pub_key_alice, sec_key_bob).into_affine();
@@ -570,7 +571,7 @@ fn compute_nullifier_key<C: CapConfig>(
 
 /// Secret key used to nullify records, can only be derived by either the record
 /// owner (`UserKeyPair`) or the correct freezer (`FreezerKeyPair`)
-#[tagged_blob("NULKEY")]
+#[tagged("NULKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -587,20 +588,22 @@ impl<C: CapConfig> NullifierKey<C> {
     // nl := PRF(nk; uid || com) where uid is leaf index, com is the coin/ar
     // commitment
     pub(crate) fn nullify(&self, uid: u64, com: &RecordCommitment<C>) -> Nullifier<C> {
-        let prf_key = PrfKey::from(self.0);
         Nullifier(
-            PRF::new(2, 1)
-                .eval(&prf_key, &[C::ScalarField::from(uid), com.0])
-                .unwrap()[0],
+            RescuePRF::<C::ScalarField, 2, 1>::evaluate(
+                &[self.0],
+                &[C::ScalarField::from(uid), com.0],
+            )
+            .unwrap()[0],
         )
     }
 }
 
-impl<C: CapConfig> From<&C::EmbeddedCurveScalarField> for NullifierKey<C> {
-    fn from(s: &C::EmbeddedCurveScalarField) -> Self {
-        NullifierKey(jf_utils::fr_to_fq::<_, C::EmbeddedCurveParam>(s))
-    }
-}
+// FIXME: uncomment this!
+// impl<C: CapConfig> From<&C::EmbeddedCurveScalarField> for NullifierKey<C> {
+//     fn from(s: &C::EmbeddedCurveScalarField) -> Self {
+//         NullifierKey(jf_utils::fr_to_fq::<_, C::EmbeddedCurveParam>(s))
+//     }
+// }
 
 #[cfg(test)]
 mod test {
@@ -610,7 +613,7 @@ mod test {
 
     #[test]
     fn test_user_keypair() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let user_pubkey = user_keypair.pub_key();
 
@@ -630,7 +633,7 @@ mod test {
 
     #[test]
     fn test_derive_nullifier_key() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::<Config>::generate(&mut rng);
         let nk1 = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
@@ -662,7 +665,7 @@ mod test {
 
     #[test]
     fn test_serde() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let minter_keypair = CredIssuerKeyPair::<Config>::generate(&mut rng);
         let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);

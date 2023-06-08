@@ -20,7 +20,10 @@ use crate::{
     freeze::FreezeNoteInput,
     keys::{FreezerKeyPair, FreezerPubKey, UserKeyPair},
     prelude::CapConfig,
-    structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
+    structs::{
+        AccMemberWitness, Amount, AssetCode, NodeValue, Nullifier, RecordCommitment, RecordOpening,
+        TxnFeeInfo,
+    },
 };
 use ark_serialize::*;
 use ark_std::{format, string::ToString, vec, vec::Vec};
@@ -32,7 +35,7 @@ use jf_plonk::{
     transcript::SolidityTranscript,
 };
 use jf_primitives::{
-    merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
+    merkle_tree::{prelude::RescueMerkleTree, MerkleTreeScheme},
     signatures::schnorr,
 };
 use jf_relation::Circuit;
@@ -195,14 +198,16 @@ impl<'a, C: CapConfig> FreezeWitness<'a, C> {
         freezing_keypair: &'a FreezerKeyPair<C>,
     ) -> Self {
         let input_ros = vec![RecordOpening::default(); num_input];
-        let mut mt = MerkleTree::<C::ScalarField>::new(tree_depth).unwrap();
-        input_ros
-            .iter()
-            .for_each(|ro| mt.push(ro.derive_record_commitment().to_field_element()));
+        let mut mt = RescueMerkleTree::<C::ScalarField>::from_elems(tree_depth, &[]).unwrap();
+        input_ros.iter().for_each(|ro| {
+            mt.push(ro.derive_record_commitment().to_field_element())
+                .unwrap()
+        });
         let input_acc_member_witnesses = (0..num_input)
             .map(|uid| {
-                AccMemberWitness::lookup_from_tree(&mt, uid as u64)
-                    .expect_ok().unwrap() // safe unwrap()
+                RescueMerkleTree::lookup(&mt, uid as u64)
+                    .expect_ok()
+                    .unwrap()
                     .1
             })
             .collect();
@@ -363,7 +368,7 @@ mod test {
 
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let fee_keypair = UserKeyPair::<Config>::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
@@ -430,7 +435,7 @@ mod test {
 
     #[test]
     fn test_freeze_validity_proof() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;

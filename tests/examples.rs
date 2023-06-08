@@ -13,7 +13,7 @@
 extern crate anyhow;
 
 use anyhow::Result;
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_serialize::*;
 use ark_std::{
     collections::{HashMap, HashSet},
@@ -40,7 +40,7 @@ pub const MAX_DEGREE: usize = 131074;
 
 /// simulate retrieving global public structured reference string
 pub fn mock_retrieve_srs() -> UniversalSrs<<Config as CapConfig>::PairingCurve> {
-    universal_setup::<_, Config>(MAX_DEGREE, &mut ark_std::test_rng()).unwrap()
+    universal_setup::<_, Config>(MAX_DEGREE, &mut jf_utils::test_rng()).unwrap()
 }
 
 /// Naive ledger structure
@@ -1653,7 +1653,7 @@ impl AssetIssuerMock {
 ///  6. simulate verifier node again on new transfer note
 #[test]
 pub fn example_native_asset_transfer() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -1763,7 +1763,7 @@ pub fn example_native_asset_transfer() {
 ///  4. receiver decrypts receiver memos into new record
 #[test]
 pub fn example_non_native_asset_transfer() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -1853,7 +1853,7 @@ pub fn example_non_native_asset_transfer() {
 ///  4. Viewer decrypts viewing memos
 #[test]
 pub fn example_test_viewed_asset_transfer() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -1967,7 +1967,7 @@ pub fn example_test_viewed_asset_transfer() {
 ///  4. Viewer decrypts viewing memos
 #[test]
 pub fn example_viewed_non_native_asset_with_credentials() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -2104,7 +2104,7 @@ fn check_transfer_visible_data(
 
 #[test]
 fn example_fee_collection_and_batch_verification() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -2181,7 +2181,7 @@ fn example_fee_collection_and_batch_verification() {
 
 #[test]
 fn example_mint() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());
@@ -2256,7 +2256,7 @@ fn example_mint() {
 
 #[test]
 fn example_freeze() {
-    let rng = &mut ark_std::test_rng();
+    let rng = &mut jf_utils::test_rng();
     // 0. setting up params
     let mut ledger_state = LedgerStateMock::new();
     let srs = Rc::new(mock_retrieve_srs());

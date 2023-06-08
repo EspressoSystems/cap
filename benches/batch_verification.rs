@@ -44,7 +44,7 @@ fn run_benchmark_batch_verification(c: &mut Criterion, filename_list: &mut Vec<S
     benchmark_group.sample_size(10);
     benchmark_group.measurement_time(Duration::new(10, 0));
 
-    let mut prng = ark_std::test_rng();
+    let mut prng = jf_utils::test_rng();
 
     let timestamp = 1234;
 

@@ -15,9 +15,11 @@ use crate::{
     keys::FreezerKeyPair,
     prelude::CapConfig,
     proof::freeze::{self, FreezeProvingKey, FreezePublicInput, FreezeVerifyingKey, FreezeWitness},
-    structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
+    structs::{
+        AccMemberWitness, Amount, AssetCode, NodeValue, Nullifier, RecordCommitment, RecordOpening,
+        TxnFeeInfo,
+    },
     utils::txn_helpers::{freeze::*, *},
-    NodeValue,
 };
 use ark_serialize::*;
 use ark_std::{
@@ -26,7 +28,7 @@ use ark_std::{
     vec::Vec,
 };
 use jf_plonk::proof_system::structs::Proof;
-use jf_primitives::{merkle_tree::AccMemberWitness, signatures::schnorr};
+use jf_primitives::signatures::schnorr;
 use serde::{Deserialize, Serialize};
 
 /// Freezing note structure
@@ -218,7 +220,7 @@ mod test {
 
     #[test]
     fn test_freeze_note() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;
@@ -330,7 +332,7 @@ mod test {
         proving_key: &FreezeProvingKey<Config>,
         verifying_key: &FreezeVerifyingKey<Config>,
     ) -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
 
         let (note, keypair, _fee_chg_ro, record_openings) =
             builder.build_freeze_note(rng, &proving_key)?;

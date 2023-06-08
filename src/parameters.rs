@@ -48,7 +48,7 @@ pub fn store_universal_parameter_for_demo<C: CapConfig>(
     max_degree: usize,
     dest: Option<PathBuf>,
 ) -> Result<(), TxnApiError> {
-    let mut rng = ark_std::test_rng();
+    let mut rng = jf_utils::test_rng();
     let universal_param = proof::universal_setup::<_, C>(max_degree, &mut rng)?;
     let dest = match dest {
         Some(dest) => dest,
@@ -610,7 +610,7 @@ mod test {
     #[test]
     #[ignore = "expensive to run in CI, already tested locally"]
     fn store_and_load_for_transfer_prover_verifier() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let num_input = 2;
         let num_output = 5;
         let tree_depth = 10;
@@ -646,7 +646,7 @@ mod test {
     #[test]
     #[ignore = "expensive to run in CI, already tested locally"]
     fn store_and_load_for_mint_prover_verifier() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 10;
         let max_degree = compute_universal_param_size::<Config>(NoteType::Mint, 1, 2, tree_depth)?;
         let universal_param = universal_setup::<_, Config>(max_degree, rng)?;
@@ -663,7 +663,7 @@ mod test {
     #[test]
     #[ignore = "expensive to run in CI, already tested locally"]
     fn store_and_load_for_freeze_prover_verifier() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 10;
         let num_inputs = 2;
         let max_degree = compute_universal_param_size::<Config>(

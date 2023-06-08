@@ -18,7 +18,7 @@
 //! use crate::utils::compute_universal_param_size,
 //! use crate::structs::NoteType;
 //!
-//! let rng = &mut ark_std::test_rng();
+//! let rng = &mut jf_utils::test_rng();
 //!
 //! let num_input = 3;
 //! let num_output = 3;
@@ -74,11 +74,9 @@ pub fn universal_setup<R: RngCore + CryptoRng, C: CapConfig>(
 pub fn load_srs<C: CapConfig>(
     max_degree: usize,
 ) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
+    use ark_std::{eprint, eprintln};
     use hex_literal::hex;
     use sha2::{Digest, Sha256};
-
-    use ark_serialize::CanonicalDeserialize;
-    use ark_std::{eprint, eprintln};
 
     if max_degree > 2usize.pow(17) {
         return Err(TxnApiError::FailedSnark(

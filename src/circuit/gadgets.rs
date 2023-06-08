@@ -199,7 +199,7 @@ mod tests {
         structs::{AssetPolicy, RecordCommitment, RecordOpening, RevealMap},
     };
     use ark_ff::{One, Zero};
-    use ark_std::{test_rng, vec::Vec};
+    use ark_std::vec::Vec;
     use jf_primitives::{
         circuit::merkle_tree::{gen_merkle_path_for_test, AccMemberWitnessVar},
         merkle_tree::AccMemberWitness,
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn test_prove_spend() -> Result<(), CircuitError> {
-        let rng = &mut test_rng();
+        let rng = &mut jf_utils::test_rng();
 
         // Case 1: Asset record with freezing policy
         // Create user/freezer keypairs
@@ -449,7 +449,7 @@ mod tests {
         let reveal_map = RevealMap::default();
         check_hadamard_product::<Config>(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let reveal_map = RevealMap::rand_for_test(rng);
         check_hadamard_product::<Config>(&reveal_map, &vals, VIEWABLE_DATA_LEN)?;
 

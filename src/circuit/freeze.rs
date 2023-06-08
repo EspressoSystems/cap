@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn test_freeze_circuit_build() -> Result<(), CircuitError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 2;
         let fee_keypair = UserKeyPair::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);

@@ -425,7 +425,7 @@ mod tests {
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let mut input_ros = vec![RecordOpening::<Config>::rand_for_test(rng); 5];
         input_ros[0].asset_def = AssetDefinition::native();
         let output_ros = vec![RecordOpening::rand_for_test(rng); 4];
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn test_threshold_policy() -> Result<(), CircuitError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 3];
@@ -564,7 +564,7 @@ mod tests {
     }
     #[test]
     fn test_transfer_circuit_build() -> Result<(), CircuitError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
@@ -682,7 +682,7 @@ mod tests {
 
     #[test]
     fn test_transfer_circuit_build_with_dummy_records() -> Result<(), CircuitError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::generate(rng);
         let user_keypairs = vec![&user_keypair, &user_keypair, &user_keypair];
@@ -762,7 +762,7 @@ mod tests {
     fn create_witness_and_pub_input<'a>(
         builder: &'a TransferParamsBuilder<Config>,
     ) -> (TransferWitness<'a, Config>, TransferPublicInput<Config>) {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let witness = builder.build_witness(rng);
         let valid_until = 1234u64;
         let pub_input = TransferPublicInput::from_witness(&witness, valid_until).unwrap();

@@ -98,7 +98,7 @@ else
 fi
 
 # Run the benchmark binary
-cargo bench
+cargo bench --features dev
 
 
 # ^^^  TERMINATE YOUR CODE BEFORE THE BOTTOM ARGBASH MARKER  ^^^

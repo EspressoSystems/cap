@@ -17,13 +17,12 @@ use crate::{
     proof::mint::{self, MintProvingKey, MintPublicInput, MintVerifyingKey, MintWitness},
     structs::{
         Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode,
-        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
+        NodeValue, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
     },
     utils::txn_helpers::{mint::*, *},
-    NodeValue,
 };
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Read, SerializationError, Write};
-use ark_std::{string::ToString, vec, UniformRand};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_std::{string::ToString, vec, vec::Vec, UniformRand};
 use jf_plonk::proof_system::structs::Proof;
 use jf_primitives::signatures::schnorr;
 use rand::{CryptoRng, RngCore};
@@ -219,7 +218,7 @@ mod test {
 
     #[test]
     fn test_mint_note() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 10;
         // increasing the max_degree since bls12_377 requires a larger one
         let max_degree = 32770;
@@ -359,7 +358,7 @@ mod test {
         receiver_keypair: &UserKeyPair<Config>,
         viewer_keypair: &ViewerKeyPair<Config>,
     ) -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
 
         let (note, sig_keypair, _change_ro) = builder.build_mint_note(rng, &proving_key)?;
         // Check note

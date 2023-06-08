@@ -55,7 +55,7 @@ fn run_benchmark_mint(c: &mut Criterion, filename_list: &mut Vec<String>) {
     benchmark_group.sample_size(10);
     benchmark_group.measurement_time(Duration::new(10, 0));
 
-    let mut prng = ark_std::test_rng();
+    let mut prng = jf_utils::test_rng();
 
     // Public parameters
     let domain_size =

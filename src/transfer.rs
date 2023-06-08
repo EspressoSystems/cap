@@ -18,8 +18,9 @@ use crate::{
         TransferProvingKey, TransferPublicInput, TransferVerifyingKey, TransferWitness,
     },
     structs::{
-        Amount, AssetCode, AssetDefinition, ExpirableCredential, FeeInput, FreezeFlag, Nullifier,
-        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
+        AccMemberWitness, Amount, AssetCode, AssetDefinition, ExpirableCredential, FeeInput,
+        FreezeFlag, NodeValue, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
+        ViewableMemo,
     },
     utils::{
         safe_sum_amount,
@@ -35,10 +36,7 @@ use ark_std::{
     vec::Vec,
 };
 use jf_plonk::proof_system::structs::Proof;
-use jf_primitives::{
-    merkle_tree::{AccMemberWitness, NodeValue},
-    signatures::schnorr,
-};
+use jf_primitives::signatures::schnorr;
 use serde::{Deserialize, Serialize};
 
 /// Anonymous Transfer note structure for single sender, single asset type (+
@@ -434,7 +432,7 @@ mod tests {
         let valid_until = 1234;
         let extra_proof_bound_data = "0x12345678901234567890".as_bytes().to_vec();
 
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let domain_size = compute_universal_param_size::<Config>(
             NoteType::Transfer,
             num_input,
@@ -663,7 +661,7 @@ mod tests {
         cred_expiry: u64,
         extra_proof_bound_data: &[u8],
     ) -> Result<TransferParamsBuilder<'a, Config>, TxnApiError> {
-        let mut prng = &mut ark_std::test_rng();
+        let mut prng = &mut jf_utils::test_rng();
 
         let builder = TransferParamsBuilder::new_non_native(
             input_amounts.len(),
@@ -756,7 +754,7 @@ mod tests {
         let valid_until = 1234;
         let extra_proof_bound_data = "0x12345678901234567890".as_bytes().to_vec();
 
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let domain_size = compute_universal_param_size::<Config>(
             NoteType::Transfer,
             num_input,

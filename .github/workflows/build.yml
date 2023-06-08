@@ -9,7 +9,6 @@ on:
 
 env:
   RUSTFLAGS: "-C overflow-checks=on"
-  CARGO_HUSKY_DONT_INSTALL_HOOKS: "true"
 
 jobs:
   build:
@@ -23,7 +22,6 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@v3
-
 
       - name: Install Rust 1.64 toolchain
         uses: dtolnay/rust-toolchain@master
@@ -47,7 +45,7 @@ jobs:
         run: cargo audit --ignore RUSTSEC-2022-0013
 
       - name: Check Bench
-        run: cargo bench --no-run
+        run: cargo bench --no-run --features dev
 
       - name: Check Ignored Tests
         run: cargo test --release --no-run -- --ignored

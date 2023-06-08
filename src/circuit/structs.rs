@@ -14,7 +14,7 @@ use crate::{
     prelude::CapConfig,
     structs::{AssetPolicy, ExpirableCredential, IdentityAttribute, RecordOpening, ViewableMemo},
 };
-use ark_ec::ProjectiveCurve;
+use ark_ec::CurveGroup;
 use ark_ff::{One, PrimeField, Zero};
 use ark_std::{format, ops::Neg, string::ToString, vec, vec::Vec};
 use jf_primitives::circuit::{
@@ -441,7 +441,7 @@ mod tests {
         },
     };
     use ark_ff::{One, Zero};
-    use ark_std::{test_rng, vec::Vec};
+    use ark_std::vec::Vec;
     use jf_relation::{errors::CircuitError, BoolVar, Circuit, PlonkCircuit};
 
     type F = <Config as CapConfig>::ScalarField;
@@ -464,7 +464,7 @@ mod tests {
 
     #[test]
     fn test_verify_expirable_credential() -> Result<(), CircuitError> {
-        let rng = &mut test_rng();
+        let rng = &mut jf_utils::test_rng();
         let minter_keypair = CredIssuerKeyPair::generate(rng);
         let user = UserKeyPair::<Config>::generate(rng);
         let expiry = 9999u64;
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_compute_record_commitment_consistency() -> Result<(), CircuitError> {
-        let rng = &mut test_rng();
+        let rng = &mut jf_utils::test_rng();
         let record_open = RecordOpening::<Config>::rand_for_test(rng);
         let record_comm = record_open.derive_record_commitment();
         let mut circuit = PlonkCircuit::new_turbo_plonk();
@@ -526,7 +526,7 @@ mod tests {
         dummy_policy.enforce_dummy_policy::<Config>(&mut circuit)?;
         assert!(circuit.check_circuit_satisfiability(&[]).is_ok());
         // bad path
-        let rng = &mut test_rng();
+        let rng = &mut jf_utils::test_rng();
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let policy = AssetPolicy::<Config>::rand_for_test(rng);
 
@@ -539,7 +539,7 @@ mod tests {
 
     #[test]
     fn test_enforce_equal_policy() -> Result<(), CircuitError> {
-        let mut rng = &mut test_rng();
+        let mut rng = &mut jf_utils::test_rng();
         // happy path
         let mut circuit = PlonkCircuit::new_turbo_plonk();
         let policy1 = AssetPolicy::<Config>::rand_for_test(&mut rng);
@@ -567,7 +567,7 @@ mod tests {
 
     #[test]
     fn test_check_equal_viewing_memo() -> Result<(), CircuitError> {
-        let rng = &mut test_rng();
+        let rng = &mut jf_utils::test_rng();
         let data: Vec<F> = (0..10).map(|i| F::from(i as u32)).collect();
         let mut data2 = data.clone();
         data2[0] = F::from(1u32);
