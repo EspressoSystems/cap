@@ -177,7 +177,7 @@ use crate::{
     keys::UserPubKey,
     proof::transfer::TransferVerifyingKey,
     structs::{
-        Amount, AssetDefinition, BlindFactor, FreezeFlag, Nullifier, ReceiverMemo,
+        Amount, AssetDefinition, BlindFactor, FreezeFlag, NodeValue, Nullifier, ReceiverMemo,
         RecordCommitment, RecordOpening,
     },
 };
@@ -190,14 +190,11 @@ use jf_plonk::{
     proof_system::structs::{Proof, VerifyingKey},
     transcript::SolidityTranscript,
 };
-use jf_primitives::{
-    merkle_tree::NodeValue,
-    signatures::{schnorr, SchnorrSignatureScheme, SignatureScheme},
-};
-use jf_utils::tagged_blob;
+use jf_primitives::signatures::{schnorr, SchnorrSignatureScheme, SignatureScheme};
 use mint::MintNote;
 use proof::{freeze::FreezeVerifyingKey, mint::MintVerifyingKey};
 use serde::{Deserialize, Serialize};
+use tagged_base64::tagged;
 use transfer::TransferNote;
 use utils::txn_helpers::get_receiver_memos_digest;
 
@@ -211,60 +208,6 @@ pub enum TransactionNote<C: CapConfig> {
     Mint(Box<MintNote<C>>),
     /// a freeze/unfreeze note
     Freeze(Box<FreezeNote<C>>),
-}
-
-impl<C: CapConfig> CanonicalSerialize for TransactionNote<C> {
-    fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
-    where
-        W: ark_serialize::Write,
-    {
-        match self {
-            Self::Transfer(transfer_note) => {
-                let flag = 0;
-                w.write_all(&[flag])?;
-                <TransferNote<C> as CanonicalSerialize>::serialize(transfer_note, &mut w)
-            },
-            Self::Mint(mint_note) => {
-                let flag = 1;
-                w.write_all(&[flag])?;
-                <MintNote<C> as CanonicalSerialize>::serialize(mint_note, &mut w)
-            },
-            Self::Freeze(freeze_note) => {
-                let flag = 2;
-                w.write_all(&[flag])?;
-                <FreezeNote<C> as CanonicalSerialize>::serialize(freeze_note, &mut w)
-            },
-        }
-    }
-    fn serialized_size(&self) -> usize {
-        match self {
-            Self::Transfer(transfer_note) => transfer_note.serialized_size() + 1,
-            Self::Mint(mint_note) => mint_note.serialized_size() + 1,
-            Self::Freeze(freeze_note) => freeze_note.serialized_size() + 1,
-        }
-    }
-}
-
-impl<C: CapConfig> CanonicalDeserialize for TransactionNote<C> {
-    fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
-    where
-        R: ark_serialize::Read,
-    {
-        let mut flag = [0u8; 1];
-        r.read_exact(&mut flag)?;
-        match flag[0] {
-            0 => Ok(Self::Transfer(Box::new(
-                <TransferNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            ))),
-            1 => Ok(Self::Mint(Box::new(
-                <MintNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            ))),
-            2 => Ok(Self::Freeze(Box::new(
-                <FreezeNote<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            ))),
-            _ => Err(SerializationError::InvalidData),
-        }
-    }
 }
 
 impl<C: CapConfig> commit::Committable for TransactionNote<C> {
@@ -372,7 +315,7 @@ impl<C: CapConfig> From<FreezeNote<C>> for TransactionNote<C> {
 
 /// A transaction verifying key contains a proof verification key of possibly
 /// various transaction types, including transfer, mint and freeze.
-#[tagged_blob("TXVERKEY")]
+#[tagged("TXVERKEY")]
 #[derive(Debug, Clone)]
 pub enum TransactionVerifyingKey<C: CapConfig> {
     /// verification key for validity proof in transfer note
@@ -381,62 +324,6 @@ pub enum TransactionVerifyingKey<C: CapConfig> {
     Mint(MintVerifyingKey<C>),
     /// verification key for validity proof in freeze note
     Freeze(FreezeVerifyingKey<C>),
-}
-
-impl<C: CapConfig> CanonicalSerialize for TransactionVerifyingKey<C> {
-    fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
-    where
-        W: ark_serialize::Write,
-    {
-        match self {
-            Self::Transfer(transfer_key) => {
-                let flag = 0;
-                w.write_all(&[flag])?;
-                <TransferVerifyingKey<C> as CanonicalSerialize>::serialize(transfer_key, &mut w)
-            },
-            Self::Mint(mint_key) => {
-                let flag = 1;
-                w.write_all(&[flag])?;
-                <MintVerifyingKey<C> as CanonicalSerialize>::serialize(mint_key, &mut w)
-            },
-
-            Self::Freeze(freeze_key) => {
-                let flag = 2;
-                w.write_all(&[flag])?;
-                <FreezeVerifyingKey<C> as CanonicalSerialize>::serialize(freeze_key, &mut w)
-            },
-        }
-    }
-
-    fn serialized_size(&self) -> usize {
-        match self {
-            Self::Transfer(transfer_key) => transfer_key.serialized_size() + 1,
-            Self::Mint(mint_key) => mint_key.serialized_size() + 1,
-            Self::Freeze(freeze_key) => freeze_key.serialized_size() + 1,
-        }
-    }
-}
-
-impl<C: CapConfig> CanonicalDeserialize for TransactionVerifyingKey<C> {
-    fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
-    where
-        R: ark_serialize::Read,
-    {
-        let mut flag = [0u8; 1];
-        r.read_exact(&mut flag)?;
-        match flag[0] {
-            0 => Ok(Self::Transfer(
-                <TransferVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            )),
-            1 => Ok(Self::Mint(
-                <MintVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            )),
-            2 => Ok(Self::Freeze(
-                <FreezeVerifyingKey<C> as CanonicalDeserialize>::deserialize(&mut r)?,
-            )),
-            _ => Err(SerializationError::InvalidData),
-        }
-    }
 }
 
 impl<C: CapConfig> TransactionVerifyingKey<C> {

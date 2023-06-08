@@ -17,10 +17,9 @@ use crate::{
     proof::mint::{self, MintProvingKey, MintPublicInput, MintVerifyingKey, MintWitness},
     structs::{
         Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, InternalAssetCode,
-        Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
+        NodeValue, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
     },
     utils::txn_helpers::{mint::*, *},
-    NodeValue,
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{string::ToString, vec, vec::Vec, UniformRand};

@@ -40,10 +40,11 @@ use jf_primitives::{
     rescue::Permutation,
     signatures::schnorr::{self, Signature},
 };
-use jf_utils::{deserialize_canonical_bytes, hash_to_field, tagged_blob, CanonicalBytes};
+use jf_utils::hash_to_field;
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
 use sha3::{Digest, Keccak256};
+use tagged_base64::tagged;
 
 /// Alias for `NodeValue` type in merkle tree.
 pub type NodeValue<F> = <RescueMerkleTree<F> as MerkleTreeScheme>::NodeValue;
@@ -62,7 +63,7 @@ pub enum NoteType {
 }
 
 /// The random seed used in AssetCode derivation
-#[tagged_blob("ASSET_SEED")]
+#[tagged("ASSET_SEED")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -99,7 +100,7 @@ impl<C: CapConfig> AssetCodeDigest<C> {
 }
 
 /// A unique identifier/code for an asset type
-#[tagged_blob("INTERNAL_ASSET_CODE")]
+#[tagged("INTERNAL_ASSET_CODE")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -174,28 +175,6 @@ impl Amount {
     }
 }
 
-impl CanonicalSerialize for Amount {
-    #[inline]
-    fn serialize<W: Write>(&self, mut writer: W) -> Result<(), SerializationError> {
-        Ok(writer.write_all(&((*self).0 as u128).to_le_bytes())?)
-    }
-
-    #[inline]
-    fn serialized_size(&self) -> usize {
-        core::mem::size_of::<u128>()
-    }
-}
-
-impl CanonicalDeserialize for Amount {
-    #[inline]
-    fn deserialize<R: Read>(mut reader: R) -> Result<Self, SerializationError> {
-        let mut bytes = [0u8; core::mem::size_of::<u128>()];
-        reader.read_exact(&mut bytes)?;
-        let res = u128::from_le_bytes(bytes);
-        Ok(Self(res))
-    }
-}
-
 impl From<Amount> for primitive_types::U256 {
     fn from(amt: Amount) -> Self {
         u128::from(amt).into()
@@ -222,7 +201,7 @@ impl TryFrom<primitive_types::U256> for Amount {
 }
 
 /// Asset code structure
-#[tagged_blob("ASSET_CODE")]
+#[tagged("ASSET_CODE")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -326,53 +305,7 @@ impl<C: CapConfig> AssetCode<C> {
 /// (upk_x, upk_y, v, blind, attrs) where reveal bits for upk_x and upk_y are
 /// the same. Also note that asset code code is compulsorily revealed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-#[serde(from = "CanonicalBytes", into = "CanonicalBytes")]
 pub struct RevealMap(pub(crate) [bool; VIEWABLE_DATA_LEN]);
-
-deserialize_canonical_bytes!(RevealMap);
-
-impl CanonicalSerialize for RevealMap {
-    fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
-    where
-        W: ark_serialize::Write,
-    {
-        w.write_all(&VIEWABLE_DATA_LEN.to_le_bytes())?;
-        let tmp: Vec<u8> = self.0.iter().map(|x| (*x) as u8).collect();
-        w.write_all(&tmp[..])?;
-        Ok(())
-    }
-
-    fn serialized_size(&self) -> usize {
-        VIEWABLE_DATA_LEN + 8
-    }
-}
-
-impl CanonicalDeserialize for RevealMap {
-    fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
-    where
-        R: ark_serialize::Read,
-    {
-        let mut len_buf = [0u8; 8];
-        r.read_exact(&mut len_buf)?;
-        let len = usize::from_le_bytes(len_buf);
-
-        if len != VIEWABLE_DATA_LEN {
-            return Err(ark_serialize::SerializationError::InvalidData);
-        }
-
-        let mut buf = [0u8; VIEWABLE_DATA_LEN];
-        r.read_exact(&mut buf)?;
-        let mut map = [true; VIEWABLE_DATA_LEN];
-        for (&b, e) in buf.iter().zip(map.iter_mut()) {
-            *e = match b {
-                0 => false,
-                1 => true,
-                _ => return Err(ark_serialize::SerializationError::InvalidData),
-            };
-        }
-        Ok(Self(map))
-    }
-}
 
 impl RevealMap {
     /// Create a `RevealMap` with internal representation.
@@ -722,7 +655,7 @@ impl<C: CapConfig> AssetPolicy<C> {
 /// Asset Definition
 /// * `code` -- asset code as unique id code
 /// * `policy` -- asset policy attached
-#[tagged_blob("ASSET_DEF")]
+#[tagged("ASSET_DEF")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -786,7 +719,7 @@ impl<C: CapConfig> AssetDefinition<C> {
 }
 
 /// The blind factor used to produce a hiding commitment
-#[tagged_blob("BLIND")]
+#[tagged("BLIND")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -810,7 +743,7 @@ impl<C: CapConfig> BlindFactor<C> {
 }
 
 /// The nullifier represents a spent/consumed asset record
-#[tagged_blob("NUL")]
+#[tagged("NUL")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -835,7 +768,7 @@ impl<C: CapConfig> Nullifier<C> {
 }
 
 /// Asset record to be published
-#[tagged_blob("REC")]
+#[tagged("REC")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -867,18 +800,15 @@ impl<C: CapConfig> RecordCommitment<C> {
     }
 }
 
-impl<C: CapConfig> From<RecordCommitment<C>> for NodeValue<C::ScalarField> {
-    fn from(rc: RecordCommitment<C>) -> Self {
-        NodeValue::from_scalar(rc.0)
-    }
-}
-
 /// Flag indicating whether records is frozen or not
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum FreezeFlag {
     /// Record is spendable or frozable
+    #[serde(rename = "0")]
     Unfrozen,
     /// Record can only be unfrozen
+    #[serde(rename = "1")]
     Frozen,
 }
 
@@ -912,33 +842,6 @@ impl From<FreezeFlag> for bool {
         match flag {
             FreezeFlag::Unfrozen => false,
             FreezeFlag::Frozen => true,
-        }
-    }
-}
-impl CanonicalSerialize for FreezeFlag {
-    fn serialize<W>(&self, mut w: W) -> Result<(), ark_serialize::SerializationError>
-    where
-        W: ark_serialize::Write,
-    {
-        Ok(w.write_all(&[u8::from(*self)])?)
-    }
-
-    fn serialized_size(&self) -> usize {
-        1
-    }
-}
-
-impl CanonicalDeserialize for FreezeFlag {
-    fn deserialize<R>(mut r: R) -> Result<Self, ark_serialize::SerializationError>
-    where
-        R: ark_serialize::Read,
-    {
-        let mut buf = [0u8; 1];
-        r.read_exact(&mut buf)?;
-        match buf[0] {
-            0 => Ok(FreezeFlag::Unfrozen),
-            1 => Ok(FreezeFlag::Frozen),
-            _ => Err(SerializationError::InvalidData),
         }
     }
 }
@@ -1071,7 +974,7 @@ pub(crate) struct Credential<C: CapConfig>(pub(crate) Signature<C::EmbeddedCurve
 
 /// An identity attribute of a user, usually attested via `ExpirableCredential`
 /// created by an identity creator.
-#[tagged_blob("ID")]
+#[tagged("ID")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -1260,7 +1163,7 @@ impl<C: CapConfig> ExpirableCredential<C> {
 /// Memos for viewers such as viewers required by the asset policy.
 /// Concretely, it is a ciphertext over details of a
 /// transaction, enabling asset viewing and identity viewing.
-#[tagged_blob("AUDMEMO")]
+#[tagged("AUDMEMO")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -1595,7 +1498,7 @@ impl<C: CapConfig> ViewableData<C> {
 }
 // TODO: (alex) add this after Philippe's MT MR merged
 /// The proof of membership in an accumulator (Merkle tree) for an asset record
-#[tagged_blob("RECMEMO")]
+#[tagged("RECMEMO")]
 #[derive(Clone, Debug, PartialEq, Eq, Hash, CanonicalSerialize, CanonicalDeserialize)]
 /// Encrypted Message for owners of transaction outputs
 pub struct ReceiverMemo(pub(crate) aead::Ciphertext);

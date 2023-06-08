@@ -18,7 +18,7 @@ use crate::{
     errors::TxnApiError,
     keys::FreezerPubKey,
     prelude::CapConfig,
-    structs::{Amount, AssetDefinition, NoteType, RecordOpening},
+    structs::{Amount, AssetDefinition, NodeValue, NoteType, RecordOpening},
 };
 use ark_ec::CurveGroup;
 use ark_std::{format, string::ToString};
@@ -280,7 +280,10 @@ pub(crate) mod txn_helpers {
         errors::TxnApiError,
         keys::{CredIssuerPubKey, FreezerPubKey},
         prelude::CapConfig,
-        structs::{Amount, BlindFactor, FreezeFlag, Nullifier, RecordOpening},
+        structs::{
+            AccMemberWitness, Amount, AssetDefinition, BlindFactor, FreezeFlag, NodeValue,
+            Nullifier, RecordOpening,
+        },
         transfer::TransferNoteInput,
     };
 
@@ -293,7 +296,7 @@ pub(crate) mod txn_helpers {
         vec,
         vec::Vec,
     };
-    use jf_primitives::merkle_tree::{MerkleLeaf, MerkleLeafProof, MerkleTree};
+    use jf_primitives::merkle_tree::prelude::RescueMerkleTree;
     use jf_utils::hash_to_field;
     use rand::{CryptoRng, RngCore};
 
@@ -317,7 +320,6 @@ pub(crate) mod txn_helpers {
             proof::mint::MintProvingKey,
             structs::{AssetCode, AssetCodeDigest, AssetCodeSeed},
         };
-        use jf_primitives::merkle_tree::AccMemberWitness;
 
         pub(crate) fn check_proving_key_consistency<C: CapConfig>(
             proving_key: &MintProvingKey<C>,
@@ -359,12 +361,8 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod transfer {
-        use jf_primitives::merkle_tree::NodeValue;
-
         use super::*;
-        use crate::{
-            keys::ViewerPubKey, proof::transfer::TransferProvingKey, structs::AssetDefinition,
-        };
+        use crate::{keys::ViewerPubKey, proof::transfer::TransferProvingKey};
 
         pub(crate) fn check_proving_key_consistency<C: CapConfig>(
             proving_key: &TransferProvingKey<C>,
@@ -520,8 +518,6 @@ pub(crate) mod txn_helpers {
     }
 
     pub(crate) mod freeze {
-        use jf_primitives::merkle_tree::NodeValue;
-
         use super::*;
         use crate::{freeze::FreezeNoteInput, proof::freeze::FreezeProvingKey, structs::FeeInput};
 

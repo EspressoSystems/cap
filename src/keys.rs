@@ -50,8 +50,9 @@ use jf_primitives::{
         SignatureScheme,
     },
 };
-use jf_utils::{hash_to_field, tagged_blob};
+use jf_utils::hash_to_field;
 use serde::{Deserialize, Serialize};
+use tagged_base64::tagged;
 
 /// Public address for a user to send assets to/from.
 #[derive(CanonicalSerialize, CanonicalDeserialize, Serialize, Deserialize, Derivative)]
@@ -80,7 +81,7 @@ impl<C: CapConfig> UserAddress<C> {
 }
 
 /// The public key of a `UserKeyPair`
-#[tagged_blob("USERPUBKEY")]
+#[tagged("USERPUBKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -160,7 +161,7 @@ impl<C: CapConfig> UserPubKey<C> {
 }
 
 /// A key pair for the user who owns and can consume records (spend asset)
-#[tagged_blob("USERKEY")]
+#[tagged("USERKEY")]
 #[derive(Derivative, CanonicalSerialize, CanonicalDeserialize)]
 #[derivative(
     Default(bound = "C: CapConfig"),
@@ -241,7 +242,7 @@ impl<C: CapConfig> UserKeyPair<C> {
 }
 
 /// Public key for the credential creator
-#[tagged_blob("CREDPUBKEY")]
+#[tagged("CREDPUBKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -281,7 +282,7 @@ impl<C: CapConfig> CredIssuerPubKey<C> {
 }
 
 /// Key pair for the credential creator
-#[tagged_blob("CREDKEY")]
+#[tagged("CREDKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -315,7 +316,7 @@ impl<C: CapConfig> CredIssuerKeyPair<C> {
 }
 
 /// Public key for the viewer
-#[tagged_blob("AUDPUBKEY")]
+#[tagged("AUDPUBKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -350,7 +351,7 @@ impl<C: CapConfig> ViewerPubKey<C> {
     }
 }
 /// Key pair for the viewer
-#[tagged_blob("AUDKEY")]
+#[tagged("AUDKEY")]
 #[derive(CanonicalDeserialize, CanonicalSerialize, Derivative)]
 #[derivative(Debug(bound = "C: CapConfig"), Clone(bound = "C: CapConfig"))]
 pub struct ViewerKeyPair<C: CapConfig>(pub(crate) elgamal::KeyPair<C::EmbeddedCurveParam>);
@@ -452,7 +453,7 @@ impl<C: CapConfig> ViewerKeyPair<C> {
 }
 
 /// Public key for the freezer
-#[tagged_blob("FREEZEPUBKEY")]
+#[tagged("FREEZEPUBKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Clone(bound = "C: CapConfig"),
@@ -483,7 +484,7 @@ impl<C: CapConfig> PartialEq for FreezerPubKey<C> {
 }
 
 /// Key pair for the freezer
-#[tagged_blob("FREEZEKEY")]
+#[tagged("FREEZEKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -570,7 +571,7 @@ fn compute_nullifier_key<C: CapConfig>(
 
 /// Secret key used to nullify records, can only be derived by either the record
 /// owner (`UserKeyPair`) or the correct freezer (`FreezerKeyPair`)
-#[tagged_blob("NULKEY")]
+#[tagged("NULKEY")]
 #[derive(CanonicalSerialize, CanonicalDeserialize, Derivative)]
 #[derivative(
     Debug(bound = "C: CapConfig"),
@@ -597,11 +598,12 @@ impl<C: CapConfig> NullifierKey<C> {
     }
 }
 
-impl<C: CapConfig> From<&C::EmbeddedCurveScalarField> for NullifierKey<C> {
-    fn from(s: &C::EmbeddedCurveScalarField) -> Self {
-        NullifierKey(jf_utils::fr_to_fq::<_, C::EmbeddedCurveParam>(s))
-    }
-}
+// FIXME: uncomment this!
+// impl<C: CapConfig> From<&C::EmbeddedCurveScalarField> for NullifierKey<C> {
+//     fn from(s: &C::EmbeddedCurveScalarField) -> Self {
+//         NullifierKey(jf_utils::fr_to_fq::<_, C::EmbeddedCurveParam>(s))
+//     }
+// }
 
 #[cfg(test)]
 mod test {
