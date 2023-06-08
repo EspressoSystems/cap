@@ -35,7 +35,7 @@ use jf_primitives::{
     aead,
     commitment::{CommitmentScheme, FixedLengthRescueCommitment},
     elgamal,
-    merkle_tree::{AccMemberWitness, NodeValue},
+    merkle_tree::prelude::{MerkleTreeScheme, RescueMerkleTree},
     prf::{RescuePRF, PRF},
     rescue::Permutation,
     signatures::schnorr::{self, Signature},
@@ -44,6 +44,11 @@ use jf_utils::{deserialize_canonical_bytes, hash_to_field, tagged_blob, Canonica
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
 use sha3::{Digest, Keccak256};
+
+/// Alias for `NodeValue` type in merkle tree.
+pub type NodeValue<F> = <RescueMerkleTree<F> as MerkleTreeScheme>::NodeValue;
+/// Alias for `MembershipProof` type in merkle tree.
+pub type AccMemberWitness<F> = <RescueMerkleTree<F> as MerkleTreeScheme>::MembershipProof;
 
 #[derive(Debug, Clone, Copy)]
 /// Enum for each type of note

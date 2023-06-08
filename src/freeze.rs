@@ -15,9 +15,11 @@ use crate::{
     keys::FreezerKeyPair,
     prelude::CapConfig,
     proof::freeze::{self, FreezeProvingKey, FreezePublicInput, FreezeVerifyingKey, FreezeWitness},
-    structs::{Amount, AssetCode, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo},
+    structs::{
+        AccMemberWitness, Amount, AssetCode, NodeValue, Nullifier, RecordCommitment, RecordOpening,
+        TxnFeeInfo,
+    },
     utils::txn_helpers::{freeze::*, *},
-    NodeValue,
 };
 use ark_serialize::*;
 use ark_std::{
@@ -26,7 +28,7 @@ use ark_std::{
     vec::Vec,
 };
 use jf_plonk::proof_system::structs::Proof;
-use jf_primitives::{merkle_tree::AccMemberWitness, signatures::schnorr};
+use jf_primitives::signatures::schnorr;
 use serde::{Deserialize, Serialize};
 
 /// Freezing note structure

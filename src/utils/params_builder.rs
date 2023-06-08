@@ -31,9 +31,9 @@ use crate::{
     },
     sign_receiver_memos,
     structs::{
-        Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
-        ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, NoteType, ReceiverMemo,
-        RecordOpening, RevealMap, TxnFeeInfo,
+        AccMemberWitness, Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition,
+        AssetPolicy, ExpirableCredential, FeeInput, FreezeFlag, IdentityAttribute, NodeValue,
+        NoteType, ReceiverMemo, RecordOpening, RevealMap, TxnFeeInfo,
     },
     transfer::{TransferNote, TransferNoteInput},
     utils::{compute_universal_param_size, next_power_of_three},
@@ -41,7 +41,9 @@ use crate::{
 };
 use ark_std::{boxed::Box, rand::prelude::*, rc::Rc, vec, vec::Vec, UniformRand};
 use jf_primitives::{
-    merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
+    merkle_tree::prelude::{
+        AppendableMerkleTreeScheme, MerkleCommitment, MerkleTreeScheme, RescueMerkleTree,
+    },
     signatures::schnorr,
 };
 use rayon::prelude::*;
@@ -151,25 +153,29 @@ impl<C: CapConfig> TxnsParams<C> {
             })
             .collect();
 
-        let mut mt = MerkleTree::new(tree_depth).unwrap();
+        let mut mt = RescueMerkleTree::from_elems(tree_depth, &[]).unwrap();
         for builder in transfer_builders.iter() {
             for ro in builder.input_ros.iter() {
-                mt.push(ro.derive_record_commitment().to_field_element());
+                mt.push(ro.derive_record_commitment().to_field_element())
+                    .unwrap();
             }
         }
         for builder in mint_builders.iter() {
-            mt.push(builder.fee_ro.derive_record_commitment().to_field_element());
+            mt.push(builder.fee_ro.derive_record_commitment().to_field_element())
+                .unwrap();
         }
         for builder in freeze_builders.iter() {
             for ro in builder.input_ros().iter() {
-                mt.push(ro.derive_record_commitment().to_field_element());
+                mt.push(ro.derive_record_commitment().to_field_element())
+                    .unwrap();
             }
             mt.push(
                 builder
                     .fee_ro()
                     .derive_record_commitment()
                     .to_field_element(),
-            );
+            )
+            .unwrap();
         }
         let mut offset: u64 = 0;
         for builder in transfer_builders.iter_mut() {
@@ -237,7 +243,7 @@ impl<C: CapConfig> TxnsParams<C> {
             txns,
             verifying_keys,
             valid_until,
-            merkle_root: mt.commitment().root_value,
+            merkle_root: mt.commitment().digest(),
         }
     }
 
@@ -589,9 +595,9 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     }
 
     fn refresh_merkle_root(mut self) -> Self {
-        let mut mt = MerkleTree::new(self.tree_depth).unwrap();
+        let mut mt = RescueMerkleTree::from_elems(self.tree_depth, &[]).unwrap();
         for ro in self.input_ros.iter() {
-            mt.push(ro.derive_record_commitment().to_field_element());
+            mt.push(ro.derive_record_commitment().to_field_element().unwrap());
         }
         self.update_acc_member_witness(&mt, None);
         self
@@ -601,7 +607,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     /// leaves in the merkle tree.
     pub(crate) fn update_acc_member_witness(
         &mut self,
-        mt: &MerkleTree<C::ScalarField>,
+        mt: &RescueMerkleTree<C::ScalarField>,
         uids: Option<Vec<u64>>,
     ) {
         let uids = if let Some(uids) = uids {
@@ -616,13 +622,11 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
         };
         // update acc_member_witness of all input records
         for (idx, &uid) in uids.iter().enumerate() {
-            self.input_acc_member_witnesses[idx] = AccMemberWitness::lookup_from_tree(mt, uid)
-                .expect_ok()
-                .unwrap()
-                .1; // safe unwrap()
+            self.input_acc_member_witnesses[idx] =
+                RescueMerkleTree::lookup(&mt, uid).expect_ok().unwrap().1;
         }
 
-        self.root = mt.commitment().root_value;
+        self.root = mt.commitment().digest();
     }
 
     pub(crate) fn update_input_freeze_flag(
@@ -1008,20 +1012,21 @@ impl<'a, C: CapConfig> MintParamsBuilder<'a, C> {
     }
 
     fn refresh_merkle_root(&mut self) {
-        let mut mt = MerkleTree::new(self.tree_depth).unwrap();
-        mt.push(self.fee_ro.derive_record_commitment().to_field_element());
-        self.acc_member_witness = AccMemberWitness::lookup_from_tree(&mt, 0)
-            .expect_ok()
-            .unwrap()
-            .1; // safe unwrap()
+        let mut mt = RescueMerkleTree::from_elems(self.tree_depth, &[]).unwrap();
+        mt.push(self.fee_ro.derive_record_commitment().to_field_element())
+            .unwrap();
+        let (_, proof) = RescueMerkleTree::lookup(&mt, 0).expect_ok().unwrap();
+        self.acc_member_witness = proof;
     }
 
-    fn update_acc_member_witness(&mut self, mt: &MerkleTree<C::ScalarField>, uid: Option<u64>) {
+    fn update_acc_member_witness(
+        &mut self,
+        mt: &RescueMerkleTree<C::ScalarField>,
+        uid: Option<u64>,
+    ) {
         let uid = if let Some(uid) = uid { uid } else { 0 };
-        self.acc_member_witness = AccMemberWitness::lookup_from_tree(mt, uid)
-            .expect_ok()
-            .unwrap()
-            .1; // safe unwrap()
+        let (_, proof) = RescueMerkleTree::lookup(&mt, uid).expect_ok().unwrap();
+        self.acc_member_witness = proof;
     }
 
     pub(crate) fn build_witness<R: RngCore + CryptoRng>(&self, rng: &mut R) -> MintWitness<C> {
@@ -1262,17 +1267,19 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
     }
 
     fn refresh_merkle_root(&mut self) {
-        let mut mt = MerkleTree::new(self.tree_depth).unwrap();
+        let mut mt = RescueMerkleTree::from_elems(self.tree_depth, &[]).unwrap();
         for ro in self.input_ros().iter() {
-            mt.push(ro.derive_record_commitment().to_field_element());
+            mt.push(ro.derive_record_commitment().to_field_element())
+                .unwrap();
         }
-        mt.push(self.fee_ro().derive_record_commitment().to_field_element());
+        mt.push(self.fee_ro().derive_record_commitment().to_field_element())
+            .unwrap();
         self.update_acc_member_witness(&mt, None, None);
     }
 
     fn update_acc_member_witness(
         &mut self,
-        mt: &MerkleTree<C::ScalarField>,
+        mt: &RescueMerkleTree<C::ScalarField>,
         input_uids: Option<Vec<u64>>,
         fee_uid: Option<u64>,
     ) {
@@ -1296,14 +1303,12 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
 
         // update acc_member_witness of all input records
         for (idx, &uid) in input_uids.iter().enumerate() {
-            self.inputs[idx].acc_member_witness = AccMemberWitness::lookup_from_tree(mt, uid)
-                .expect_ok()
-                .unwrap() // safe unwrap()
-                .1;
+            let (_, proof) = RescueMerkleTree::lookup(&mt, uid).expect_ok().unwrap();
+            self.inputs[idx].acc_member_witness = proof;
         }
-        self.fee_input.acc_member_witness = AccMemberWitness::lookup_from_tree(mt, fee_uid)
+        self.fee_input.acc_member_witness = RescueMerkleTree::lookup(&mt, fee_uid)
             .expect_ok()
-            .unwrap() // safe unwrap()
+            .unwrap()
             .1;
     }
 

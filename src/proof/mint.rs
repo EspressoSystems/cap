@@ -20,8 +20,9 @@ use crate::{
     keys::UserKeyPair,
     prelude::CapConfig,
     structs::{
-        Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition, AssetPolicy,
-        InternalAssetCode, Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
+        AccMemberWitness, Amount, AssetCode, AssetCodeDigest, AssetCodeSeed, AssetDefinition,
+        AssetPolicy, InternalAssetCode, NodeValue, Nullifier, RecordCommitment, RecordOpening,
+        ViewableMemo,
     },
 };
 use ark_serialize::*;
@@ -34,7 +35,7 @@ use jf_plonk::{
     transcript::SolidityTranscript,
 };
 use jf_primitives::{
-    merkle_tree::{AccMemberWitness, MerkleTree, NodeValue},
+    merkle_tree::{prelude::RescueMerkleTree, MerkleTreeScheme},
     signatures::schnorr,
 };
 use jf_utils::{deserialize_canonical_bytes, CanonicalBytes};
@@ -159,12 +160,9 @@ impl<'a, C: CapConfig> MintWitness<'a, C> {
         };
         let chg_ro = fee_ro.clone();
 
-        let mut mt = MerkleTree::new(tree_depth).unwrap();
+        let mut mt = RescueMerkleTree::from_elems(tree_depth, &[]).unwrap();
         mt.push(fee_ro.derive_record_commitment().to_field_element());
-        let acc_member_witness = AccMemberWitness::lookup_from_tree(&mt, 0)
-            .expect_ok()
-            .unwrap()
-            .1; // safe unwrap()
+        let acc_member_witness = RescueMerkleTree::lookup(&mt, 0).expect_ok().unwrap().1;
         Self {
             minter_keypair,
             acc_member_witness,

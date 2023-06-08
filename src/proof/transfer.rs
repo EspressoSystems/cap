@@ -20,8 +20,8 @@ use crate::{
     keys::{CredIssuerPubKey, UserKeyPair},
     prelude::CapConfig,
     structs::{
-        Amount, AssetCode, AssetDefinition, ExpirableCredential, Nullifier, RecordCommitment,
-        RecordOpening, ViewableMemo,
+        AccMemberWitness, Amount, AssetCode, AssetDefinition, ExpirableCredential, NodeValue,
+        Nullifier, RecordCommitment, RecordOpening, ViewableMemo,
     },
     transfer::TransferNoteInput,
     utils::safe_sum_amount,
@@ -44,7 +44,7 @@ use jf_plonk::{
     transcript::SolidityTranscript,
 };
 use jf_primitives::{
-    merkle_tree::{AccMemberWitness, MerklePath, MerklePathNode, MerkleTree, NodeValue},
+    merkle_tree::{prelude::RescueMerkleTree, MerkleTreeScheme},
     signatures::schnorr,
 };
 use jf_relation::Circuit;
@@ -236,17 +236,14 @@ impl<'a, C: CapConfig> TransferWitness<'a, C> {
                 freeze_flag: Default::default(),
                 blind: Default::default(),
             };
-            let mut mt = MerkleTree::new(tree_depth).unwrap();
+            let mut mt =
+                RescueMerkleTree::from_elems(tree_depth, &[C::ScalarField::default()]).unwrap();
             mt.push(ro.derive_record_commitment().to_field_element());
+            let acc_member_witness = RescueMerkleTree::lookup(&mt, 0).expect_ok().unwrap().1;
             InputSecret {
                 owner_keypair: user_keypair,
                 ro,
-                acc_member_witness: AccMemberWitness {
-                    merkle_path: MerklePath {
-                        nodes: vec![MerklePathNode::default(); tree_depth as usize],
-                    },
-                    ..Default::default()
-                },
+                acc_member_witness,
                 cred: ExpirableCredential::dummy_unexpired().unwrap(),
             }
         };

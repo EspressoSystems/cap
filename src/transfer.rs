@@ -18,8 +18,9 @@ use crate::{
         TransferProvingKey, TransferPublicInput, TransferVerifyingKey, TransferWitness,
     },
     structs::{
-        Amount, AssetCode, AssetDefinition, ExpirableCredential, FeeInput, FreezeFlag, Nullifier,
-        RecordCommitment, RecordOpening, TxnFeeInfo, ViewableMemo,
+        AccMemberWitness, Amount, AssetCode, AssetDefinition, ExpirableCredential, FeeInput,
+        FreezeFlag, NodeValue, Nullifier, RecordCommitment, RecordOpening, TxnFeeInfo,
+        ViewableMemo,
     },
     utils::{
         safe_sum_amount,
@@ -35,10 +36,7 @@ use ark_std::{
     vec::Vec,
 };
 use jf_plonk::proof_system::structs::Proof;
-use jf_primitives::{
-    merkle_tree::{AccMemberWitness, NodeValue},
-    signatures::schnorr,
-};
+use jf_primitives::signatures::schnorr;
 use serde::{Deserialize, Serialize};
 
 /// Anonymous Transfer note structure for single sender, single asset type (+
