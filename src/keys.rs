@@ -613,7 +613,7 @@ mod test {
 
     #[test]
     fn test_user_keypair() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let user_pubkey = user_keypair.pub_key();
 
@@ -633,7 +633,7 @@ mod test {
 
     #[test]
     fn test_derive_nullifier_key() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::<Config>::generate(&mut rng);
         let nk1 = user_keypair.derive_nullifier_key(&freezer_keypair.pub_key());
@@ -665,7 +665,7 @@ mod test {
 
     #[test]
     fn test_serde() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let minter_keypair = CredIssuerKeyPair::<Config>::generate(&mut rng);
         let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);

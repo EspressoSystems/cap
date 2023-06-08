@@ -368,7 +368,7 @@ mod test {
 
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let fee_keypair = UserKeyPair::<Config>::generate(rng);
         let freezing_keypair = FreezerKeyPair::generate(rng);
         let input_amounts = vec![Amount::from(20u64), Amount::from(30u64)];
@@ -435,7 +435,7 @@ mod test {
 
     #[test]
     fn test_freeze_validity_proof() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 6;
         let num_input = 3;
         let max_degree = 65538;

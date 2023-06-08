@@ -218,7 +218,7 @@ mod test {
 
     #[test]
     fn test_mint_note() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 10;
         // increasing the max_degree since bls12_377 requires a larger one
         let max_degree = 32770;
@@ -358,7 +358,7 @@ mod test {
         receiver_keypair: &UserKeyPair<Config>,
         viewer_keypair: &ViewerKeyPair<Config>,
     ) -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
 
         let (note, sig_keypair, _change_ro) = builder.build_mint_note(rng, &proving_key)?;
         // Check note

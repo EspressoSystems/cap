@@ -1628,7 +1628,7 @@ impl<'kp, C: CapConfig> TxnFeeInfo<'kp, C> {
 mod test {
     use super::*;
     use crate::prelude::Config;
-    use ark_std::{convert::TryInto, test_rng};
+    use ark_std::convert::TryInto;
 
     type F = <Config as CapConfig>::ScalarField;
 
@@ -1686,7 +1686,7 @@ mod test {
             let zero = F::zero();
             let mut reveal_map = RevealMap::default();
             reveal_map.reveal_all();
-            let mut rng = test_rng();
+            let mut rng = jf_utils::test_rng();
             let mut attrs = [zero; VIEWABLE_DATA_LEN];
             for i in 0..VIEWABLE_DATA_LEN {
                 let rand_u64 = rng.next_u64();
@@ -1725,7 +1725,7 @@ mod test {
 
         #[test]
         fn mint() -> Result<(), TxnApiError> {
-            let rng = &mut ark_std::test_rng();
+            let rng = &mut jf_utils::test_rng();
             let tree_depth = 10;
             let max_degree = 32770;
             let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;
@@ -1776,7 +1776,7 @@ mod test {
 
         #[test]
         fn transfer() {
-            let mut rng = ark_std::test_rng();
+            let mut rng = jf_utils::test_rng();
             let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);
             let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
             let freezer_keypair = FreezerKeyPair::generate(&mut rng);
@@ -1853,7 +1853,7 @@ mod test {
 
     #[test]
     fn test_expirable_credential() -> Result<(), TxnApiError> {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let user_keypair = UserKeyPair::<Config>::generate(&mut rng);
         let minter_keypair = CredIssuerKeyPair::<Config>::generate(&mut rng);
         let mut attrs = IdentityAttribute::random_vector(&mut rng);
@@ -1907,7 +1907,7 @@ mod test {
 
     #[test]
     fn test_asset_code() {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cap_token_description = b"cap_usdx";
         let seed = AssetCodeSeed::<Config>::generate(rng);
         let internal_asset_code = InternalAssetCode::new(seed, cap_token_description);
@@ -1928,7 +1928,7 @@ mod test {
 
     #[test]
     fn test_asset_policy() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let viewer_keypair = ViewerKeyPair::<Config>::generate(&mut rng);
         let minter_keypair = CredIssuerKeyPair::generate(&mut rng);
         let freezer_keypair = FreezerKeyPair::generate(&mut rng);
@@ -2008,7 +2008,7 @@ mod test {
     #[test]
     fn test_amount() {
         // Arithmetics
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let a = u64::rand(rng) as u128 / 2;
         let a_amount = Amount::from(a);
         let b = a + u32::rand(rng) as u128;
@@ -2039,7 +2039,7 @@ mod test {
 
     #[test]
     fn test_serde() {
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
 
         // amount value related
         let amount_value = Amount::from(u128::rand(&mut rng));

@@ -129,7 +129,7 @@ where
 }
 
 pub fn get_key_pairs<C: CapConfig>(num_inputs: usize) -> Vec<UserKeyPair<C>> {
-    let mut prng = ark_std::test_rng();
+    let mut prng = jf_utils::test_rng();
     let mut user_keypairs = vec![];
     for _ in 0..num_inputs {
         user_keypairs.push(UserKeyPair::generate(&mut prng));

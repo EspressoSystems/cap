@@ -291,7 +291,7 @@ mod test {
 
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 2;
         let input_amount = Amount::from(30u64);
         let fee = Amount::from(10u64);
@@ -341,7 +341,7 @@ mod test {
 
     #[test]
     fn test_mint_validity_proof() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let tree_depth = 10;
         let max_degree = 32770;
         let universal_param = universal_setup_for_staging::<_, Config>(max_degree, rng)?;

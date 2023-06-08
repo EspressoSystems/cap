@@ -18,7 +18,7 @@
 //! use crate::utils::compute_universal_param_size,
 //! use crate::structs::NoteType;
 //!
-//! let rng = &mut ark_std::test_rng();
+//! let rng = &mut jf_utils::test_rng();
 //!
 //! let num_input = 3;
 //! let num_output = 3;

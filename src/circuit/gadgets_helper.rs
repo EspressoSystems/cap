@@ -102,7 +102,7 @@ mod tests {
 
     #[test]
     fn test_internal_asset_code() -> Result<(), CircuitError> {
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
 
         let asset_code_seed = AssetCodeSeed::<Config>::generate(&mut prng);
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_user_address() -> Result<(), CircuitError> {
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
 
@@ -152,7 +152,7 @@ mod tests {
 
     #[test]
     fn test_nullifier_key() -> Result<(), CircuitError> {
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let mut circuit = PlonkCircuit::<F>::new_turbo_plonk();
         let user_key_pair = crate::keys::UserKeyPair::<Config>::generate(&mut prng);
         let user_public_key = user_key_pair.pub_key();
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     fn test_nullifier() -> Result<(), CircuitError> {
-        let mut prng = ark_std::test_rng();
+        let mut prng = jf_utils::test_rng();
         let nullifier_key = NullifierKey::<Config>::from(&Fj::rand(&mut prng));
         let uid = 10u64;
         let uid_scalar = F::from(10u8);

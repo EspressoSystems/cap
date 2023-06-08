@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_pub_input_to_scalars_order_consistency() {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let mint_ro = RecordOpening::<Config>::rand_for_test(rng);
         let mint_internal_ac = InternalAssetCode::new(AssetCodeSeed::generate(rng), &[]);
         let mint_ac = AssetCode::new_domestic_from_internal(&mint_internal_ac);
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn test_mint_circuit_build() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let minter_keypair = UserKeyPair::generate(rng);
         let receiver_keypair = UserKeyPair::generate(rng);
         let viewer_keypair = ViewerKeyPair::generate(rng);

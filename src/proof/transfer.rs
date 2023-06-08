@@ -482,7 +482,7 @@ mod test {
 
     #[test]
     fn test_transfer_witness_creation() {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cred_expiry = 9998u64;
         let user_keypair = UserKeyPair::<Config>::generate(rng);
         let user_keypairs = vec![&user_keypair; 2];
@@ -539,7 +539,7 @@ mod test {
 
     #[test]
     fn test_pub_input_creation() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let cred_expiry = 9998u64;
         let valid_until = 1234u64;
 
@@ -595,7 +595,7 @@ mod test {
 
     #[test]
     fn test_transfer_validity_proof() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         // 2-in-6-out-10-depth is 30740 num of constraints
         // eval domain size is 32768
         let max_degree = 65538;

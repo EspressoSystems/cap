@@ -56,7 +56,7 @@ fn run_benchmark_transfer(c: &mut Criterion, filename_list: &mut Vec<String>) {
 
     for num_inputs in &NUM_INPUTS_RANGE {
         for num_outputs in &NUM_OUTPUTS_RANGE {
-            let mut prng = ark_std::test_rng();
+            let mut prng = jf_utils::test_rng();
 
             let valid_until = 1234;
 

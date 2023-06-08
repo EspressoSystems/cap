@@ -100,7 +100,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let mut transfer_builders: Vec<_> = (0..num_transfer_txn)
             .into_par_iter()
             .map(|_| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 let user_keypairs_slice = user_keypairs.iter().collect();
                 TransferParamsBuilder::rand(
                     rng,
@@ -124,7 +124,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let mut mint_builders: Vec<_> = (0..num_mint_txn)
             .into_par_iter()
             .map(|i| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 MintParamsBuilder::rand(
                     rng,
                     tree_depth,
@@ -147,7 +147,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let mut freeze_builders: Vec<_> = (0..num_freeze_txn)
             .into_par_iter()
             .map(|i| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 let freezing_keypairs = freezing_keypairs[i].iter().collect();
                 FreezeParamsBuilder::rand(rng, tree_depth, &fee_keypairs[i], freezing_keypairs)
             })
@@ -201,7 +201,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let transfer_txns: Vec<TransactionNote<C>> = transfer_builders
             .into_par_iter()
             .map(|builder| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 let mut extra_proof_bound_data = [0u8; 32];
                 rng.fill_bytes(&mut extra_proof_bound_data);
                 let (note, ..) = builder
@@ -218,7 +218,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let mint_txns: Vec<_> = mint_builders
             .into_par_iter()
             .map(|builder| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 let (note, ..) = builder.build_mint_note(rng, &mint_prover_key).unwrap();
                 TransactionNote::Mint(Box::new(note))
             })
@@ -226,7 +226,7 @@ impl<C: CapConfig> TxnsParams<C> {
         let freeze_txns: Vec<_> = freeze_builders
             .into_par_iter()
             .map(|builder| {
-                let rng = &mut ark_std::test_rng();
+                let rng = &mut jf_utils::test_rng();
                 let (note, ..) = builder.build_freeze_note(rng, &freeze_prover_key).unwrap();
                 TransactionNote::Freeze(Box::new(note))
             })
@@ -334,7 +334,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
             input_creds: vec![None; num_input],
             input_acc_member_witnesses: vec![AccMemberWitness::default(); num_input],
             root: NodeValue::default(),
-            rng: ark_std::test_rng(),
+            rng: jf_utils::test_rng(),
         }
     }
 
@@ -351,7 +351,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
     ) -> Self {
         assert_eq!(user_keypairs.len(), num_input);
         let tree_depth = Self::calculate_tree_depth(num_input, num_output, tree_depth);
-        let mut rng = ark_std::test_rng();
+        let mut rng = jf_utils::test_rng();
         let transfer_asset_def = NonNativeAssetDefinition::generate(&mut rng);
 
         Self {
@@ -1176,7 +1176,7 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
         fee_keypair: &'a UserKeyPair<C>,
         freezing_keypairs: Vec<&'a FreezerKeyPair<C>>,
     ) -> Self {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         assert_eq!(
             input_amounts.len(),
             freezing_keypairs.len(),
@@ -1350,13 +1350,13 @@ impl<'a, C: CapConfig> FreezeParamsBuilder<'a, C> {
 
     // calculate the output ROs
     fn output_ros(&self) -> Vec<RecordOpening<C>> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         get_output_ros(rng, &self.inputs)
     }
 
     /// Build a witness
     pub(crate) fn build_witness(&self) -> FreezeWitness<C> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let (txn_fee_input, _) = TxnFeeInfo::new(rng, self.fee_input.clone(), self.fee).unwrap();
         FreezeWitness::new_unchecked(self.inputs.clone(), &self.output_ros(), txn_fee_input)
     }

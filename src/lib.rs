@@ -524,7 +524,7 @@ mod test {
 
     #[test]
     fn test_transaction_note() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let num_transfer_txn = 1;
         let num_mint_txn = 2;
         let num_freeze_txn = 3;
@@ -590,7 +590,7 @@ mod test {
         assert!(calculate_fee(&txns).is_err());
 
         // test derive_txns_fee_record()
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let pks = (0..7)
             .map(|_| UserPubKey::default())
             .collect::<Vec<UserPubKey<Config>>>();
@@ -618,7 +618,7 @@ mod test {
 
     #[test]
     fn test_batch_verify() -> Result<(), TxnApiError> {
-        let rng = &mut ark_std::test_rng();
+        let rng = &mut jf_utils::test_rng();
         let num_transfer_txn = 5;
         let num_mint_txn = 2;
         let num_freeze_txn = 3;
