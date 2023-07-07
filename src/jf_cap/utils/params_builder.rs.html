@@ -1455,7 +1455,6 @@
 <span id="1455">1455</span>
 <span id="1456">1456</span>
 <span id="1457">1457</span>
-<span id="1458">1458</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -1550,7 +1549,6 @@
 
         <span class="kw">let</span> <span class="ident">valid_until</span> <span class="op">=</span> <span class="number">1000</span>;
         <span class="kw">let</span> <span class="ident">user_keypairs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">UserKeyPair</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">transfer_num_input</span>)
-            .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">UserKeyPair::generate</span>(<span class="ident">rng</span>))
             .<span class="ident">collect</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">transfer_builders</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">num_transfer_txn</span>)
@@ -2163,7 +2161,7 @@
             <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>..<span class="number">20</span>) <span class="kw">as</span> <span class="ident">u64</span>);
             <span class="kw">let</span> <span class="ident">fee_change</span> <span class="op">=</span> <span class="ident">Amount::from</span>(<span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>..<span class="op">=</span><span class="ident">fee</span>.<span class="number">0</span>));
             <span class="kw">let</span> <span class="ident">transfer_amount</span> <span class="op">=</span> <span class="ident">Amount::from</span>(
-                <span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>..<span class="number">50</span>) <span class="op">*</span> (<span class="ident">num_input</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">*</span> (<span class="ident">num_output</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">u128</span>,
+                <span class="ident">rng</span>.<span class="ident">gen_range</span>(<span class="number">1</span>..<span class="number">50</span>) <span class="op">*</span> (<span class="ident">num_input</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>) <span class="op">*</span> (<span class="ident">num_output</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>),
             );
             <span class="kw">let</span> <span class="ident">input_amounts</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">transfer_amount</span> <span class="op">/</span> (<span class="ident">num_input</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>); <span class="ident">num_input</span> <span class="op">-</span> <span class="number">1</span>];
             <span class="kw">let</span> <span class="ident">output_amounts</span> <span class="op">=</span> <span class="macro">vec!</span>[<span class="ident">transfer_amount</span> <span class="op">/</span> (<span class="ident">num_output</span> <span class="kw">as</span> <span class="ident">u128</span> <span class="op">-</span> <span class="number">1</span>); <span class="ident">num_output</span> <span class="op">-</span> <span class="number">1</span>];

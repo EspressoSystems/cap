@@ -1156,7 +1156,7 @@
                     .<span class="ident">owner_keypair</span>
                     .<span class="ident">derive_nullifier_key</span>(<span class="kw-2">&amp;</span><span class="ident">secret</span>.<span class="ident">ro</span>.<span class="ident">asset_def</span>.<span class="ident">policy</span>.<span class="ident">freezer_pk</span>);
                 <span class="kw">let</span> <span class="ident">uid</span> <span class="op">=</span> <span class="ident">secret</span>.<span class="ident">acc_member_witness</span>.<span class="ident">uid</span>;
-                <span class="prelude-val">Ok</span>(<span class="ident">nk</span>.<span class="ident">nullify</span>(<span class="ident">uid</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="kw-2">&amp;</span><span class="ident">comm</span>))
+                <span class="prelude-val">Ok</span>(<span class="ident">nk</span>.<span class="ident">nullify</span>(<span class="ident">uid</span>, <span class="kw-2">&amp;</span><span class="ident">comm</span>))
             })
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 

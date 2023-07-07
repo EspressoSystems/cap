@@ -685,6 +685,7 @@
 <span id="685">685</span>
 <span id="686">686</span>
 <span id="687">687</span>
+<span id="688">688</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) 2022 Espresso Systems (espressosys.com)</span>
 <span class="comment">// This file is part of the Configurable Asset Privacy (CAP) library.</span>
 
@@ -766,8 +767,9 @@
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>))]</span>
-<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalParam</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
-    <span class="ident">load_universal_parameters_from_path</span>(<span class="ident">default_path</span>(<span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>, <span class="string">&quot;bin&quot;</span>))
+<span class="kw">fn</span> <span class="ident">load_default_universal_parameters</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">CapConfig</span><span class="op">&gt;</span>(
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">UniversalSrs</span><span class="op">&lt;</span><span class="ident">C::PairingCurve</span><span class="op">&gt;</span>, <span class="ident">TxnApiError</span><span class="op">&gt;</span> {
+    <span class="ident">load_universal_parameters_from_path</span>::<span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">default_path</span>(<span class="ident">DEFAULT_UNIVERSAL_SRS_FILENAME</span>, <span class="string">&quot;bin&quot;</span>))
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bn254&quot;</span>)]</span>
