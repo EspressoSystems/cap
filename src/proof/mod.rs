@@ -137,5 +137,5 @@ pub fn universal_setup_for_staging<R: RngCore + CryptoRng, C: CapConfig>(
     max_degree: usize,
     rng: &mut R,
 ) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
-    universal_setup(max_degree, rng)
+    universal_setup::<R, C>(max_degree, rng)
 }

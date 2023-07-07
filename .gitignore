@@ -4,6 +4,7 @@
 /target
 cargo-system-config.toml
 .pre-commit-config.yaml
+.direnv/
 
 # Test coverage (grcov)
 default.profraw
