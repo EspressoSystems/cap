@@ -991,7 +991,7 @@ dependencies = [
 [[package]]
 name = "jf-plonk"
 version = "0.1.2"
-source = "git+https://github.com/EspressoSystems/jellyfish.git?branch=main#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
+source = "git+https://github.com/EspressoSystems/jellyfish.git?rev=bcd92b2cffd63b946a6b11c327ef1f5efb957714#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
@@ -1024,7 +1024,7 @@ dependencies = [
 [[package]]
 name = "jf-primitives"
 version = "0.1.2"
-source = "git+https://github.com/EspressoSystems/jellyfish.git?branch=main#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
+source = "git+https://github.com/EspressoSystems/jellyfish.git?rev=bcd92b2cffd63b946a6b11c327ef1f5efb957714#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
@@ -1057,7 +1057,7 @@ dependencies = [
 [[package]]
 name = "jf-relation"
 version = "0.1.2"
-source = "git+https://github.com/EspressoSystems/jellyfish.git?branch=main#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
+source = "git+https://github.com/EspressoSystems/jellyfish.git?rev=bcd92b2cffd63b946a6b11c327ef1f5efb957714#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
@@ -1083,7 +1083,7 @@ dependencies = [
 [[package]]
 name = "jf-utils"
 version = "0.1.2"
-source = "git+https://github.com/EspressoSystems/jellyfish.git?branch=main#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
+source = "git+https://github.com/EspressoSystems/jellyfish.git?rev=bcd92b2cffd63b946a6b11c327ef1f5efb957714#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
 dependencies = [
  "anyhow",
  "ark-ec",
@@ -1102,7 +1102,7 @@ dependencies = [
 [[package]]
 name = "jf-utils-derive"
 version = "0.1.2"
-source = "git+https://github.com/EspressoSystems/jellyfish.git?branch=main#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
+source = "git+https://github.com/EspressoSystems/jellyfish.git?rev=bcd92b2cffd63b946a6b11c327ef1f5efb957714#bcd92b2cffd63b946a6b11c327ef1f5efb957714"
 dependencies = [
  "ark-std",
  "quote",

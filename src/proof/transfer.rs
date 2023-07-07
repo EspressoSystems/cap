@@ -395,7 +395,7 @@ impl<C: CapConfig> TransferPublicInput<C> {
                     .owner_keypair
                     .derive_nullifier_key(&secret.ro.asset_def.policy.freezer_pk);
                 let uid = secret.acc_member_witness.uid;
-                Ok(nk.nullify(uid as u64, &comm))
+                Ok(nk.nullify(uid, &comm))
             })
             .collect::<Result<Vec<_>, TxnApiError>>()?;
 

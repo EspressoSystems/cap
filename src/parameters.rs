@@ -79,8 +79,9 @@ fn load_universal_parameters_from_path<C: CapConfig>(
 }
 
 #[cfg(not(feature = "bn254"))]
-fn load_default_universal_parameters() -> Result<UniversalParam, TxnApiError> {
-    load_universal_parameters_from_path(default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"))
+fn load_default_universal_parameters<C: CapConfig>(
+) -> Result<UniversalSrs<C::PairingCurve>, TxnApiError> {
+    load_universal_parameters_from_path::<C>(default_path(DEFAULT_UNIVERSAL_SRS_FILENAME, "bin"))
 }
 
 #[cfg(feature = "bn254")]

@@ -174,7 +174,7 @@ impl Amount {
 impl CanonicalSerialize for Amount {
     #[inline]
     fn serialize<W: Write>(&self, mut writer: W) -> Result<(), SerializationError> {
-        Ok(writer.write_all(&((*self).0 as u128).to_le_bytes())?)
+        Ok(writer.write_all(&(self.0).to_le_bytes())?)
     }
 
     #[inline]
@@ -1135,14 +1135,12 @@ impl<C: CapConfig> IdentityAttribute<C> {
         R: RngCore + CryptoRng,
     {
         (0..ATTRS_LEN)
-            .into_iter()
             .map(|_| IdentityAttribute::random(rng))
             .collect()
     }
 
     fn default_vector() -> Vec<Self> {
         (0..ATTRS_LEN)
-            .into_iter()
             .map(|_| IdentityAttribute::default())
             .collect()
     }

@@ -92,7 +92,6 @@ impl<C: CapConfig> TxnsParams<C> {
 
         let valid_until = 1000;
         let user_keypairs: Vec<UserKeyPair<C>> = (0..transfer_num_input)
-            .into_iter()
             .map(|_| UserKeyPair::generate(rng))
             .collect();
         let mut transfer_builders: Vec<_> = (0..num_transfer_txn)
@@ -705,7 +704,7 @@ impl<'a, C: CapConfig> TransferParamsBuilder<'a, C> {
             let fee = Amount::from(rng.gen_range(1..20) as u64);
             let fee_change = Amount::from(rng.gen_range(1..=fee.0));
             let transfer_amount = Amount::from(
-                rng.gen_range(1..50) * (num_input as u128 - 1) * (num_output as u128 - 1) as u128,
+                rng.gen_range(1..50) * (num_input as u128 - 1) * (num_output as u128 - 1),
             );
             let input_amounts = vec![transfer_amount / (num_input as u128 - 1); num_input - 1];
             let output_amounts = vec![transfer_amount / (num_output as u128 - 1); num_output - 1];

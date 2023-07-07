@@ -73,7 +73,7 @@ pub(crate) fn next_power_of_three(current: usize) -> usize {
 pub(crate) fn safe_sum_amount(elems: &[Amount]) -> Option<Amount> {
     let res = elems
         .iter()
-        .fold(Some(0u128), |acc, elem| acc?.checked_add((*elem).0));
+        .fold(Some(0u128), |acc, elem| acc?.checked_add(elem.0));
     res.map(|x| x.into())
 }
 /// Computes the size of the universal parameters given the type and the

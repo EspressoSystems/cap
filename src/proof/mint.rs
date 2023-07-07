@@ -231,7 +231,7 @@ impl<C: CapConfig> MintPublicInput<C> {
         let input_nullifier = witness
             .minter_keypair
             .derive_nullifier_key(&witness.fee_ro.asset_def.policy.freezer_pk)
-            .nullify(uid as u64, &fee_rc);
+            .nullify(uid, &fee_rc);
         let mint_rc = RecordCommitment::from(&witness.mint_ro);
         let chg_rc = RecordCommitment::from(&witness.chg_ro);
         let mint_amount = witness.mint_ro.amount;

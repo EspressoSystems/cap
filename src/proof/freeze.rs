@@ -297,15 +297,13 @@ impl<C: CapConfig> FreezePublicInput<C> {
             .map(|(i, (ro, acc_wit))| {
                 let comm = ro.derive_record_commitment();
                 if i == 0 {
-                    witness.fee_keypair.nullify(
-                        &FreezerPubKey::default(),
-                        acc_wit.uid as u64,
-                        &comm,
-                    )
+                    witness
+                        .fee_keypair
+                        .nullify(&FreezerPubKey::default(), acc_wit.uid, &comm)
                 } else {
                     witness.freezing_keypairs[i - 1].nullify(
                         &ro.pub_key.address(),
-                        acc_wit.uid as u64,
+                        acc_wit.uid,
                         &comm,
                     )
                 }
