@@ -11,42 +11,40 @@ name = "gen-params"
 path = "src/bin/gen-parameters.rs"
 
 [dependencies]
-ark-std = { version = "0.3.0", default-features = false }
-ark-serialize = { version = "0.3.0", default-features = false }
+anyhow = { version = "^1.0", default-features = false }
+ark-bls12-377 =  { git = "https://github.com/arkworks-rs/curves", rev = "677b4ae751a274037880ede86e9b6f30f62635af", optional = true }
+ark-bls12-381 = { version = "0.3.0", default-features = false, features = ["curve"], optional = true }
+ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"], optional = true }
 ark-ec = { version = "0.3.0", default-features = false }
+ark-ed-on-bls12-377 = { git = "https://github.com/arkworks-rs/curves", rev = "677b4ae751a274037880ede86e9b6f30f62635af", optional = true }
+ark-ed-on-bls12-381 = { version = "0.3.0", default-features = false, optional = true }
+ark-ed-on-bn254 = { version = "0.3.0", default-features = false, optional = true }
 ark-ff = { version = "0.3.0", default-features = false }
+ark-serialize = { version = "0.3.0", default-features = false }
+ark-std = { version = "0.3.0", default-features = false }
+bincode = { version = "1.3.3", default-features = false }
 commit = { git = "https://github.com/EspressoSystems/commit.git", tag = "0.1.0" }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde_derive = { version = "1.0", default-features = false }
-jf-plonk = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
-jf-relation = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
-jf-primitives = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
-jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", branch = "main" }
-sha2 = { version = "0.9.5", default-features = false }
-structopt = { version = "0.3.22", default-features = false }
+csv = { version = "1.1.6", default-features = false }
+derivative = { version = "2", features = ["use_core"] }
+derive_more = "0.99.17"
+displaydoc = { version = "0.2.3", default-features = false }
+hex-literal = "^0.3"
+jf-plonk = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = "bcd92b2cffd63b946a6b11c327ef1f5efb957714" }
+jf-primitives = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = "bcd92b2cffd63b946a6b11c327ef1f5efb957714" }
+jf-relation = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = "bcd92b2cffd63b946a6b11c327ef1f5efb957714" }
+jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = "bcd92b2cffd63b946a6b11c327ef1f5efb957714" }
+num_cpus = { version = "1.13.0", default-features = false }
+percentage = { version = "0.1.0", default-features = false }
+primitive-types = "0.11"
 rand = { version = "0.8.4", default-features = false, features = [ "alloc" ] }
 rand_chacha = { version = "0.3.1" }
 rayon = { version = "1.5.0", default-features = false }
-percentage = { version = "0.1.0", default-features = false }
-num_cpus = { version = "1.13.0", default-features = false }
-csv = { version = "1.1.6", default-features = false }
-displaydoc = { version = "0.2.3", default-features = false }
-anyhow = { version = "^1.0", default-features = false }
-derivative = { version = "2", features = ["use_core"] }
-bincode = { version = "1.3.3", default-features = false }
-sha3 = "^0.10"
-hex-literal = "^0.3"
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_derive = { version = "1.0", default-features = false }
 serde_json = "1.0.61"
-derive_more = "0.99.17"
-primitive-types = "0.11"
-
-# curves
-ark-bls12-381 = { version = "0.3.0", default-features = false, features = ["curve"], optional = true }
-ark-ed-on-bls12-381 = { version = "0.3.0", default-features = false, optional = true }
-ark-bls12-377 =  { git = "https://github.com/arkworks-rs/curves", rev = "677b4ae751a274037880ede86e9b6f30f62635af", optional = true }
-ark-ed-on-bls12-377 = { git = "https://github.com/arkworks-rs/curves", rev = "677b4ae751a274037880ede86e9b6f30f62635af", optional = true }
-ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"], optional = true }
-ark-ed-on-bn254 = { version = "0.3.0", default-features = false, optional = true }
+sha2 = { version = "0.9.5", default-features = false }
+sha3 = "^0.10"
+structopt = { version = "0.3.22", default-features = false }
 
 [dev-dependencies]
 criterion = "0.3.1"
@@ -71,10 +69,10 @@ name = "batch_verification"
 harness = false
 
 [features]
-default = [ "bn254" ]
-bls12_381 = [ "ark-bls12-381", "ark-ed-on-bls12-381" ]
-bls12_377 = [ "ark-bls12-377", "ark-ed-on-bls12-377" ]
-bn254 = [ "ark-bn254", "ark-ed-on-bn254" ]
-std = [ "ark-std/std" ]
+default = ["bn254"]
+bls12_381 = ["ark-bls12-381", "ark-ed-on-bls12-381"]
+bls12_377 = ["ark-bls12-377", "ark-ed-on-bls12-377"]
+bn254 = ["ark-bn254", "ark-ed-on-bn254"]
+std = ["ark-std/std"]
 # exposing apis for testing purpose
 test_apis = []
