@@ -105,7 +105,7 @@ pub struct Config;
 
 #[cfg(feature = "bls12_381")]
 impl CapConfig for Config {
-    type PairingCurve = ark_bls12_381::Bls12_377;
+    type PairingCurve = ark_bls12_381::Bls12_381;
     type PairingCurveParam = ark_bls12_381::g1::Parameters;
     type EmbeddedCurveParam = ark_ed_on_bls12_381::EdwardsParameters;
     type BaseField = ark_bls12_381::Fq;
