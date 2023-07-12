@@ -47,7 +47,7 @@ sha3 = "^0.10"
 structopt = { version = "0.3.22", default-features = false }
 
 [dev-dependencies]
-criterion = "0.3.1"
+criterion = "0.4.0"
 quickcheck = "1.0"
 quickcheck_macros = "1.0"
 
