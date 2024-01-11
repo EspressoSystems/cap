@@ -35,7 +35,7 @@ jf-relation = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = 
 jf-utils = { git = "https://github.com/EspressoSystems/jellyfish.git", rev = "bcd92b2cffd63b946a6b11c327ef1f5efb957714" }
 num_cpus = { version = "1.13.0", default-features = false }
 percentage = { version = "0.1.0", default-features = false }
-primitive-types = "0.11"
+primitive-types = "0.12"
 rand = { version = "0.8.4", default-features = false, features = [ "alloc" ] }
 rand_chacha = { version = "0.3.1" }
 rayon = { version = "1.7.0", default-features = false }
