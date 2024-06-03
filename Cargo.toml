@@ -17,7 +17,7 @@ ark-bls12-381 = { version = "0.3.0", default-features = false, features = ["curv
 ark-bn254 = { version = "0.3.0", default-features = false, features = ["curve"], optional = true }
 ark-ec = { version = "0.3.0", default-features = false }
 ark-ed-on-bls12-377 = { git = "https://github.com/arkworks-rs/curves", rev = "677b4ae751a274037880ede86e9b6f30f62635af", optional = true }
-ark-ed-on-bls12-381 = { version = "0.3.0", default-features = false, optional = true }
+ark-ed-on-bls12-381 = { version = "0.4.0", default-features = false, optional = true }
 ark-ed-on-bn254 = { version = "0.3.0", default-features = false, optional = true }
 ark-ff = { version = "0.3.0", default-features = false }
 ark-serialize = { version = "0.3.0", default-features = false }
